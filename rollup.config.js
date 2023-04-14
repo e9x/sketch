@@ -1,3 +1,4 @@
+import eslint from "@rollup/plugin-eslint";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import replace from "@rollup/plugin-replace";
 import { expand } from "dotenv-expand";
@@ -48,6 +49,7 @@ const options = defineConfig([
       sourcemap: "hidden",
     },
     plugins: [
+      eslint(),
       esbuild({
         minify: !isDevelopment,
         jsx: "automatic",
@@ -87,6 +89,7 @@ const options = defineConfig([
             sourcemap: "inline",
           },
           plugins: [
+            eslint(),
             esbuild({ minify: true }),
             nodeResolve(),
             replace({
