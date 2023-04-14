@@ -1,0 +1,30 @@
+{
+  "name": "krunksketch",
+  "version": "1.0.0-alpha",
+  "description": "try to take over the world!",
+  "author": "The Gaming Gurus",
+  "private": true,
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -cw"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^3.7.2",
+    "@rollup/plugin-replace": "^5.0.2",
+    "@types/tampermonkey": "^4.0.10",
+    "@typescript-eslint/eslint-plugin": "^5.58.0",
+    "dotenv-expand": "^10.0.0",
+    "dotenv-flow": "^3.2.0",
+    "eslint": "^8.38.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-import": "^2.27.5",
+    "prettier": "^2.8.7",
+    "rollup": "^3.20.2",
+    "rollup-plugin-banner2": "^1.2.2",
+    "rollup-plugin-esbuild": "^5.0.0",
+    "rollup-plugin-obfuscator": "^1.0.3",
+    "rollup-plugin-userscript-metablock": "^0.3.2",
+    "typescript": "^5.0.4"
+  }
+}
