@@ -3,12 +3,6 @@ import { useEffect, useState } from "preact/hooks";
 const configTarget = new EventTarget();
 const valueCache = new Map<string, unknown>();
 
-export const defaultConfig = {
-  aimbot: false,
-  wallbangs: false,
-  bhop: false,
-};
-
 export function getConfig<T>(key: string, defaultValue?: T) {
   if (valueCache.has(key)) return valueCache.get(key);
   const value = GM_getValue(key, defaultValue);
