@@ -26,11 +26,14 @@ const envKeys = [
   ...Object.keys(process.env).filter((key) => key.startsWith("SKETCH_")),
 ];
 
-const envReplacements = envKeys.reduce((r, key) => {
-  if (key in process.env)
-    r[`process.env.${key}`] = JSON.stringify(process.env[key]);
-  return r;
-}, {});
+const envReplacements = {
+  ...envKeys.reduce((r, key) => {
+    if (key in process.env)
+      r[`process.env.${key}`] = JSON.stringify(process.env[key]);
+    return r;
+  }, {}),
+  "process.env.": `(${JSON.stringify({ env: {} })}).`,
+};
 
 /**
  * @type {import("rollup").RollupOptions}
