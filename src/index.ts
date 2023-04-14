@@ -1,12 +1,18 @@
 import "./menu/createUI";
 import KrunkBox, { WorkInkErrors } from "./KrunkBox";
+import { bhopHook } from "./cheats/bhop";
 import { gameVersion, workInkURL } from "./consts";
+import type { Module } from "./filters";
+import { matchModule } from "./filters";
 import type { Hook } from "./inject";
 import { getGame, waitForGameLoad } from "./inject";
 
-const hook: Hook<
-  (module: { i: number; l: true; exports: unknown }) => unknown
-> = (dataArg: string, src: string) => {
+bhopHook();
+
+const hook: Hook<(module: Module) => unknown> = (
+  dataArg: string,
+  src: string
+) => {
   // hook __webpack_require__, specifically the part where it returns module.exports and when it's generating the exports, not caching it
   // the hook is ran once per module
   src = src.replace(
@@ -16,7 +22,7 @@ const hook: Hook<
 
   return {
     data: (module) => {
-      console.log(module);
+      matchModule(module);
       return module.exports;
     },
     src,
