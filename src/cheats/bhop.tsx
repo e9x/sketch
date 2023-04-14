@@ -17,7 +17,9 @@ export function bhopHook() {
 
     if (inputs[iInputs.jump]) {
       inputs[iInputs.jump] =
-        localPlayer.onGround || localPlayer.onWall ? lastJump : 0;
+        localPlayer.onGround || (localPlayer.wallJump && localPlayer.onWall)
+          ? lastJump
+          : 0;
       lastJump ^= 1;
 
       // if crouch isn't already held, override crouch

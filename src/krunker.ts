@@ -295,6 +295,7 @@ export declare class Player {
   inputs: Inputs;
   ammos: number[];
   onWall: number;
+  wallJump: number; // bool
   onGround: boolean;
   airTime: number;
   x: number;
