@@ -14,6 +14,7 @@ export interface FetchResponse {
   ok: boolean;
   headers: Headers;
   text: () => Promise<string>;
+  json: () => Promise<unknown>;
 }
 
 /**
@@ -34,6 +35,7 @@ export function GM_fetch(url: string, opts: FetchOptions = {}) {
           statusText: res.statusText,
           ok: res.status >= 200 && res.status < 300,
           text: () => Promise.resolve(res.responseText),
+          json: () => Promise.resolve(JSON.parse(res.responseText)),
           headers: res.responseHeaders
             .split("\r\n")
             .filter(Boolean) // empty lines

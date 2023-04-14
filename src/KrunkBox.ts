@@ -131,4 +131,25 @@ export default class KrunkBox {
       return await res.text();
     }
   }
+  async vars() {
+    while (true) {
+      const res = await GM_fetch(new URL("vars", apiURL).toString());
+
+      // has not been minified/processed yet
+      if (res.status === 404) {
+        console.log("Too early, trying again in 3s");
+        await sleep(3e3);
+        continue;
+      }
+
+      if (!res.ok) {
+        // server error, try again in some
+        console.log("Server error, trying again in 3s");
+        await sleep(3e3);
+        continue;
+      }
+
+      return (await res.json()) as { gameVersion: string };
+    }
+  }
 }

@@ -1,4 +1,5 @@
 import KrunkBox from "./KrunkBox";
+import { gameVersion } from "./consts";
 import type { Hook } from "./inject";
 import { getToken, getGame, waitForGameLoad } from "./inject";
 
@@ -39,6 +40,15 @@ async function main() {
     if (!(await krunkbox.valid())) {
       krunkbox = undefined;
     }
+  }
+
+  const vars = await krunkbox.vars();
+
+  if (vars.gameVersion !== gameVersion) {
+    if (confirm("KrunkSketch isn't updated. Join the Discord for updates?"))
+      GM_openInTab("https://y9x.github.io/discord/");
+
+    return;
   }
 
   const game = await getGame(krunkbox, hook);
