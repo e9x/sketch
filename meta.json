@@ -10,6 +10,5 @@
     "GM_openInTab",
     "GM_xmlhttpRequest"
   ],
-  "connect": ["imsoware.sys32.dev", "[::1]"],
   "run-at": "document-start"
 }

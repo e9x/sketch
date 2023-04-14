@@ -27,7 +27,7 @@ export function GM_fetch(url: string, opts: FetchOptions = {}) {
       method: opts.method,
       data: opts.body,
       headers: opts.headers,
-      onerror: (e) => reject(e.error),
+      onerror: (e) => reject(e),
       onload: (res) =>
         resolve({
           status: res.status,
