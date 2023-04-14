@@ -1,4 +1,4 @@
-import Menu from "../Menu";
+import Menu from "./Menu";
 import extendRoot from "./extendSettings";
 
 // settings = 0

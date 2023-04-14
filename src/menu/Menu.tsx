@@ -1,8 +1,8 @@
-import ColorPicker from "./menu/components/ColorPicker";
-import FilePicker from "./menu/components/FilePicker";
-import Link from "./menu/components/Link";
-import { Set } from "./menu/components/Set";
-import Slider from "./menu/components/Slider";
+import ColorPicker from "./components/ColorPicker";
+import FilePicker from "./components/FilePicker";
+import Link from "./components/Link";
+import { Set } from "./components/Set";
+import Slider from "./components/Slider";
 
 export default function Menu() {
   return (
