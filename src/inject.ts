@@ -29,24 +29,7 @@ export async function getToken() {
   return token;
 }
 
-export async function getGame<Data>(hook: Hook<Data>) {
-  let krunkbox: KrunkBox | undefined;
-
-  const savedToken = GM_getValue("token", undefined);
-
-  if (savedToken) krunkbox = new KrunkBox(savedToken);
-
-  while (!krunkbox) {
-    const apiToken = await getToken();
-
-    if (!apiToken) return; // aborted
-
-    krunkbox = new KrunkBox(apiToken);
-    if (!(await krunkbox.valid())) {
-      krunkbox = undefined;
-    }
-  }
-
+export async function getGame<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
   const [token, source] = await Promise.all([
     fetchToken(krunkbox),
     krunkbox.source(),

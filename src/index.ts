@@ -1,5 +1,6 @@
+import KrunkBox from "./KrunkBox";
 import type { Hook } from "./inject";
-import { getGame, waitForGameLoad } from "./inject";
+import { getToken, getGame, waitForGameLoad } from "./inject";
 
 const hook: Hook<
   (module: { i: number; l: true; exports: unknown }) => unknown
@@ -20,10 +21,31 @@ const hook: Hook<
   };
 };
 
-const gamePromise = getGame(hook);
+const gameLoad = waitForGameLoad();
 
-waitForGameLoad().then(() =>
-  gamePromise.then((load) => {
-    if (load) load();
-  })
-);
+async function main() {
+  let krunkbox: KrunkBox | undefined;
+
+  const savedToken = GM_getValue("token", undefined);
+
+  if (savedToken) krunkbox = new KrunkBox(savedToken);
+
+  while (!krunkbox) {
+    const apiToken = await getToken();
+
+    if (!apiToken) return; // aborted
+
+    krunkbox = new KrunkBox(apiToken);
+    if (!(await krunkbox.valid())) {
+      krunkbox = undefined;
+    }
+  }
+
+  const game = await getGame(krunkbox, hook);
+
+  await gameLoad;
+
+  game();
+}
+
+main();
