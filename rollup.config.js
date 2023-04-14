@@ -1,3 +1,4 @@
+import { nodeResolve } from "@rollup/plugin-node-resolve";
 import replace from "@rollup/plugin-replace";
 import { expand } from "dotenv-expand";
 import { config } from "dotenv-flow";
@@ -47,15 +48,20 @@ const options = defineConfig([
       sourcemap: "hidden",
     },
     plugins: [
-      replace({
-        ...envReplacements,
-        preventAssignment: true,
+      esbuild({
+        minify: !isDevelopment,
+        jsx: "automatic",
+        jsxImportSource: "preact",
       }),
-      esbuild({ minify: !isDevelopment }),
+      nodeResolve(),
       !isDevelopment &&
         obfuscator({
           exclude: /node_modules/,
         }),
+      replace({
+        ...envReplacements,
+        preventAssignment: true,
+      }),
       banner(() => "/*eslint-disable*/"),
       metablock({
         file: fileURLToPath(new URL("meta.json", import.meta.url)),
@@ -81,11 +87,12 @@ const options = defineConfig([
             sourcemap: "inline",
           },
           plugins: [
+            esbuild({ minify: true }),
+            nodeResolve(),
             replace({
               ...envReplacements,
               preventAssignment: true,
             }),
-            esbuild({ minify: true }),
             banner(() => "/*eslint-disable*/"),
             metablock({
               file: fileURLToPath(new URL("meta.json", import.meta.url)),

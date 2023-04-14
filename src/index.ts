@@ -1,3 +1,4 @@
+import "./menu/createUI";
 import KrunkBox from "./KrunkBox";
 import { gameVersion } from "./consts";
 import type { Hook } from "./inject";

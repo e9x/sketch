@@ -10,7 +10,10 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "jsx": "preserve",
+    "jsxImportSource": "preact",
+    "jsxFactory": "h"
   },
   "include": ["src/**/*"]
 }
