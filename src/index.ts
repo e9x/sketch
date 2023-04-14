@@ -1,8 +1,8 @@
 import "./menu/createUI";
-import KrunkBox from "./KrunkBox";
-import { gameVersion } from "./consts";
+import KrunkBox, { WorkInkErrors } from "./KrunkBox";
+import { gameVersion, workInkURL } from "./consts";
 import type { Hook } from "./inject";
-import { getToken, getGame, waitForGameLoad } from "./inject";
+import { getGame, waitForGameLoad } from "./inject";
 
 const hook: Hook<
   (module: { i: number; l: true; exports: unknown }) => unknown
@@ -60,3 +60,26 @@ async function main() {
 }
 
 main();
+
+async function getToken() {
+  let token: string | undefined;
+
+  while (!token) {
+    GM_openInTab(workInkURL);
+    const key = prompt(
+      "Go to the newly opened tab and follow the instructions. When done, enter your access key here"
+    );
+    // cancel
+    if (typeof key !== "string") return;
+    const res = await KrunkBox.processWorkInk(key);
+    if (res === WorkInkErrors.BadToken) alert("Bad access key. Try again.");
+    else if (res === WorkInkErrors.DuplicateToken)
+      alert("Access key already used. Try again.");
+    else {
+      token = res;
+      break;
+    }
+  }
+
+  return token;
+}

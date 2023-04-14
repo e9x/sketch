@@ -1,33 +1,10 @@
-import KrunkBox, { APIError, WorkInkErrors } from "./KrunkBox";
-import { workInkURL } from "./consts";
+import type KrunkBox from "./KrunkBox";
+import { APIError } from "./KrunkBox";
 
 export type Hook<Data> = (
   dataArg: string,
   src: string
 ) => { data: Data; src: string };
-
-export async function getToken() {
-  let token: string | undefined;
-
-  while (!token) {
-    GM_openInTab(workInkURL);
-    const key = prompt(
-      "Go to the newly opened tab and follow the instructions. When done, enter your access key here"
-    );
-    // cancel
-    if (typeof key !== "string") return;
-    const res = await KrunkBox.processWorkInk(key);
-    if (res === WorkInkErrors.BadToken) alert("Bad access key. Try again.");
-    else if (res === WorkInkErrors.DuplicateToken)
-      alert("Access key already used. Try again.");
-    else {
-      token = res;
-      break;
-    }
-  }
-
-  return token;
-}
 
 export async function getGame<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
   const [token, source] = await Promise.all([
