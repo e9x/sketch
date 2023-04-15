@@ -11,8 +11,13 @@ import {
 } from "../filters";
 import type { Player } from "../krunker/Player";
 import { isEnemy, pos2D, getXDire, getDir } from "../krunkerUtil";
+import Select from "../menu/components/Select";
 import Switch from "../menu/components/Switch";
 import type THREE from "three";
+
+const defaultAimbot = "off";
+export const defaultAutoFire = false;
+const defaultFrustumCheck = true;
 
 /**
  * Get the position that will be aimed at (eg the head)
@@ -50,8 +55,6 @@ function calcRot(target: THREE.Vector3) {
   return new render.THREE.Vector2(xDire, yDire);
 }
 
-const defaultAimbot = false;
-
 function antiRecoil(rot: THREE.Vector2) {
   rot.x -= getRender().shakeY;
   rot.x -= getLocalPlayer().recoilAnimY * getConfig().recoilMlt;
@@ -74,7 +77,9 @@ export function aimbotHook() {
   // let target: Player | undefined;
 
   inputHooks.push((inputs) => {
-    if (!configGet("aimbot", defaultAimbot)) return;
+    const aimbot = configGet("aimbot", defaultAimbot);
+
+    if (aimbot === "off") return;
 
     const game = getGame();
     const overlay = getOverlay();
@@ -92,21 +97,37 @@ export function aimbotHook() {
     }
 
     // if (inputs[iInputs.frame] % 10 === 0) console.log(currentReload);
+    const autoFire = configGet("autoFire", defaultAutoFire);
+
+    if (autoFire) {
+      if (localPlayer.weapon.noAim === false) {
+        inputs[iInputs.scope] = 1;
+
+        // not fully aimed
+        if (localPlayer.aimVal) return;
+      }
+    } else {
+      // require user input
+      if (!inputs[iInputs.shoot]) return;
+    }
 
     // if the weapon can't shoot
     // maybe use cantShootTimer?
-    if (!inputs[iInputs.shoot] || currentReload || localPlayer.reloadTimer)
-      return;
+    if (currentReload || localPlayer.reloadTimer) return;
 
     const overlayCenter = new game.THREE.Vector2(
       overlay.canvas.width / 2,
       overlay.canvas.height / 2
     );
 
+    const frustumCheck = configGet("frustumCheck", defaultFrustumCheck);
+
     const target = game.players.list
       .filter(validTarget)
       .map((player) => playerAimPoint(player))
-      .filter((point) => getRender().frustum.containPoint(point))
+      .filter(
+        (point) => !frustumCheck || getRender().frustum.containPoint(point)
+      )
       .map((point) => ({ screen: pos2D(point), point }))
       .sort(
         (p1, p2) =>
@@ -115,6 +136,9 @@ export function aimbotHook() {
       )[0]?.point;
 
     if (target) {
+      if (autoFire) {
+        inputs[iInputs.shoot] = 1;
+      }
       // console.log("target:", target);
 
       const rot = calcRot(target);
@@ -137,13 +161,36 @@ export function aimbotHook() {
 
 export function AimbotMenu() {
   const [aimbot, setAimbot] = useConfig("aimbot", defaultAimbot);
+  const [autoFire, setAutoFire] = useConfig("autoFire", defaultAutoFire);
+  const [frustumCheck, setFrustumCheck] = useConfig(
+    "frustumCheck",
+    defaultFrustumCheck
+  );
 
   return (
-    <Switch
-      title="Aimbot"
-      description="Silent aimbot that makes all your shots hit"
-      defaultChecked={aimbot}
-      onChange={(event) => setAimbot(event.currentTarget.checked)}
-    />
+    <>
+      <Select
+        title="Aimbot"
+        description="Silent aimbot that makes all your shots hit"
+        defaultValue={aimbot}
+        onChange={(event) => setAimbot(event.currentTarget.value)}
+      >
+        <option value="off">Off</option>
+        <option value="silent">Silent</option>
+        <option value="smooth">Smooth</option>
+      </Select>
+      <Switch
+        title="FOV check"
+        description="Checks if enemies are in your field of view"
+        defaultChecked={frustumCheck}
+        onChange={(event) => setFrustumCheck(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Auto Fire"
+        description="Automatically aim and fire at players"
+        defaultChecked={autoFire}
+        onChange={(event) => setAutoFire(event.currentTarget.checked)}
+      />
+    </>
   );
 }

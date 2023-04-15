@@ -1,6 +1,7 @@
 import useConfig, { configGet } from "../config";
 import { iInputs } from "../consts";
 import { getCanBSeen, getGame, getRender, inputHooks } from "../filters";
+import { isEnemy } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
 
 const defaultTriggerbot = false;
@@ -14,16 +15,21 @@ export function triggerbotHook() {
     const game = getGame();
     const render = getRender();
 
-    const direction = new game.THREE.Vector3();
+    const direction = new game.THREE.Vector3(
+      inputs[iInputs.xDir],
+      inputs[iInputs.yDir],
+      0
+    );
     const position = new game.THREE.Vector3();
 
-    render.camera.getWorldDirection(direction);
+    // render.camera.getWorldDirection(direction);
     render.camera.getWorldPosition(position);
 
     game.raycaster.set(position, direction);
 
     for (const player of game.players.list)
       if (
+        isEnemy(player) &&
         player.objInstances &&
         player[getCanBSeen()] &&
         game.raycaster.intersectObjects(player.objInstances.children, true)

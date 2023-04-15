@@ -16,6 +16,8 @@ export declare class Player {
   headMlt: number;
   reloadTimer: number;
   isPlayer: true;
+  // between 0 and 1. 0 = aimed, 1 = aiming
+  aimVal: number;
   inputs: unknown[];
   ammos: number[];
   aimTime: number;
@@ -40,6 +42,9 @@ export declare class Player {
   landBobY: number;
   recoilAnimY: number;
   weapon: {
+    // true or undefined = can't aim
+    // false = can aim
+    noAim?: boolean;
     nAuto?: boolean;
   };
 }
