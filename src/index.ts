@@ -1,6 +1,7 @@
 import "./menu/createUI";
 import KrunkBox, { WorkInkErrors } from "./KrunkBox";
 import { aimbotHook } from "./cheats/aimbot";
+import { autoReloadHook } from "./cheats/autoReload";
 import { bhopHook } from "./cheats/bhop";
 import { forceAutoHook } from "./cheats/forceAuto";
 import { triggerbotHook } from "./cheats/triggerbot";
@@ -15,6 +16,7 @@ bhopHook();
 aimbotHook();
 triggerbotHook();
 forceAutoHook();
+autoReloadHook();
 
 const hook: Hook<(module: Module) => unknown> = (
   dataArg: string,

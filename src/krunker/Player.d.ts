@@ -12,6 +12,7 @@ export declare class Player {
   isPlayer: true;
   inputs: unknown[];
   ammos: number[];
+  loadoutIndex: number;
   onWall: number;
   wallJump: number; // bool
   onGround: boolean;
