@@ -1,4 +1,11 @@
-import { getGame, getOverlay, getRender } from "./filters";
+import {
+  getCanBSeen,
+  getConfig,
+  getGame,
+  getLocalPlayer,
+  getOverlay,
+  getRender,
+} from "./filters";
 import type { Player } from "./krunker/Player";
 import type THREE from "three";
 
@@ -111,4 +118,57 @@ export function pos2D(input: THREE.Vector3, offsetY = 0) {
     x: ((pos.x + 1) / 2) * this.data.ctx.canvas.width,
     y: ((-pos.y + 1) / 2) * this.data.ctx.canvas.height,
   };*/
+}
+
+export function calcRot(target: Player) {
+  const localPlayer = getLocalPlayer();
+
+  const render = getRender();
+
+  const worldPos = new render.THREE.Vector3();
+
+  render.fpsCamera.getWorldPosition(worldPos);
+
+  const xDire =
+    getXDire(
+      worldPos.x,
+      worldPos.y,
+      worldPos.z,
+      target.x,
+      target.y + target.height - target.crouchVal * getConfig().crouchAnimMlt,
+      target.z
+    ) || 0;
+  const yDire = getDir(localPlayer.z, localPlayer.x, target.z, target.x) || 0;
+
+  return new render.THREE.Vector2(xDire, yDire);
+}
+
+export function validTarget(target: Player) {
+  const localPlayer = getLocalPlayer();
+
+  if (target === localPlayer) return false;
+
+  if (!target[getCanBSeen()]) return false;
+
+  if (!isEnemy(target)) return false;
+
+  if (!getRender().frustum.containPoint(playerPos(target))) return false;
+
+  return true;
+}
+
+export function isEnemy(player: Player) {
+  const localPlayer = getLocalPlayer();
+
+  if (!localPlayer) return false;
+
+  if (player.isYou) return false;
+
+  if (!player.active) return false;
+
+  if (!player.team) return true;
+
+  if (player.team !== localPlayer.team) return true;
+
+  return false;
 }

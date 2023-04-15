@@ -2,6 +2,8 @@ import "./menu/createUI";
 import KrunkBox, { WorkInkErrors } from "./KrunkBox";
 import { aimbotHook } from "./cheats/aimbot";
 import { bhopHook } from "./cheats/bhop";
+import { forceAutoHook } from "./cheats/forceAuto";
+import { triggerbotHook } from "./cheats/triggerbot";
 import { configGet } from "./config";
 import { gameVersion, workInkURL } from "./consts";
 import { matchVars, matchModule } from "./filters";
@@ -11,6 +13,8 @@ import { getGame, waitForGameLoad } from "./inject";
 
 bhopHook();
 aimbotHook();
+triggerbotHook();
+forceAutoHook();
 
 const hook: Hook<(module: Module) => unknown> = (
   dataArg: string,

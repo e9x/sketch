@@ -26,6 +26,9 @@ export declare class Player {
   height: number;
   landBobY: number;
   recoilAnimY: number;
+  weapon?: {
+    nAuto?: boolean;
+  };
 }
 
 export declare class manager {

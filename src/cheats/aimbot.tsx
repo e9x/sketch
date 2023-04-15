@@ -1,7 +1,6 @@
 import useConfig, { configGet } from "../config";
 import { iInputs } from "../consts";
 import {
-  getCanBSeen,
   getConfig,
   getGame,
   getLocalPlayer,
@@ -9,7 +8,7 @@ import {
   inputHooks,
 } from "../filters";
 import type { Player } from "../krunker/Player";
-import { getDir, getXDire, playerPos } from "../krunkerUtil";
+import { validTarget, calcRot } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
 import type THREE from "three";
 
@@ -19,59 +18,6 @@ function antiRecoil(rot: THREE.Vector2) {
   rot.x -= getRender().shakeY;
   rot.x -= getLocalPlayer().recoilAnimY * getConfig().recoilMlt;
   rot.x -= getLocalPlayer().landBobY * 0.1;
-}
-
-function calcRot(target: Player) {
-  const localPlayer = getLocalPlayer();
-
-  const render = getRender();
-
-  const worldPos = new render.THREE.Vector3();
-
-  render.fpsCamera.getWorldPosition(worldPos);
-
-  const xDire =
-    getXDire(
-      worldPos.x,
-      worldPos.y,
-      worldPos.z,
-      target.x,
-      target.y + target.height - target.crouchVal * getConfig().crouchAnimMlt,
-      target.z
-    ) || 0;
-  const yDire = getDir(localPlayer.z, localPlayer.x, target.z, target.x) || 0;
-
-  return new render.THREE.Vector2(xDire, yDire);
-}
-
-function validTarget(target: Player) {
-  const localPlayer = getLocalPlayer();
-
-  if (target === localPlayer) return false;
-
-  if (!target[getCanBSeen()]) return false;
-
-  if (!isEnemy(target)) return false;
-
-  if (!getRender().frustum.containPoint(playerPos(target))) return false;
-
-  return true;
-}
-
-function isEnemy(player: Player) {
-  const localPlayer = getLocalPlayer();
-
-  if (!localPlayer) return false;
-
-  if (player.isYou) return false;
-
-  if (!player.active) return false;
-
-  if (!player.team) return true;
-
-  if (player.team !== localPlayer.team) return true;
-
-  return false;
 }
 
 export function aimbotHook() {

@@ -10,6 +10,7 @@ declare class Game {
   THREE: typeof THREE;
   players: manager;
   config: unknown;
+  raycaster: THREE.Raycaster;
   controls: {
     spect: unknown;
     tmpInpts: number[][];
