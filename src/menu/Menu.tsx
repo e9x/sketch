@@ -7,12 +7,16 @@ import { Set } from "./components/Set";
 
 export default function Menu() {
   return (
-    <Set title="Art">
-      <BhopMenu />
-      <AimbotMenu />
-      <TriggerbotMenu />
-      <ForceAutoMenu />
-      <AutoReloadMenu />
-    </Set>
+    <>
+      <Set title="Skill">
+        <BhopMenu />
+        <ForceAutoMenu />
+        <AutoReloadMenu />
+        <TriggerbotMenu />
+      </Set>
+      <Set title="Aim">
+        <AimbotMenu />
+      </Set>
+    </>
   );
 }
