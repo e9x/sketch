@@ -9,7 +9,7 @@ import {
   inputHooks,
 } from "../filters";
 import type { Player } from "../krunker/Player";
-import { getDir, getXDire } from "../krunkerUtil";
+import { getDir, getXDire, playerPos } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
 import type { Vector2 } from "three";
 
@@ -52,6 +52,10 @@ function validTarget(target: Player) {
   if (!target[getCanBSeen()]) return false;
 
   if (!isEnemy(target)) return false;
+
+  if (!getRender().frustum.containsPoint(playerPos(target))) return false;
+
+  // pos2D(playerPos(target)))
 
   return true;
 }
