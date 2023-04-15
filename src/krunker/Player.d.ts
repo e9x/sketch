@@ -27,7 +27,7 @@ export declare class Player {
   height: number;
   landBobY: number;
   recoilAnimY: number;
-  weapon?: {
+  weapon: {
     nAuto?: boolean;
   };
 }

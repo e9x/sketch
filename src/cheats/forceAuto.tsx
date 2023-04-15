@@ -13,7 +13,7 @@ export function forceAutoHook() {
 
     const localPlayer = getLocalPlayer();
 
-    if (localPlayer.weapon?.nAuto && inputs[iInputs.shoot]) {
+    if (localPlayer.weapon.nAuto && inputs[iInputs.shoot]) {
       inputs[iInputs.shoot] = lastShoot;
       lastShoot ^= 1;
     }
