@@ -1,3 +1,7 @@
+import { getGame, getOverlay, getRender } from "./filters";
+import type { Player } from "./krunker/Player";
+import type { Vector3 } from "three";
+
 export function getDistance(x1: number, y1: number, x2: number, y2: number) {
   return Math.sqrt((x2 -= x1) * x2 + (y2 -= y1) * y2);
 }
@@ -71,4 +75,40 @@ export function lineInRect(
 
 export function getAngleDst(a1: number, a2: number) {
   return Math.atan2(Math.sin(a2 - a1), Math.cos(a1 - a2));
+}
+
+export function playerPos(player: Player) {
+  const game = getGame();
+
+  return new game.THREE.Vector3(player.x, player.y, player.z);
+}
+
+export function pos2D(input: Vector3, offsetY = 0) {
+  const render = getRender();
+  const overlay = getOverlay();
+
+  const vec = input.clone();
+  vec.y += offsetY;
+  vec.project(render.camera);
+  vec.x = (vec.x + 1) / 2;
+  vec.y = (-vec.y + 1) / 2;
+  vec.x *= innerWidth / overlay.scale!;
+  vec.y *= innerHeight / overlay.scale!;
+
+  return new render.THREE.Vector2(vec.x, vec.y);
+
+  // if (isNaN(v.x) || isNaN(v.y) || isNaN(v.z)) return { x: 0, y: 0 };
+
+  // pos = { x: pos.x, y: pos.y, z: pos.z };
+
+  /*pos.y += offset_y;
+
+  this.update_camera();
+
+  this.project3d(pos, this.data.world.camera);
+
+  return {
+    x: ((pos.x + 1) / 2) * this.data.ctx.canvas.width,
+    y: ((-pos.y + 1) / 2) * this.data.ctx.canvas.height,
+  };*/
 }

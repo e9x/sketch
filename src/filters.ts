@@ -8,6 +8,7 @@ import type Game from "./krunker/Game";
 import type { Player, _canBSeen } from "./krunker/Player";
 import type RenderManager from "./krunker/RenderManager";
 import type configModule from "./krunker/config";
+import type * as Overlay from "./krunker/overlay";
 
 export interface Module<T = any> {
   exports: T;
@@ -40,14 +41,6 @@ export function getLocalPlayer() {
 }
 
 export const inputHooks: ((inputs: number[]) => void)[] = [];
-
-if (isDevelopment)
-  Object.assign(new Function("return window")(), {
-    getGame,
-    getRender,
-    getCanBSeen,
-    getLocalPlayer,
-  });
 
 function doGameHooks() {
   console.log("Got game");
@@ -98,6 +91,24 @@ matchers.push((module: Module<typeof Game>) => {
 
     return result;
   };
+});
+
+let overlay: typeof Overlay | undefined;
+
+export function getOverlay() {
+  if (!overlay) throw new Error("Too early");
+  return overlay;
+}
+
+matchers.push((module: Module<typeof Overlay>) => {
+  if (
+    typeof module.exports !== "object" ||
+    module.exports === null ||
+    !("medalsList" in module.exports)
+  )
+    return;
+
+  overlay = module.exports;
 });
 
 matchers.push((module: Module<typeof RenderManager>) => {
@@ -166,3 +177,12 @@ export function matchVars(src: string) {
 
   canBSeen = foundCanBSeen;
 }
+
+if (isDevelopment)
+  Object.assign(new Function("return window")(), {
+    getGame,
+    getRender,
+    getCanBSeen,
+    getLocalPlayer,
+    getOverlay,
+  });
