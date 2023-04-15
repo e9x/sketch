@@ -28,16 +28,14 @@ export default function useConfig<T>(key: string, defaultValue?: T) {
   // trigger re-render with useState
   const [state, setState] = useState(configGet(key, defaultValue));
 
-  const event = `set ${key}`;
-
   useEffect(() => {
     function listener() {
       setState(configGet(key, defaultValue));
     }
 
-    configTarget.addEventListener(event, listener, { once: true });
+    configTarget.addEventListener(key, listener, { once: true });
 
-    return () => configTarget.removeEventListener(event, listener);
+    return () => configTarget.removeEventListener(key, listener);
   });
 
   return [
@@ -47,7 +45,7 @@ export default function useConfig<T>(key: string, defaultValue?: T) {
       if (value === null) configDelete(key);
       else configSet(key, value);
       setState(configGet(key));
-      configTarget.dispatchEvent(new Event(event));
+      configTarget.dispatchEvent(new Event(key));
     },
   ] as [T, (value: T | null) => void];
 }
