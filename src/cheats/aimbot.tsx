@@ -16,7 +16,7 @@ import Switch from "../menu/components/Switch";
 import type THREE from "three";
 
 const defaultAimbot = "off";
-export const defaultAutoFire = false;
+export const defaultBot = false;
 const defaultFrustumCheck = true;
 
 /**
@@ -97,7 +97,7 @@ export function aimbotHook() {
     }
 
     // if (inputs[iInputs.frame] % 10 === 0) console.log(currentReload);
-    const autoFire = configGet("autoFire", defaultAutoFire);
+    const autoFire = configGet("autoFire", defaultBot);
 
     if (autoFire) {
       if (localPlayer.weapon.noAim === false) {
@@ -161,7 +161,7 @@ export function aimbotHook() {
 
 export function AimbotMenu() {
   const [aimbot, setAimbot] = useConfig("aimbot", defaultAimbot);
-  const [autoFire, setAutoFire] = useConfig("autoFire", defaultAutoFire);
+  const [bot, setBot] = useConfig("bot", defaultBot);
   const [frustumCheck, setFrustumCheck] = useConfig(
     "frustumCheck",
     defaultFrustumCheck
@@ -186,10 +186,10 @@ export function AimbotMenu() {
         onChange={(event) => setFrustumCheck(event.currentTarget.checked)}
       />
       <Switch
-        title="Auto Fire"
+        title="Turret"
         description="Automatically aim and fire at players"
-        defaultChecked={autoFire}
-        onChange={(event) => setAutoFire(event.currentTarget.checked)}
+        defaultChecked={bot}
+        onChange={(event) => setBot(event.currentTarget.checked)}
       />
     </>
   );

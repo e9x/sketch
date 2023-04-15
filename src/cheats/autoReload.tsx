@@ -2,7 +2,7 @@ import useConfig, { configGet } from "../config";
 import { iInputs } from "../consts";
 import { getLocalPlayer, inputHooks } from "../filters";
 import Switch from "../menu/components/Switch";
-import { defaultAutoFire } from "./aimbot";
+import { defaultBot } from "./aimbot";
 import random from "lodash/random";
 
 const defaultAutoReload = false;
@@ -13,7 +13,7 @@ export function autoReloadHook() {
   inputHooks.push((inputs) => {
     if (
       !configGet("autoReload", defaultAutoReload) &&
-      !configGet("autoFire", defaultAutoFire)
+      !configGet("bot", defaultBot)
     )
       return;
 
