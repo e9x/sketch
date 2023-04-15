@@ -15,7 +15,11 @@ declare class RenderManager {
   fpsCamera: PerspectiveCamera;
   tmpMouse: Vector2;
   tmpMouse2: Vector2;
-  frustum: Frustum;
+  frustum: Frustum & {
+    // fake function
+    containsPoint: (point: THREE.Vector3) => false;
+    containPoint: (point: THREE.Vector3) => boolean;
+  };
   shakeX: number;
   shakeY: number;
 }

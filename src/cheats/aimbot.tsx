@@ -53,9 +53,7 @@ function validTarget(target: Player) {
 
   if (!isEnemy(target)) return false;
 
-  if (!getRender().frustum.containsPoint(playerPos(target))) return false;
-
-  // pos2D(playerPos(target)))
+  if (!getRender().frustum.containPoint(playerPos(target))) return false;
 
   return true;
 }
