@@ -54,6 +54,7 @@ export function BhopMenu() {
   return (
     <Switch
       title="Bhop"
+      description="Hold space to bhop and crouch to slidehop."
       defaultChecked={bhop}
       onChange={(event) => setBhop(event.currentTarget.checked)}
     />

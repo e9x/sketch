@@ -37,6 +37,7 @@ export function AutoReloadMenu() {
   return (
     <Switch
       title="Auto Reload"
+      description="Automatically reloads your guns"
       defaultChecked={autoReload}
       onChange={(event) => setAutoReload(event.currentTarget.checked)}
     />

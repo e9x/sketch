@@ -44,6 +44,7 @@ export function TriggerbotMenu() {
   return (
     <Switch
       title="Triggerbot"
+      description="Shoots enemys that come into your line of sight while you're holding right click"
       defaultChecked={triggerbot}
       onChange={(event) => setTriggerbot(event.currentTarget.checked)}
     />

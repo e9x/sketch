@@ -141,6 +141,7 @@ export function AimbotMenu() {
   return (
     <Switch
       title="Aimbot"
+      description="Silent aimbot that makes all your shots hit"
       defaultChecked={aimbot}
       onChange={(event) => setAimbot(event.currentTarget.checked)}
     />
