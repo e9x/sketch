@@ -19,6 +19,21 @@ export function getDevURL() {
   return `http://${devHost}:${devPort}/`;
 }
 
+/*
+mouseY,
+mouseX,
+movDir,
+lMouse,
+rMouse,
+jump,
+reload,
+crouch,
+scroll,
+swap,
+restK,
+inter
+*/
+
 export const iInputs = {
   frame: 0,
   delta: 1, // capped at 0.1-33
