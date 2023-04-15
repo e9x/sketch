@@ -22,10 +22,12 @@ export function bhopHook() {
           : 0;
       lastJump ^= 1;
 
-      // if crouch isn't already held, override crouch
-      if (!inputs[iInputs.crouch])
-        inputs[iInputs.crouch] =
-          (localPlayer.velocity.y || 0) < 0 ? 1 : inputs[iInputs.crouch];
+      // ~~if crouch isn't already held, override crouch~~
+      // if(!inputs[iInputs.crouch])
+
+      // if crouch is held, slidehop
+      if (inputs[iInputs.crouch])
+        inputs[iInputs.crouch] = (localPlayer.velocity.y || 0) < 0 ? 1 : 0;
     }
   });
 }
