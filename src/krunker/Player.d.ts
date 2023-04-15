@@ -42,10 +42,16 @@ export declare class Player {
   landBobY: number;
   recoilAnimY: number;
   weapon: {
-    // true or undefined = can't aim
-    // false = can aim
+    /**
+     * true or undefined = can't aim
+     * false = can aim
+     */
     noAim?: boolean;
     nAuto?: boolean;
+    /**
+     * 0 - 1 or unset if no pierce
+     */
+    pierce?: number;
   };
 }
 

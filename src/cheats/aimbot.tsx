@@ -1,7 +1,6 @@
 import useConfig, { configGet } from "../config";
 import { iInputs } from "../consts";
 import {
-  getCanBSeen,
   getConfig,
   getGame,
   getLocalPlayer,
@@ -17,6 +16,7 @@ import type THREE from "three";
 
 const defaultAimbot = "off";
 export const defaultBot = false;
+const defaultWallbangs = false;
 const defaultFrustumCheck = true;
 
 /**
@@ -65,8 +65,6 @@ function validTarget(target: Player) {
   const localPlayer = getLocalPlayer();
 
   if (target === localPlayer) return false;
-
-  if (!target[getCanBSeen()]) return false;
 
   if (!isEnemy(target)) return false;
 
@@ -121,13 +119,32 @@ export function aimbotHook() {
     );
 
     const frustumCheck = configGet("frustumCheck", defaultFrustumCheck);
+    const wallbangs =
+      configGet("wallbangs", defaultWallbangs) &&
+      localPlayer.weapon.pierce !== undefined;
 
     const target = game.players.list
       .filter(validTarget)
       .map((player) => playerAimPoint(player))
-      .filter(
-        (point) => !frustumCheck || getRender().frustum.containPoint(point)
-      )
+      .filter((point) => {
+        if (frustumCheck && !getRender().frustum.containPoint(point))
+          return false;
+
+        if (
+          game.canSee(
+            localPlayer,
+            point.x,
+            point.y,
+            point.z,
+            undefined,
+            undefined,
+            !wallbangs
+          ) !== null
+        )
+          return false;
+
+        return true;
+      })
       .map((point) => ({ screen: pos2D(point), point }))
       .sort(
         (p1, p2) =>
@@ -166,6 +183,7 @@ export function AimbotMenu() {
     "frustumCheck",
     defaultFrustumCheck
   );
+  const [wallbangs, setWallbangs] = useConfig("frustumCheck", defaultWallbangs);
 
   return (
     <>
@@ -179,6 +197,11 @@ export function AimbotMenu() {
         <option value="silent">Silent</option>
         <option value="smooth">Smooth</option>
       </Select>
+      <Switch
+        title="Wallbangs"
+        defaultChecked={wallbangs}
+        onChange={(event) => setWallbangs(event.currentTarget.checked)}
+      />
       <Switch
         title="FOV check"
         description="Checks if enemies are in your field of view"

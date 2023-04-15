@@ -25,6 +25,17 @@ declare class Game {
   roundId: string;
   sessionId: string;
   store: unknown;
+  canSee(
+    player: Player,
+    x2: number,
+    y2: number,
+    z2: number,
+    pad?: number | undefined,
+    ntb?: number | undefined,
+    skipTran?: boolean | undefined,
+    getShort?: boolean | undefined,
+    doRamps?: boolean | undefined
+  ): false | number | null;
   get isServer(): boolean;
   get tmpPlayer(): Player | null;
 }
