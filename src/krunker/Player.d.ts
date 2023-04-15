@@ -12,6 +12,8 @@ export declare class Player {
   isPlayer: true;
   inputs: unknown[];
   ammos: number[];
+  aimTime: number;
+  reloads: number[];
   loadoutIndex: number;
   onWall: number;
   wallJump: number; // bool
