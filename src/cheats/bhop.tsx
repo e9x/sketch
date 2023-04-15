@@ -1,6 +1,6 @@
-import useConfig, { getConfig } from "../config";
+import useConfig, { configGet } from "../config";
+import { iInputs } from "../consts";
 import { getLocalPlayer, inputHooks } from "../filters";
-import { iInputs } from "../krunker";
 import Switch from "../menu/components/Switch";
 
 const defaultBhop = false;
@@ -9,7 +9,7 @@ export function bhopHook() {
   let lastJump = 0;
 
   inputHooks.push((inputs) => {
-    if (!getConfig("bhop", defaultBhop)) return;
+    if (!configGet("bhop", defaultBhop)) return;
 
     const localPlayer = getLocalPlayer();
 

@@ -7,6 +7,8 @@ if (!workInkURL) throw new TypeError("Invalid SKETCH_API_URL");
 export const gameVersion = process.env.SKETCH_GAME_VERSION || "";
 if (!gameVersion) throw new TypeError("Invalid SKETCH_GAME_VERSION");
 
+export const isDevelopment = process.env.NODE_ENV !== "PRODUCTION";
+
 export function getDevURL() {
   const devHost = process.env.SKETCH_DEV_HOST || "";
   if (!devHost) throw new TypeError("Invalid devHost");
@@ -16,3 +18,19 @@ export function getDevURL() {
 
   return `http://${devHost}:${devPort}/`;
 }
+
+export const iInputs = {
+  frame: 0,
+  delta: 1, // capped at 0.1-33
+  xDir: 2,
+  yDir: 3,
+  moveDir: 4,
+  shoot: 5,
+  scope: 6,
+  jump: 7,
+  reload: 8,
+  crouch: 9,
+  weaponScroll: 10,
+  weaponSwap: 11,
+  moveLock: 12,
+};

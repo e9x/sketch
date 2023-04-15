@@ -1,13 +1,16 @@
 import "./menu/createUI";
 import KrunkBox, { WorkInkErrors } from "./KrunkBox";
+import { aimbotHook } from "./cheats/aimbot";
 import { bhopHook } from "./cheats/bhop";
+import { configGet } from "./config";
 import { gameVersion, workInkURL } from "./consts";
+import { matchVars, matchModule } from "./filters";
 import type { Module } from "./filters";
-import { matchModule } from "./filters";
 import type { Hook } from "./inject";
 import { getGame, waitForGameLoad } from "./inject";
 
 bhopHook();
+aimbotHook();
 
 const hook: Hook<(module: Module) => unknown> = (
   dataArg: string,
@@ -19,6 +22,8 @@ const hook: Hook<(module: Module) => unknown> = (
     /,(\w+)\.l=!!\[],\1\.exports}/,
     (match, module) => `,${module}.l=true,${dataArg}(${module})}`
   );
+
+  matchVars(src);
 
   return {
     data: (module) => {
@@ -34,7 +39,7 @@ const gameLoad = waitForGameLoad();
 async function main() {
   let krunkbox: KrunkBox | undefined;
 
-  const savedToken = GM_getValue("token", undefined);
+  const savedToken = configGet("token", "");
 
   if (savedToken) krunkbox = new KrunkBox(savedToken);
 

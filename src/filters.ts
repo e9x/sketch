@@ -1,73 +1,76 @@
+/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/no-this-alias */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Game, Config, Player, World, Socket } from "./krunker";
 
-export interface Module {
-  exports: any;
+import { isDevelopment } from "./consts";
+import type Game from "./krunker/Game";
+import type { Player, _canBSeen } from "./krunker/Player";
+import type RenderManager from "./krunker/RenderManager";
+import type configModule from "./krunker/config";
+
+export interface Module<T = any> {
+  exports: T;
   i: string;
-}
-
-export interface ModuleUI extends Module {
-  exports: {
-    render: (...args: unknown[]) => unknown;
-    scale: number;
-    canvas: HTMLCanvasElement;
-  };
-}
-
-export interface ModulePlayers extends Module {
-  exports: {
-    manager: {
-      new (...args: unknown[]): unknown;
-    };
-    Player: Player;
-  };
-}
-
-export interface ModuleWorld extends Module {
-  exports: () => unknown;
-}
-
-export interface ModuleGameInstance extends Module {
-  exports: (this: Game, ...args: unknown[]) => Game;
-}
-
-export interface ModuleConfig extends Module {
-  exports: Config;
 }
 
 type Matcher = (module: Module) => void;
 
 const matchers: Matcher[] = [];
 
-matchers.push((module: ModuleConfig) => {
-  if (typeof module.exports?.gameVersion === "string") {
-    console.log("Found config", module);
-  }
-});
+let render: RenderManager | undefined;
 
-matchers.push((module: ModuleUI) => {
-  if (
-    typeof module.exports?.render === "function" &&
-    typeof module.exports.canvas === "object"
-  ) {
-    console.log("Found UI", module);
-  }
-});
+export function getRender() {
+  if (!render) throw new Error("Too early");
+  return render;
+}
 
 let game: Game | undefined;
 
 export function getGame() {
+  if (!game) throw new Error("Too early");
   return game;
 }
 
 let localPlayer: Player | undefined;
 
 export function getLocalPlayer() {
+  if (!localPlayer) throw new Error("Too early");
   return localPlayer;
 }
 
-matchers.push((module: ModuleGameInstance) => {
+export const inputHooks: ((inputs: number[]) => void)[] = [];
+
+if (isDevelopment)
+  Object.assign(new Function("return window")(), {
+    getGame,
+    getRender,
+    getCanBSeen,
+    getLocalPlayer,
+  });
+
+function doGameHooks() {
+  console.log("Got game");
+
+  const { add } = getGame().players;
+
+  getGame().players.add = function (...args) {
+    const player = add.call(this, ...args);
+
+    if (player.isYou) localPlayer = player;
+
+    return player;
+  };
+
+  const { push } = getGame().controls.tmpInpts;
+
+  getGame().controls.tmpInpts.push = function (inputs) {
+    for (const hook of inputHooks) hook(inputs);
+    return push.call(this, inputs);
+  };
+}
+
+matchers.push((module: Module<typeof Game>) => {
   if (
     typeof module.exports !== "function" ||
     !module.exports.toString().includes("this.players=")
@@ -76,64 +79,90 @@ matchers.push((module: ModuleGameInstance) => {
 
   const Game = module.exports;
 
-  module.exports = function (...args) {
+  // @ts-ignore
+  module.exports = function (
+    this: Game,
+    ...args: ConstructorParameters<typeof Game>
+  ) {
     const result = Game.call(this, ...args);
 
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    game = this;
+    // new Game()
+    // game.controls = ...
+    // game.ui = ...
 
-    const { add } = this.players;
-
-    this.players.add = function (...args) {
-      const player = add.call(this, ...args);
-
-      if (player.isYou) localPlayer = player;
-
-      return player;
-    };
+    // we have to wait for the properties to be assigned
+    setTimeout(() => {
+      game = this;
+      doGameHooks();
+    });
 
     return result;
   };
 });
 
-export const inputHooks: ((inputs: number[]) => void)[] = [];
-
-matchers.push((module: ModuleWorld) => {
+matchers.push((module: Module<typeof RenderManager>) => {
   if (
     typeof module.exports !== "function" ||
-    !module.exports.toString().includes("pchObjc=")
+    !module.exports.toString().includes("this.GEOS=")
   )
     return;
 
-  const World = module.exports;
+  const RenderManager = module.exports;
 
   // @ts-ignore
   module.exports = function (
-    this: World,
-    ...args: [
-      render: Module, // identical to render lib: genBody, invisMat, GEOS
-      endscreen: Module, // identical to endscreen lib: showEndScreen, isMobile
-      utils: Module, // identical to utils lib: emptyString, compressNumArray, byte shift stuff
-      server: Module, // identical to servers lib: capFlag, addScripts, AI
-      config: Module, // identical to config data: apiURL, esportNews, assets
-      socket: Socket, // identical to socket lib: ahNum, socket, send
-      overlay: Module // identical to overlay lib: bloodCustom, ctx, canvas
-    ]
+    this: RenderManager,
+    ...args: ConstructorParameters<typeof RenderManager>
   ) {
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    const result = (World as unknown as Function).call(this, ...args);
+    const result = RenderManager.call(this, ...args);
 
-    const { push } = this.tmpInpts;
+    // new Game()
+    // game.controls = ...
+    // game.ui = ...
 
-    this.tmpInpts.push = function (inputs) {
-      for (const hook of inputHooks) hook(inputs);
-      return push.call(this, inputs);
-    };
+    // we have to wait for the properties to be assigned
+    setTimeout(() => {
+      render = this;
+    });
 
     return result;
   };
+});
+
+let config: typeof configModule | undefined;
+
+export function getConfig() {
+  if (!config) throw new Error("Too early");
+  return config;
+}
+
+matchers.push((module: Module<typeof configModule>) => {
+  if (
+    typeof module.exports !== "object" ||
+    module.exports === null ||
+    !("gameVersion" in module.exports)
+  )
+    return;
+
+  config = module.exports;
 });
 
 export function matchModule(module: Module) {
   for (const matcher of matchers) matcher(module);
+}
+
+let canBSeen: string | undefined;
+
+export function getCanBSeen(): typeof _canBSeen {
+  if (!canBSeen) throw new TypeError("Too early");
+  return canBSeen as unknown as typeof _canBSeen;
+}
+
+export function matchVars(src: string) {
+  const [, , foundCanBSeen] =
+    src.match(
+      /if\((\w+)\.(\w+)\){var \w+=\1\.objInstances\.position\.clone\(/
+    ) || [];
+
+  canBSeen = foundCanBSeen;
 }

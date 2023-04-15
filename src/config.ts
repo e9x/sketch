@@ -3,21 +3,21 @@ import { useEffect, useState } from "preact/hooks";
 const configTarget = new EventTarget();
 const valueCache = new Map<string, unknown>();
 
-export function getConfig<T>(key: string, defaultValue?: T) {
-  if (valueCache.has(key)) return valueCache.get(key);
+export function configGet<T>(key: string, defaultValue?: T): T {
+  if (valueCache.has(key)) return valueCache.get(key) as T;
   const value = GM_getValue(key, defaultValue);
   valueCache.set(key, value);
   return value;
 }
 
-export function setConfig<T>(key: string, value: T) {
+export function configSet<T>(key: string, value: T) {
   valueCache.set(key, value);
   GM_setValue(key, value);
 
   configTarget.dispatchEvent(new Event(key));
 }
 
-export function deleteConfig(key: string) {
+export function configDelete(key: string) {
   valueCache.delete(key);
   GM_deleteValue(key);
 
@@ -26,13 +26,13 @@ export function deleteConfig(key: string) {
 
 export default function useConfig<T>(key: string, defaultValue?: T) {
   // trigger re-render with useState
-  const [state, setState] = useState(getConfig(key, defaultValue));
+  const [state, setState] = useState(configGet(key, defaultValue));
 
   const event = `set ${key}`;
 
   useEffect(() => {
     function listener() {
-      setState(getConfig(key, defaultValue));
+      setState(configGet(key, defaultValue));
     }
 
     configTarget.addEventListener(event, listener, { once: true });
@@ -44,10 +44,9 @@ export default function useConfig<T>(key: string, defaultValue?: T) {
     state,
     (value) => {
       // null = nuke the item
-      if (value === null) deleteConfig(key);
-      else setConfig(key, value);
-
-      setState(value);
+      if (value === null) configDelete(key);
+      else configSet(key, value);
+      setState(configGet(key));
       configTarget.dispatchEvent(new Event(event));
     },
   ] as [T, (value: T | null) => void];
