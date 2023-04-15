@@ -4,10 +4,12 @@ import {
   getConfig,
   getGame,
   getLocalPlayer,
+  getOverlay,
   getRender,
   inputHooks,
 } from "../filters";
-import type { Player } from "../krunker/Player";
+import { pos2D } from "../krunkerUtil";
+import { playerPos } from "../krunkerUtil";
 import { validTarget, calcRot } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
 import type THREE from "three";
@@ -21,12 +23,13 @@ function antiRecoil(rot: THREE.Vector2) {
 }
 
 export function aimbotHook() {
-  let target: Player | undefined;
+  // let target: Player | undefined;
 
   inputHooks.push((inputs) => {
     if (!configGet("aimbot", defaultAimbot)) return;
 
     const game = getGame();
+    const overlay = getOverlay();
     const localPlayer = getLocalPlayer();
 
     // calculate exactly when we can shoot
@@ -46,8 +49,24 @@ export function aimbotHook() {
     // maybe use cantShootTimer?
     if (!inputs[iInputs.shoot] || currentReload) return;
 
-    if (!target || !validTarget(target))
-      target = game.players.list.find(validTarget);
+    const overlayCenter = new game.THREE.Vector2(
+      overlay.canvas.width / 2,
+      overlay.canvas.height / 2
+    );
+
+    const targets = game.players.list
+      .filter(validTarget)
+      .map((player) => ({
+        player,
+        screen: pos2D(playerPos(player)),
+      }))
+      .sort(
+        (p1, p2) =>
+          p1.screen.distanceTo(overlayCenter) -
+          p2.screen.distanceTo(overlayCenter)
+      );
+
+    const target = targets[0]?.player;
 
     if (target) {
       // console.log("target:", target);

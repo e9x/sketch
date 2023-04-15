@@ -4,6 +4,10 @@ export declare const _canBSeen: unique symbol;
 
 export declare class Player {
   constructor(...args: unknown[]);
+  alias: string;
+  name: string;
+  fakeName: string | null;
+  getName(): string;
   isYou: boolean;
   active: boolean;
   objInstances: THREE.Object3D | null;
