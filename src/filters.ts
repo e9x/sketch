@@ -43,8 +43,6 @@ export function getLocalPlayer() {
 export const inputHooks: ((inputs: number[]) => void)[] = [];
 
 function doGameHooks() {
-  console.log("Got game");
-
   const { add } = getGame().players;
 
   getGame().players.add = function (...args) {
@@ -93,6 +91,20 @@ matchers.push((module: Module<typeof Game>) => {
   };
 });
 
+export const renderHooks: (() => void)[] = [];
+
+function doOverlayHooks() {
+  const { render } = getOverlay();
+
+  getOverlay().render = function (...args) {
+    const result = render.call(this, ...args);
+
+    for (const hook of renderHooks) hook();
+
+    return result;
+  };
+}
+
 let overlay: typeof Overlay | undefined;
 
 export function getOverlay() {
@@ -109,6 +121,7 @@ matchers.push((module: Module<typeof Overlay>) => {
     return;
 
   overlay = module.exports;
+  doOverlayHooks();
 });
 
 matchers.push((module: Module<typeof RenderManager>) => {

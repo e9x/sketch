@@ -14,6 +14,9 @@ export default function Menu() {
         <AutoReloadMenu />
         <TriggerbotMenu />
       </Set>
+      <Set title="ESP">
+        <AimbotMenu />
+      </Set>
       <Set title="Aim">
         <AimbotMenu />
       </Set>
