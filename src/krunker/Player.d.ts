@@ -13,6 +13,8 @@ export declare class Player {
   objInstances: THREE.Object3D | null;
   maxHealth: number;
   health: number;
+  headMlt: number;
+  reloadTimer: number;
   isPlayer: true;
   inputs: unknown[];
   ammos: number[];
@@ -30,6 +32,10 @@ export declare class Player {
   z: number;
   team: string;
   velocity: THREE.Vector3;
+  /**
+   * height including crouch
+   */
+  adjustedHeight: number;
   height: number;
   landBobY: number;
   recoilAnimY: number;

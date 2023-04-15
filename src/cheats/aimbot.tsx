@@ -1,6 +1,7 @@
 import useConfig, { configGet } from "../config";
 import { iInputs } from "../consts";
 import {
+  getCanBSeen,
   getConfig,
   getGame,
   getLocalPlayer,
@@ -8,11 +9,46 @@ import {
   getRender,
   inputHooks,
 } from "../filters";
-import { pos2D } from "../krunkerUtil";
-import { playerPos } from "../krunkerUtil";
-import { validTarget, calcRot } from "../krunkerUtil";
+import type { Player } from "../krunker/Player";
+import { isEnemy, pos2D, getXDire, getDir } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
 import type THREE from "three";
+
+/**
+ * Get the position that will be aimed at (eg the head)
+ */
+function playerAimPoint(player: Player) {
+  return new (getGame().THREE.Vector3)(
+    player.x,
+    player.y +
+      player.adjustedHeight -
+      (getConfig().headScale * player.headMlt) / 2,
+    player.z
+  );
+}
+
+function calcRot(target: THREE.Vector3) {
+  const localPlayer = getLocalPlayer();
+
+  const render = getRender();
+
+  const worldPos = new render.THREE.Vector3();
+
+  render.fpsCamera.getWorldPosition(worldPos);
+
+  const xDire =
+    getXDire(
+      worldPos.x,
+      worldPos.y,
+      worldPos.z,
+      target.x,
+      target.y,
+      target.z
+    ) || 0;
+  const yDire = getDir(localPlayer.z, localPlayer.x, target.z, target.x) || 0;
+
+  return new render.THREE.Vector2(xDire, yDire);
+}
 
 const defaultAimbot = false;
 
@@ -20,6 +56,18 @@ function antiRecoil(rot: THREE.Vector2) {
   rot.x -= getRender().shakeY;
   rot.x -= getLocalPlayer().recoilAnimY * getConfig().recoilMlt;
   rot.x -= getLocalPlayer().landBobY * 0.1;
+}
+
+function validTarget(target: Player) {
+  const localPlayer = getLocalPlayer();
+
+  if (target === localPlayer) return false;
+
+  if (!target[getCanBSeen()]) return false;
+
+  if (!isEnemy(target)) return false;
+
+  return true;
 }
 
 export function aimbotHook() {
@@ -47,26 +95,24 @@ export function aimbotHook() {
 
     // if the weapon can't shoot
     // maybe use cantShootTimer?
-    if (!inputs[iInputs.shoot] || currentReload) return;
+    if (!inputs[iInputs.shoot] || currentReload || localPlayer.reloadTimer)
+      return;
 
     const overlayCenter = new game.THREE.Vector2(
       overlay.canvas.width / 2,
       overlay.canvas.height / 2
     );
 
-    const targets = game.players.list
+    const target = game.players.list
       .filter(validTarget)
-      .map((player) => ({
-        player,
-        screen: pos2D(playerPos(player)),
-      }))
+      .map((player) => playerAimPoint(player))
+      .filter((point) => getRender().frustum.containPoint(point))
+      .map((point) => ({ screen: pos2D(point), point }))
       .sort(
         (p1, p2) =>
           p1.screen.distanceTo(overlayCenter) -
           p2.screen.distanceTo(overlayCenter)
-      );
-
-    const target = targets[0]?.player;
+      )[0]?.point;
 
     if (target) {
       // console.log("target:", target);
