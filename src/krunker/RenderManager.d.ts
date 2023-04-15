@@ -1,21 +1,15 @@
 import type THREE from "three";
-import type {
-  MeshBasicMaterial,
-  PerspectiveCamera,
-  Vector2,
-  Frustum,
-} from "three";
 
 declare class RenderManager {
   constructor(...args: any[]);
   THREE: typeof THREE;
   isMobile: boolean;
-  invisMat: MeshBasicMaterial;
-  camera: PerspectiveCamera;
-  fpsCamera: PerspectiveCamera;
-  tmpMouse: Vector2;
-  tmpMouse2: Vector2;
-  frustum: Frustum & {
+  invisMat: THREE.MeshBasicMaterial;
+  camera: THREE.PerspectiveCamera;
+  fpsCamera: THREE.PerspectiveCamera;
+  tmpMouse: THREE.Vector2;
+  tmpMouse2: THREE.Vector2;
+  frustum: THREE.Frustum & {
     // fake function
     containsPoint: (point: THREE.Vector3) => false;
     containPoint: (point: THREE.Vector3) => boolean;

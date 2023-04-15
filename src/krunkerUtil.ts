@@ -1,6 +1,6 @@
 import { getGame, getOverlay, getRender } from "./filters";
 import type { Player } from "./krunker/Player";
-import type { Vector3 } from "three";
+import type THREE from "three";
 
 export function getDistance(x1: number, y1: number, x2: number, y2: number) {
   return Math.sqrt((x2 -= x1) * x2 + (y2 -= y1) * y2);
@@ -83,7 +83,7 @@ export function playerPos(player: Player) {
   return new game.THREE.Vector3(player.x, player.y, player.z);
 }
 
-export function pos2D(input: Vector3, offsetY = 0) {
+export function pos2D(input: THREE.Vector3, offsetY = 0) {
   const render = getRender();
   const overlay = getOverlay();
 

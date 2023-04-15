@@ -11,11 +11,11 @@ import {
 import type { Player } from "../krunker/Player";
 import { getDir, getXDire, playerPos } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
-import type { Vector2 } from "three";
+import type THREE from "three";
 
 const defaultAimbot = false;
 
-function antiRecoil(rot: Vector2) {
+function antiRecoil(rot: THREE.Vector2) {
   rot.x -= getRender().shakeY;
   rot.x -= getLocalPlayer().recoilAnimY * getConfig().recoilMlt;
   rot.x -= getLocalPlayer().landBobY * 0.1;
