@@ -6,7 +6,7 @@ export type Hook<Data> = (
   src: string
 ) => { data: Data; src: string };
 
-export async function getGame<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
+export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
   const [token, source] = await Promise.all([
     fetchToken(krunkbox),
     krunkbox.source(),

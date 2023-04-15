@@ -9,7 +9,7 @@ import { gameVersion, workInkURL } from "./consts";
 import { matchVars, matchModule } from "./filters";
 import type { Module } from "./filters";
 import type { Hook } from "./inject";
-import { getGame, waitForGameLoad } from "./inject";
+import { getInit, waitForGameLoad } from "./inject";
 
 bhopHook();
 aimbotHook();
@@ -67,7 +67,7 @@ async function main() {
     return;
   }
 
-  const game = await getGame(krunkbox, hook);
+  const game = await getInit(krunkbox, hook);
 
   await gameLoad;
 
