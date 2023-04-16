@@ -11,12 +11,11 @@ import {
 } from "../filters";
 import type { Player } from "../krunker/Player";
 import { isEnemy, pos2D, getXDire, getDir } from "../krunkerUtil";
-import Select from "../menu/components/Select";
 import Switch from "../menu/components/Switch";
 import { random } from "lodash";
 import type THREE from "three";
 
-const defaultAimbot = "off";
+const defaultAimbot = false;
 export const defaultBot = false;
 const defaultWallbangs = false;
 const defaultFrustumCheck = true;
@@ -99,7 +98,7 @@ export function aimbotHook() {
   inputHooks.push((inputs) => {
     const aimbot = configGet("aimbot", defaultAimbot);
 
-    if (aimbot === "off") return;
+    if (!aimbot) return;
 
     const game = getGame();
     const overlay = getOverlay();
@@ -211,15 +210,11 @@ export function AimbotMenu() {
 
   return (
     <>
-      <Select
+      <Switch
         title="Aimbot"
-        defaultValue={aimbot}
-        onChange={(event) => setAimbot(event.currentTarget.value)}
-      >
-        <option value="off">Off</option>
-        <option value="silent">Silent</option>
-        <option value="smooth">Smooth</option>
-      </Select>
+        defaultChecked={aimbot}
+        onChange={(event) => setAimbot(event.currentTarget.checked)}
+      />
       <Switch
         title="Wallbangs"
         defaultChecked={wallbangs}
