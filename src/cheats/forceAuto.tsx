@@ -5,18 +5,20 @@ import Switch from "../menu/components/Switch";
 
 const defaultForceAuto = false;
 
-let lastShoot = 1;
+export function forceAutoHook() {
+  let lastShoot = 1;
 
-inputHooks.push((inputs) => {
-  if (!configGet("forceauto", defaultForceAuto)) return;
+  inputHooks.push((inputs) => {
+    if (!configGet("forceauto", defaultForceAuto)) return;
 
-  const localPlayer = getLocalPlayer();
+    const localPlayer = getLocalPlayer();
 
-  if (localPlayer.weapon.nAuto && inputs[iInputs.shoot]) {
-    inputs[iInputs.shoot] = lastShoot;
-    lastShoot ^= 1;
-  }
-});
+    if (localPlayer.weapon.nAuto && inputs[iInputs.shoot]) {
+      inputs[iInputs.shoot] = lastShoot;
+      lastShoot ^= 1;
+    }
+  });
+}
 
 export function ForceAutoMenu() {
   const [triggerbot, setTriggerbot] = useConfig("forceauto", defaultForceAuto);

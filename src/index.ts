@@ -1,31 +1,41 @@
 import "./menu/createUI";
 import KrunkBox, { WorkInkErrors } from "./KrunkBox";
+import { aimbotHook } from "./cheats/aimbot";
+import { bhopHook } from "./cheats/bhop";
+import { espHook } from "./cheats/esp";
+import { forceAutoHook } from "./cheats/forceAuto";
+import { triggerbotHook } from "./cheats/triggerbot";
 import { configGet } from "./config";
 import { discordURL, gameVersion, sketchVersion, workInkURL } from "./consts";
-import { matchVars, matchModule } from "./filters";
 import type { Module } from "./filters";
-import type { Hook } from "./inject";
+import { applyHooks, matchModule } from "./filters";
 import { getInit, waitForGameLoad } from "./inject";
 
-const hook: Hook<(module: Module) => unknown> = (
-  dataArg: string,
-  src: string
-) => {
+aimbotHook();
+bhopHook();
+espHook();
+forceAutoHook();
+triggerbotHook();
+
+const hook = (dataArg: string, src: string) => {
   // hook __webpack_require__, specifically the part where it returns module.exports and when it's generating the exports, not caching it
   // the hook is ran once per module
   src = src.replace(
     /,(\w+)\.l=!!\[],\1\.exports}/,
-    (match, module) => `,${module}.l=true,${dataArg}(${module})}`
+    (match, module) => `,${module}.l=true,${dataArg}.extract(${module})}`
   );
 
-  matchVars(src);
+  const hooked = applyHooks(dataArg, src);
 
   return {
-    data: (module) => {
-      matchModule(module);
-      return module.exports;
+    data: {
+      ...hooked.data,
+      extract: (module: Module) => {
+        matchModule(module);
+        return module.exports;
+      },
     },
-    src,
+    src: hooked.src,
   };
 };
 

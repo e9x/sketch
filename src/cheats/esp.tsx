@@ -10,7 +10,11 @@ import type { Player } from "../krunker/Player";
 import { isEnemy } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
 
-const defaultESP = false;
+export const defaultESP = false;
+
+export function forceNametags() {
+  return configGet("esp", defaultESP);
+}
 
 export class PlayerRectBounds {
   private xMin: number;
@@ -104,28 +108,30 @@ function playerBox(player: Player) {
   return new PlayerRectBounds(xMin, xMax, yMin, yMax);
 }
 
-renderHooks.push(() => {
-  if (!configGet("esp", defaultESP)) return;
+export function espHook() {
+  renderHooks.push(() => {
+    if (!configGet("esp", defaultESP)) return;
 
-  try {
-    const overlay = getOverlay();
-    const game = getGame();
+    try {
+      const overlay = getOverlay();
+      const game = getGame();
 
-    for (const player of game.players.list) {
-      const box = playerBox(player);
+      for (const player of game.players.list) {
+        const box = playerBox(player);
 
-      if (!box) continue;
+        if (!box) continue;
 
-      const enemy = isEnemy(player);
+        const enemy = isEnemy(player);
 
-      overlay.ctx.strokeStyle = enemy ? "#eb5656" : "#9eeb56";
-      overlay.ctx.lineWidth = 1.5;
-      overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
+        overlay.ctx.strokeStyle = enemy ? "#eb5656" : "#9eeb56";
+        overlay.ctx.lineWidth = 1.5;
+        overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
+      }
+    } catch {
+      // sometimes we're a little early
     }
-  } catch {
-    // sometimes we're a little early
-  }
-});
+  });
+}
 
 export function ESPMenu() {
   const [esp, setESP] = useConfig("esp", defaultESP);

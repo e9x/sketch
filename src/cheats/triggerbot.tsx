@@ -6,33 +6,36 @@ import Switch from "../menu/components/Switch";
 
 const defaultTriggerbot = false;
 
-inputHooks.push((inputs) => {
-  if (!configGet("triggerbot", defaultTriggerbot)) return;
+export function triggerbotHook() {
+  inputHooks.push((inputs) => {
+    if (!configGet("triggerbot", defaultTriggerbot)) return;
 
-  if (!inputs[iInputs.scope]) return;
+    if (!inputs[iInputs.scope]) return;
 
-  const game = getGame();
-  const render = getRender();
+    const game = getGame();
+    const render = getRender();
 
-  const direction = new game.THREE.Vector3();
-  const position = new game.THREE.Vector3();
+    const direction = new game.THREE.Vector3();
+    const position = new game.THREE.Vector3();
 
-  render.camera.getWorldDirection(direction);
-  render.camera.getWorldPosition(position);
+    render.camera.getWorldDirection(direction);
+    render.camera.getWorldPosition(position);
 
-  game.raycaster.set(position, direction);
+    game.raycaster.set(position, direction);
 
-  for (const player of game.players.list)
-    if (
-      isEnemy(player) &&
-      player.objInstances &&
-      player[getCanBSeen()] &&
-      game.raycaster.intersectObjects(player.objInstances.children, true).length
-    ) {
-      inputs[iInputs.shoot] = 1;
-      break;
-    }
-});
+    for (const player of game.players.list)
+      if (
+        isEnemy(player) &&
+        player.objInstances &&
+        player[getCanBSeen()] &&
+        game.raycaster.intersectObjects(player.objInstances.children, true)
+          .length
+      ) {
+        inputs[iInputs.shoot] = 1;
+        break;
+      }
+  });
+}
 
 export function TriggerbotMenu() {
   const [triggerbot, setTriggerbot] = useConfig(
