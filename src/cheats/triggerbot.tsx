@@ -16,8 +16,8 @@ export function triggerbotHook() {
     const render = getRender();
 
     const direction = new game.THREE.Vector3(
-      inputs[iInputs.xDir],
-      inputs[iInputs.yDir],
+      inputs[iInputs.xDir] / 1000,
+      inputs[iInputs.yDir] / 1000,
       0
     );
     const position = new game.THREE.Vector3();

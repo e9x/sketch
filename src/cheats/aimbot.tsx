@@ -95,9 +95,9 @@ export function aimbotHook() {
     }
 
     // if (inputs[iInputs.frame] % 10 === 0) console.log(currentReload);
-    const autoFire = configGet("autoFire", defaultBot);
+    const bot = configGet("bot", defaultBot);
 
-    if (autoFire) {
+    if (bot) {
       if (localPlayer.weapon.noAim === false) {
         inputs[iInputs.scope] = 1;
 
@@ -153,9 +153,8 @@ export function aimbotHook() {
       )[0]?.point;
 
     if (target) {
-      if (autoFire) {
-        inputs[iInputs.shoot] = 1;
-      }
+      if (bot) inputs[iInputs.shoot] = 1;
+
       // console.log("target:", target);
 
       const rot = calcRot(target);
@@ -183,7 +182,7 @@ export function AimbotMenu() {
     "frustumCheck",
     defaultFrustumCheck
   );
-  const [wallbangs, setWallbangs] = useConfig("frustumCheck", defaultWallbangs);
+  const [wallbangs, setWallbangs] = useConfig("wallbangs", defaultWallbangs);
 
   return (
     <>
