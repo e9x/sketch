@@ -1,7 +1,5 @@
 import type THREE from "three";
 
-export declare const _canBSeen: unique symbol;
-
 export declare class Player {
   constructor(...args: unknown[]);
   id: string;
@@ -37,7 +35,7 @@ export declare class Player {
   onGround: boolean;
   airTime: number;
   crouchVal: number;
-  [_canBSeen]: boolean;
+  canBSeen: boolean;
   x: number;
   y: number;
   z: number;

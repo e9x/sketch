@@ -1,6 +1,6 @@
 import useConfig, { configGet } from "../config";
 import { iInputs } from "../consts";
-import { getCanBSeen, getGame, getRender, inputHooks } from "../filters";
+import { getGame, getRender, inputHooks } from "../filters";
 import { isEnemy } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
 
@@ -27,7 +27,7 @@ export function triggerbotHook() {
       if (
         isEnemy(player) &&
         player.objInstances &&
-        player[getCanBSeen()] &&
+        player.canBSeen &&
         game.raycaster.intersectObjects(player.objInstances.children, true)
           .length
       ) {

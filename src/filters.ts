@@ -7,7 +7,7 @@ import { forceNametags } from "./cheats/esp";
 import { isDevelopment } from "./consts";
 import type Game from "./krunker/Game";
 import type MapObjectModule from "./krunker/Object";
-import type { Player, _canBSeen } from "./krunker/Player";
+import type { Player } from "./krunker/Player";
 import type RenderManager from "./krunker/RenderManager";
 import type configModule from "./krunker/config";
 import type * as Overlay from "./krunker/overlay";
@@ -214,25 +214,11 @@ export function matchModule(module: Module) {
   for (const matcher of matchers) matcher(module);
 }
 
-let canBSeen: string | undefined;
-
-export function getCanBSeen(): typeof _canBSeen {
-  if (!canBSeen) throw new TypeError("Too early");
-  return canBSeen as unknown as typeof _canBSeen;
-}
-
 export function applyHooks(dataArg: string, src: string) {
-  const [, , foundCanBSeen] =
-    src.match(
-      /if\((\w+)\.(\w+)\){var \w+=\1\.objInstances\.position\.clone\(/
-    ) || [];
-
-  canBSeen = foundCanBSeen;
-
   src = src.replace(
-    /!(\w+)\.isYou&&\1\.objInstances\){if\(\1\.(\w+)\){/,
-    (match, player, canBSeen) =>
-      `!${player}.isYou&&${player}.objInstances){if(${player}.${canBSeen}||${dataArg}.nametags){`
+    /!(\w+)\.isYou&&\1\.objInstances\){if\(\1\.canBSeen\){/,
+    (match, player) =>
+      `!${player}.isYou&&${player}.objInstances){if(${player}.canBSeen||${dataArg}.nametags){`
   );
 
   return {
@@ -249,7 +235,6 @@ if (isDevelopment)
   Object.assign(new Function("return window")(), {
     getGame,
     getRender,
-    getCanBSeen,
     getLocalPlayer,
     getOverlay,
   });
