@@ -188,7 +188,6 @@ export function AimbotMenu() {
     <>
       <Select
         title="Aimbot"
-        description="Silent aimbot that makes all your shots hit"
         defaultValue={aimbot}
         onChange={(event) => setAimbot(event.currentTarget.value)}
       >

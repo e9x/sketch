@@ -9,6 +9,9 @@ import { Set } from "./components/Set";
 export default function Menu() {
   return (
     <>
+      <Set title="Aim">
+        <AimbotMenu />
+      </Set>
       <Set title="Skill">
         <BhopMenu />
         <ForceAutoMenu />
@@ -17,9 +20,6 @@ export default function Menu() {
       </Set>
       <Set title="ESP">
         <ESPMenu />
-      </Set>
-      <Set title="Aim">
-        <AimbotMenu />
       </Set>
     </>
   );
