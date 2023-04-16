@@ -8,19 +8,24 @@ declare class Game {
   AI: {
     ais: unknown[];
   };
+  mode: {
+    noHPbars?: boolean;
+    fakeNames?: boolean;
+  };
   map: {
     terrain: Terrain | null;
     manager: {
       objects: MapObject[];
     };
   };
+  isComp: boolean;
   COLLISIONS: unknown;
   THREE: typeof THREE;
   players: manager;
   config: unknown;
   raycaster: THREE.Raycaster;
   controls: {
-    spect: unknown;
+    spect: { target?: Player };
     tmpInpts: number[][];
     object: THREE.Object3D;
     pchObjc: THREE.Object3D;

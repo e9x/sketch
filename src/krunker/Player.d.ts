@@ -4,6 +4,9 @@ export declare const _canBSeen: unique symbol;
 
 export declare class Player {
   constructor(...args: unknown[]);
+  id: string;
+  sid: string;
+  premiumT?: number;
   alias: string;
   name: string;
   fakeName: string | null;
@@ -13,10 +16,15 @@ export declare class Player {
   objInstances: THREE.Object3D | null;
   maxHealth: number;
   health: number;
+  hpChase: number;
   headMlt: number;
   reloadTimer: number;
   isPlayer: true;
   scale: number;
+  clan: number;
+  level: number;
+  hatIndex: number;
+  headIndex: number;
   // between 0 and 1. 0 = aimed, 1 = aiming
   aimVal: number;
   inputs: unknown[];
@@ -33,7 +41,7 @@ export declare class Player {
   x: number;
   y: number;
   z: number;
-  team: string;
+  team?: number;
   velocity: THREE.Vector3;
   /**
    * height including crouch
