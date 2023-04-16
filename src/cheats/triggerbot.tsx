@@ -15,14 +15,10 @@ export function triggerbotHook() {
     const game = getGame();
     const render = getRender();
 
-    const direction = new game.THREE.Vector3(
-      inputs[iInputs.xDir] / 1000,
-      inputs[iInputs.yDir] / 1000,
-      0
-    );
+    const direction = new game.THREE.Vector3();
     const position = new game.THREE.Vector3();
 
-    // render.camera.getWorldDirection(direction);
+    render.camera.getWorldDirection(direction);
     render.camera.getWorldPosition(position);
 
     game.raycaster.set(position, direction);
