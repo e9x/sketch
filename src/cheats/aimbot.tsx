@@ -72,132 +72,130 @@ function validTarget(target: Player) {
   return true;
 }
 
-export function aimbotHook() {
-  let reloading = 0;
+let reloading = 0;
 
-  inputHooks.push((inputs) => {
-    const bot = configGet("bot", defaultBot);
+inputHooks.push((inputs) => {
+  const bot = configGet("bot", defaultBot);
 
-    if (!bot) return;
+  if (!bot) return;
 
-    const localPlayer = getLocalPlayer();
+  const localPlayer = getLocalPlayer();
 
-    // check if we already sent the reload input so we don't spam the reload input
-    if (!localPlayer.ammos[localPlayer.loadoutIndex]) {
-      // keep sending the input until we hit the "time limit" for reloading, declared when reloading = ...
-      if (reloading === 0 || inputs[iInputs.frame] < reloading) {
-        inputs[iInputs.reload] = 1;
+  // check if we already sent the reload input so we don't spam the reload input
+  if (!localPlayer.ammos[localPlayer.loadoutIndex]) {
+    // keep sending the input until we hit the "time limit" for reloading, declared when reloading = ...
+    if (reloading === 0 || inputs[iInputs.frame] < reloading) {
+      inputs[iInputs.reload] = 1;
 
-        // reload for a random amount of frames to simulate pressing it
-        // set reloading only as soon as we start holding the input down
-        if (reloading === 0) reloading = inputs[iInputs.frame] + random(3, 8);
-      }
-    } else reloading = 0;
-  });
-
-  inputHooks.push((inputs) => {
-    const aimbot = configGet("aimbot", defaultAimbot);
-
-    if (!aimbot) return;
-
-    const game = getGame();
-    const overlay = getOverlay();
-    const localPlayer = getLocalPlayer();
-
-    // calculate exactly when we can shoot
-    // the players.shoot() logic does this but we need to see the value as if it already did this logic
-    // currentReload isn't updated so we update it locally before shoot()
-
-    let currentReload = localPlayer.reloads[localPlayer.loadoutIndex];
-
-    if (currentReload) {
-      currentReload -= localPlayer.aimTime;
-      if (currentReload < 0) currentReload = 0;
+      // reload for a random amount of frames to simulate pressing it
+      // set reloading only as soon as we start holding the input down
+      if (reloading === 0) reloading = inputs[iInputs.frame] + random(3, 8);
     }
+  } else reloading = 0;
+});
 
-    // if (inputs[iInputs.frame] % 10 === 0) console.log(currentReload);
-    const bot = configGet("bot", defaultBot);
+inputHooks.push((inputs) => {
+  const aimbot = configGet("aimbot", defaultAimbot);
 
-    if (bot) {
-      if (localPlayer.weapon.noAim === false) {
-        inputs[iInputs.scope] = 1;
+  if (!aimbot) return;
 
-        // not fully aimed
-        if (localPlayer.aimVal) return;
-      }
-    } else {
-      // require user input
-      if (!inputs[iInputs.shoot]) return;
+  const game = getGame();
+  const overlay = getOverlay();
+  const localPlayer = getLocalPlayer();
+
+  // calculate exactly when we can shoot
+  // the players.shoot() logic does this but we need to see the value as if it already did this logic
+  // currentReload isn't updated so we update it locally before shoot()
+
+  let currentReload = localPlayer.reloads[localPlayer.loadoutIndex];
+
+  if (currentReload) {
+    currentReload -= localPlayer.aimTime;
+    if (currentReload < 0) currentReload = 0;
+  }
+
+  // if (inputs[iInputs.frame] % 10 === 0) console.log(currentReload);
+  const bot = configGet("bot", defaultBot);
+
+  if (bot) {
+    if (localPlayer.weapon.noAim === false) {
+      inputs[iInputs.scope] = 1;
+
+      // not fully aimed
+      if (localPlayer.aimVal) return;
     }
+  } else {
+    // require user input
+    if (!inputs[iInputs.shoot]) return;
+  }
 
-    // if the weapon can't shoot
-    // maybe use cantShootTimer?
-    if (currentReload || localPlayer.reloadTimer) return;
+  // if the weapon can't shoot
+  // maybe use cantShootTimer?
+  if (currentReload || localPlayer.reloadTimer) return;
 
-    const overlayCenter = new game.THREE.Vector2(
-      overlay.canvas.width / 2,
-      overlay.canvas.height / 2
-    );
+  const overlayCenter = new game.THREE.Vector2(
+    overlay.canvas.width / 2,
+    overlay.canvas.height / 2
+  );
 
-    const frustumCheck = configGet("frustumCheck", defaultFrustumCheck);
-    const wallbangs =
-      configGet("wallbangs", defaultWallbangs) &&
-      localPlayer.weapon.pierce !== undefined;
+  const frustumCheck = configGet("frustumCheck", defaultFrustumCheck);
+  const wallbangs =
+    configGet("wallbangs", defaultWallbangs) &&
+    localPlayer.weapon.pierce !== undefined;
 
-    const target = game.players.list
-      .filter(validTarget)
-      .map((player) => playerAimPoint(player))
-      .filter((point) => {
-        if (frustumCheck && !getRender().frustum.containPoint(point))
-          return false;
+  const target = game.players.list
+    .filter(validTarget)
+    .map((player) => playerAimPoint(player))
+    .filter((point) => {
+      if (frustumCheck && !getRender().frustum.containPoint(point))
+        return false;
 
-        if (wallbangs) setMapObjectTransparencyHook(true);
-        const cs = game.canSee(
-          localPlayer,
-          point.x,
-          point.y,
-          point.z,
-          undefined,
-          undefined,
-          // this sets the transparency value to the penetrable value, so this will skip all the penetrable values here
-          // can't just copy the canSee function because when stolen and used, it's sooo slow
-          wallbangs ? true : undefined
-        );
-        if (wallbangs) setMapObjectTransparencyHook(false);
+      if (wallbangs) setMapObjectTransparencyHook(true);
+      const cs = game.canSee(
+        localPlayer,
+        point.x,
+        point.y,
+        point.z,
+        undefined,
+        undefined,
+        // this sets the transparency value to the penetrable value, so this will skip all the penetrable values here
+        // can't just copy the canSee function because when stolen and used, it's sooo slow
+        wallbangs ? true : undefined
+      );
+      if (wallbangs) setMapObjectTransparencyHook(false);
 
-        if (cs !== null) return false;
+      if (cs !== null) return false;
 
-        return true;
-      })
-      .map((point) => ({ screen: pos2D(point), point }))
-      .sort(
-        (p1, p2) =>
-          p1.screen.distanceTo(overlayCenter) -
-          p2.screen.distanceTo(overlayCenter)
-      )[0]?.point;
+      return true;
+    })
+    .map((point) => ({ screen: pos2D(point), point }))
+    .sort(
+      (p1, p2) =>
+        p1.screen.distanceTo(overlayCenter) -
+        p2.screen.distanceTo(overlayCenter)
+    )[0]?.point;
 
-    if (target) {
-      if (bot) inputs[iInputs.shoot] = 1;
+  if (target) {
+    if (bot) inputs[iInputs.shoot] = 1;
 
-      // console.log("target:", target);
+    // console.log("target:", target);
 
-      const rot = calcRot(target);
+    const rot = calcRot(target);
 
-      antiRecoil(rot);
+    antiRecoil(rot);
 
-      // game.controls.pchObjc.rotation.x = rot.x;
-      // game.controls.object.rotation.y = rot.y;
-      // game.controls.xDr = game.controls.object.rotation.y % Math.PI2;
-      // game.controls.yDr = game.controls.pchObjc.rotation.x % Math.PI2;
+    // game.controls.pchObjc.rotation.x = rot.x;
+    // game.controls.object.rotation.y = rot.y;
+    // game.controls.xDr = game.controls.object.rotation.y % Math.PI2;
+    // game.controls.yDr = game.controls.pchObjc.rotation.x % Math.PI2;
 
-      // prevent moving in weird direction
-      inputs[iInputs.moveDir] = -1;
+    // prevent moving in weird direction
+    inputs[iInputs.moveDir] = -1;
 
-      inputs[iInputs.xDir] = rot.x * 1000;
-      inputs[iInputs.yDir] = rot.y * 1000;
-    }
-  });
-}
+    inputs[iInputs.xDir] = rot.x * 1000;
+    inputs[iInputs.yDir] = rot.y * 1000;
+  }
+});
 
 export function AimbotMenu() {
   const [aimbot, setAimbot] = useConfig("aimbot", defaultAimbot);
