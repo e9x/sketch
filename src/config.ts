@@ -13,14 +13,12 @@ export function configGet<T>(key: string, defaultValue?: T): T {
 export function configSet<T>(key: string, value: T) {
   valueCache.set(key, value);
   GM_setValue(key, value);
-
   configTarget.dispatchEvent(new Event(key));
 }
 
 export function configDelete(key: string) {
   valueCache.delete(key);
   GM_deleteValue(key);
-
   configTarget.dispatchEvent(new Event(key));
 }
 
