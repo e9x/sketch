@@ -25,6 +25,8 @@ const pkg = JSON.parse(
   await readFile(new URL("package.json", import.meta.url), "utf-8")
 );
 
+process.env.SKETCH_VERSION = pkg.version;
+
 const envKeys = [
   "NODE_ENV",
   ...Object.keys(process.env).filter((key) => key.startsWith("SKETCH_")),

@@ -7,6 +7,9 @@ if (!workInkURL) throw new TypeError("Invalid SKETCH_API_URL");
 export const gameVersion = process.env.SKETCH_GAME_VERSION || "";
 if (!gameVersion) throw new TypeError("Invalid SKETCH_GAME_VERSION");
 
+export const sketchVersion = process.env.SKETCH_VERSION || "";
+if (!sketchVersion) throw new TypeError("Invalid SKETCH_VERSION");
+
 export const isDevelopment = process.env.NODE_ENV !== "PRODUCTION";
 
 export function getDevURL() {
