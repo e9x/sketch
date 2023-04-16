@@ -1,7 +1,7 @@
 import "./menu/createUI";
-import KrunkBox, { APIError, WorkInkErrors } from "./KrunkBox";
+import KrunkBox, { WorkInkErrors } from "./KrunkBox";
 import { configGet } from "./config";
-import { gameVersion, sketchVersion, workInkURL } from "./consts";
+import { discordURL, gameVersion, sketchVersion, workInkURL } from "./consts";
 import { matchVars, matchModule } from "./filters";
 import type { Module } from "./filters";
 import type { Hook } from "./inject";
@@ -36,16 +36,22 @@ async function main() {
 
   const savedToken = configGet("token", "");
 
-  const version = await KrunkBox.sketchVersion(sketchVersion);
+  const version = await KrunkBox.sketchVersion(sketchVersion, gameVersion);
+
+  if (!version.sketchUpdated) {
+    if (confirm("KrunkSketch isn't updated. Join the Discord for updates?"))
+      GM_openInTab(discordURL);
+
+    return;
+  }
 
   if (version.outdated) {
     if (
       confirm(
         `KrunkSketch is outdated. You have ${sketchVersion} but the latest is ${version.latestVersion}. Update?`
       )
-    ) {
+    )
       GM_openInTab(version.updateURL);
-    }
 
     return;
   }
@@ -58,20 +64,8 @@ async function main() {
     if (!apiToken) return; // aborted
 
     krunkbox = new KrunkBox(apiToken);
-    if (!(await krunkbox.valid())) {
-      krunkbox = undefined;
-    }
-  }
 
-  const vars = await krunkbox.vars();
-
-  if (vars === APIError.BadToken) throw new Error("Bad token!");
-
-  if (vars.gameVersion !== gameVersion) {
-    if (confirm("KrunkSketch isn't updated. Join the Discord for updates?"))
-      GM_openInTab("https://y9x.github.io/discord/");
-
-    return;
+    if (!(await krunkbox.valid())) krunkbox = undefined;
   }
 
   const game = await getInit(krunkbox, hook);

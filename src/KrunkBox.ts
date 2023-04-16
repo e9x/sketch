@@ -36,14 +36,17 @@ export default class KrunkBox {
       return await res.text();
     }
   }
-  static async sketchVersion(currentVersion: string) {
+  static async sketchVersion(
+    currentVersion: string,
+    currentGameVersion: string
+  ) {
     while (true) {
       const res = await GM_fetch(new URL("sketchVersion", apiURL).toString(), {
         method: "POST",
         headers: {
-          "content-type": "text/plain",
+          "content-type": "application/json",
         },
-        body: currentVersion,
+        body: JSON.stringify({ currentVersion, currentGameVersion }),
       });
 
       if (res.status === 425) {
@@ -61,6 +64,9 @@ export default class KrunkBox {
 
       const data = (await res.json()) as {
         outdated: boolean;
+        // if we should even tell the user to update
+        // sometimes sketch just isn't updated
+        sketchUpdated: boolean;
         latestVersion: string;
         updateURL: string;
       };
@@ -180,36 +186,6 @@ export default class KrunkBox {
       }
 
       return await res.text();
-    }
-  }
-  async vars() {
-    while (true) {
-      const res = await GM_fetch(new URL("vars", apiURL).toString(), {
-        headers: {
-          "x-token": this.token,
-        },
-      });
-
-      if (res.status === 402) return APIError.BadToken;
-
-      // x-token should be available even if 404
-      this.token = res.headers.get("x-token") || this.token;
-
-      // has not been minified/processed yet
-      if (res.status === 404) {
-        console.log("Too early, trying again in 3s");
-        await sleep(3e3);
-        continue;
-      }
-
-      if (!res.ok) {
-        // server error, try again in some
-        console.log("Server error, trying again in 3s");
-        await sleep(3e3);
-        continue;
-      }
-
-      return (await res.json()) as { gameVersion: string };
     }
   }
 }
