@@ -1,3 +1,4 @@
+import useConfig, { configGet } from "../config";
 import {
   getConfig,
   getGame,
@@ -7,6 +8,9 @@ import {
 } from "../filters";
 import type { Player } from "../krunker/Player";
 import { isEnemy } from "../krunkerUtil";
+import Switch from "../menu/components/Switch";
+
+const defaultESP = false;
 
 export class PlayerRectBounds {
   private xMin: number;
@@ -102,6 +106,8 @@ function playerBox(player: Player) {
 
 export function espHook() {
   renderHooks.push(() => {
+    if (!configGet("esp", defaultESP)) return;
+
     try {
       const overlay = getOverlay();
       const game = getGame();
@@ -127,5 +133,13 @@ export function espHook() {
 }
 
 export function ESPMenu() {
-  return <></>;
+  const [esp, setESP] = useConfig("esp", defaultESP);
+
+  return (
+    <Switch
+      title="ESP"
+      defaultChecked={esp}
+      onChange={(event) => setESP(event.currentTarget.checked)}
+    />
+  );
 }
