@@ -1,3 +1,4 @@
+/* eslint-disable no-var */
 import { getGame, getLocalPlayer, getOverlay, getRender } from "./filters";
 import type { Player } from "./krunker/Player";
 import type THREE from "three";
@@ -127,4 +128,23 @@ export function isEnemy(player: Player) {
   if (player.team !== localPlayer.team) return true;
 
   return false;
+}
+
+export function progressOnLine(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  x3: number,
+  y3: number
+) {
+  let ux = x2 - x1;
+  let uy = y2 - y1;
+  const u2 = Math.sqrt(ux * ux + uy * uy);
+  ux /= u2;
+  uy /= u2;
+  return (
+    (ux * (x3 - x1) + uy * (y3 - y1)) /
+    Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
+  );
 }

@@ -1,10 +1,18 @@
+import type MapObject from "./Object";
 import type { Player, manager } from "./Player";
+import type Terrain from "./Terrain";
 import type THREE from "three";
 
 declare class Game {
   constructor(...args: unknown[]);
   AI: {
     ais: unknown[];
+  };
+  map: {
+    terrain: Terrain | null;
+    manager: {
+      objects: MapObject[];
+    };
   };
   COLLISIONS: unknown;
   THREE: typeof THREE;

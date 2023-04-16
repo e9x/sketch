@@ -130,17 +130,7 @@ export function aimbotHook() {
         if (frustumCheck && !getRender().frustum.containPoint(point))
           return false;
 
-        if (
-          game.canSee(
-            localPlayer,
-            point.x,
-            point.y,
-            point.z,
-            undefined,
-            undefined,
-            !wallbangs
-          ) !== null
-        )
+        if (game.canSee(localPlayer, point.x, point.y, point.z) !== null)
           return false;
 
         return true;

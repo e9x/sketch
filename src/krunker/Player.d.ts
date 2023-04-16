@@ -16,6 +16,7 @@ export declare class Player {
   headMlt: number;
   reloadTimer: number;
   isPlayer: true;
+  scale: number;
   // between 0 and 1. 0 = aimed, 1 = aiming
   aimVal: number;
   inputs: unknown[];
