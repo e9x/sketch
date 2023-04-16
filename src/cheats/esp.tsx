@@ -6,6 +6,7 @@ import {
   renderHooks,
 } from "../filters";
 import type { Player } from "../krunker/Player";
+import { isEnemy } from "../krunkerUtil";
 
 export class PlayerRectBounds {
   private xMin: number;
@@ -110,7 +111,9 @@ export function espHook() {
 
         if (!box) continue;
 
-        overlay.ctx.strokeStyle = "red";
+        const enemy = isEnemy(player);
+
+        overlay.ctx.strokeStyle = enemy ? "#eb5656" : "#9eeb56";
         overlay.ctx.lineWidth = 1.5;
         overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
       }
