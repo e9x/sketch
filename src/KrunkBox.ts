@@ -147,7 +147,7 @@ export default class KrunkBox {
         },
       });
 
-      if (res.status === 402) return WorkInkErrors.BadToken;
+      if (res.status === 402) return APIError.BadToken;
 
       // x-token should be available even if 404
       this.token = res.headers.get("x-token") || this.token;

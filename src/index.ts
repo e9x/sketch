@@ -1,5 +1,5 @@
 import "./menu/createUI";
-import KrunkBox, { WorkInkErrors } from "./KrunkBox";
+import KrunkBox, { APIError, WorkInkErrors } from "./KrunkBox";
 import { configGet } from "./config";
 import { gameVersion, workInkURL } from "./consts";
 import { matchVars, matchModule } from "./filters";
@@ -50,6 +50,8 @@ async function main() {
   }
 
   const vars = await krunkbox.vars();
+
+  if (vars === APIError.BadToken) throw new Error("Bad token!");
 
   if (vars.gameVersion !== gameVersion) {
     if (confirm("KrunkSketch isn't updated. Join the Discord for updates?"))
