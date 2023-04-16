@@ -1,7 +1,7 @@
 import "./menu/createUI";
 import KrunkBox, { APIError, WorkInkErrors } from "./KrunkBox";
 import { configGet } from "./config";
-import { gameVersion, workInkURL } from "./consts";
+import { gameVersion, sketchVersion, workInkURL } from "./consts";
 import { matchVars, matchModule } from "./filters";
 import type { Module } from "./filters";
 import type { Hook } from "./inject";
@@ -35,6 +35,20 @@ async function main() {
   let krunkbox: KrunkBox | undefined;
 
   const savedToken = configGet("token", "");
+
+  const version = await KrunkBox.sketchVersion(sketchVersion);
+
+  if (version.outdated) {
+    if (
+      confirm(
+        `KrunkSketch is outdated. You have ${sketchVersion} but the latest is ${version.latestVersion}. Update?`
+      )
+    ) {
+      GM_openInTab(version.updateURL);
+    }
+
+    return;
+  }
 
   if (savedToken) krunkbox = new KrunkBox(savedToken);
 

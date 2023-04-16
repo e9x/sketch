@@ -36,6 +36,42 @@ export default class KrunkBox {
       return await res.text();
     }
   }
+  static async sketchVersion(currentVersion: string) {
+    while (true) {
+      const res = await GM_fetch(new URL("sketchVersion", apiURL).toString(), {
+        method: "POST",
+        headers: {
+          "content-type": "text/plain",
+        },
+        body: currentVersion,
+      });
+
+      if (res.status === 425) {
+        console.log("Too early, trying again in 3s");
+        await sleep(3e3);
+        continue;
+      }
+
+      if (!res.ok) {
+        // server error, try again in some
+        console.log("Server error, trying again in 3s");
+        await sleep(3e3);
+        continue;
+      }
+
+      const data = (await res.json()) as {
+        outdated: boolean;
+        latestVersion: string;
+        updateURL: string;
+      };
+
+      return {
+        ...data,
+        // we have to resolve it
+        updateURL: new URL(data.updateURL, apiURL).toString(),
+      };
+    }
+  }
   constructor(token: string) {
     this.token = token;
   }
@@ -70,6 +106,13 @@ export default class KrunkBox {
       }
 
       if (res.status === 402) return APIError.BadToken;
+
+      if (!res.ok) {
+        // server error, try again in some
+        console.log("Server error, trying again in 3s");
+        await sleep(3e3);
+        continue;
+      }
 
       // x-token should be available if eg fastify crashes
       // but if we don't get x-token, just don't change it
