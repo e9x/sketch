@@ -24,6 +24,7 @@
     "indent": "off",
     "quotes": "off",
     "import/no-unresolved": "off",
+    "eqeqeq": "error",
     "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/consistent-type-imports": "error"
   }

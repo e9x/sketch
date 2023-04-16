@@ -7,6 +7,7 @@ import {
   getOverlay,
   getRender,
   inputHooks,
+  setMapObjectTransparencyHook,
 } from "../filters";
 import type { Player } from "../krunker/Player";
 import { isEnemy, pos2D, getXDire, getDir } from "../krunkerUtil";
@@ -130,8 +131,21 @@ export function aimbotHook() {
         if (frustumCheck && !getRender().frustum.containPoint(point))
           return false;
 
-        if (game.canSee(localPlayer, point.x, point.y, point.z) !== null)
-          return false;
+        if (wallbangs) setMapObjectTransparencyHook(true);
+        const cs = game.canSee(
+          localPlayer,
+          point.x,
+          point.y,
+          point.z,
+          undefined,
+          undefined,
+          // this sets the transparency value to the penetrable value, so this will skip all the penetrable values here
+          // can't just copy the canSee function because when stolen and used, it's sooo slow
+          wallbangs ? true : undefined
+        );
+        if (wallbangs) setMapObjectTransparencyHook(false);
+
+        if (cs !== null) return false;
 
         return true;
       })

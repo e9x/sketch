@@ -5,6 +5,7 @@
 
 import { isDevelopment } from "./consts";
 import type Game from "./krunker/Game";
+import type MapObjectModule from "./krunker/Object";
 import type { Player, _canBSeen } from "./krunker/Player";
 import type RenderManager from "./krunker/RenderManager";
 import type configModule from "./krunker/config";
@@ -122,6 +123,43 @@ matchers.push((module: Module<typeof Overlay>) => {
 
   overlay = module.exports;
   doOverlayHooks();
+});
+
+let MapObject: typeof MapObjectModule | undefined;
+
+let mapObjectTransparencyHook = false;
+
+function doMapObjectHooks() {
+  const transparentMap = new WeakMap<MapObjectModule, number | undefined>();
+  Object.defineProperty(getMapObject().prototype, "transparent", {
+    get(this: MapObjectModule) {
+      if (mapObjectTransparencyHook) return this.penetrable ? 1 : 0;
+      return transparentMap.get(this);
+    },
+    set(this: MapObjectModule, value) {
+      transparentMap.set(this, value);
+    },
+  });
+}
+
+export function getMapObject() {
+  if (!MapObject) throw new Error("Too early");
+  return MapObject;
+}
+
+export function setMapObjectTransparencyHook(hookEnabled: boolean) {
+  mapObjectTransparencyHook = hookEnabled;
+}
+
+matchers.push((module: Module<typeof MapObjectModule>) => {
+  if (
+    typeof module.exports !== "function" ||
+    !module.exports.toString().includes("this.penetrable=")
+  )
+    return;
+
+  MapObject = module.exports;
+  doMapObjectHooks();
 });
 
 matchers.push((module: Module<typeof RenderManager>) => {
