@@ -116,6 +116,8 @@ export function espHook() {
       const overlay = getOverlay();
       const game = getGame();
 
+      overlay.ctx.save();
+
       for (const player of game.players.list) {
         const box = playerBox(player);
 
@@ -127,6 +129,8 @@ export function espHook() {
         overlay.ctx.lineWidth = 1.5;
         overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
       }
+
+      overlay.ctx.restore();
     } catch {
       // sometimes we're a little early
     }
