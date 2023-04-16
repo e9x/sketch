@@ -123,9 +123,6 @@ export function espHook() {
         overlay.ctx.lineWidth = 1.5;
         overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
       }
-
-      overlay.ctx.textAlign = "center";
-      overlay.ctx.fillText("hi", 200, 200);
     } catch {
       // sometimes we're a little early
     }
