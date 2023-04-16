@@ -97,21 +97,6 @@ export function pos2D(input: THREE.Vector3, offsetY = 0) {
   vec.y *= innerHeight / overlay.scale!;
 
   return new render.THREE.Vector2(vec.x, vec.y);
-
-  // if (isNaN(v.x) || isNaN(v.y) || isNaN(v.z)) return { x: 0, y: 0 };
-
-  // pos = { x: pos.x, y: pos.y, z: pos.z };
-
-  /*pos.y += offset_y;
-
-  this.update_camera();
-
-  this.project3d(pos, this.data.world.camera);
-
-  return {
-    x: ((pos.x + 1) / 2) * this.data.ctx.canvas.width,
-    y: ((-pos.y + 1) / 2) * this.data.ctx.canvas.height,
-  };*/
 }
 
 export function isEnemy(player: Player) {
