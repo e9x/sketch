@@ -13,6 +13,7 @@ import type { Player } from "../krunker/Player";
 import { isEnemy, pos2D, getXDire, getDir } from "../krunkerUtil";
 import Select from "../menu/components/Select";
 import Switch from "../menu/components/Switch";
+import { random } from "lodash";
 import type THREE from "three";
 
 const defaultAimbot = "off";
@@ -73,7 +74,27 @@ function validTarget(target: Player) {
 }
 
 export function aimbotHook() {
-  // let target: Player | undefined;
+  let reloading = 0;
+
+  inputHooks.push((inputs) => {
+    const bot = configGet("bot", defaultBot);
+
+    if (!bot) return;
+
+    const localPlayer = getLocalPlayer();
+
+    // check if we already sent the reload input so we don't spam the reload input
+    if (!localPlayer.ammos[localPlayer.loadoutIndex]) {
+      // keep sending the input until we hit the "time limit" for reloading, declared when reloading = ...
+      if (reloading === 0 || inputs[iInputs.frame] < reloading) {
+        inputs[iInputs.reload] = 1;
+
+        // reload for a random amount of frames to simulate pressing it
+        // set reloading only as soon as we start holding the input down
+        if (reloading === 0) reloading = inputs[iInputs.frame] + random(3, 8);
+      }
+    } else reloading = 0;
+  });
 
   inputHooks.push((inputs) => {
     const aimbot = configGet("aimbot", defaultAimbot);

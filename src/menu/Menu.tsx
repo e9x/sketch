@@ -1,5 +1,4 @@
 import { AimbotMenu } from "../cheats/aimbot";
-import { AutoReloadMenu } from "../cheats/autoReload";
 import { BhopMenu } from "../cheats/bhop";
 import { ESPMenu } from "../cheats/esp";
 import { ForceAutoMenu } from "../cheats/forceAuto";
@@ -15,7 +14,6 @@ export default function Menu() {
       <Set title="Skill">
         <BhopMenu />
         <ForceAutoMenu />
-        <AutoReloadMenu />
         <TriggerbotMenu />
       </Set>
       <Set title="ESP">

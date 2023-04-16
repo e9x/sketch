@@ -1,7 +1,6 @@
 import "./menu/createUI";
 import KrunkBox, { WorkInkErrors } from "./KrunkBox";
 import { aimbotHook } from "./cheats/aimbot";
-import { autoReloadHook } from "./cheats/autoReload";
 import { bhopHook } from "./cheats/bhop";
 import { espHook } from "./cheats/esp";
 import { forceAutoHook } from "./cheats/forceAuto";
@@ -17,7 +16,6 @@ bhopHook();
 aimbotHook();
 triggerbotHook();
 forceAutoHook();
-autoReloadHook();
 espHook();
 
 const hook: Hook<(module: Module) => unknown> = (
