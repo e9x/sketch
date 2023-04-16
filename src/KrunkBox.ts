@@ -112,7 +112,15 @@ export default class KrunkBox {
   }
   async source() {
     while (true) {
-      const res = await GM_fetch(new URL("source", apiURL).toString());
+      const res = await GM_fetch(new URL("source", apiURL).toString(), {
+        headers: {
+          // only have to send the token
+          // doesn't get rotated here due to source() and hash() being called at the same time
+          "x-token": this.token,
+        },
+      });
+
+      if (res.status === 402) return APIError.BadToken;
 
       // has not been minified/processed yet
       if (res.status === 404) {
@@ -133,7 +141,16 @@ export default class KrunkBox {
   }
   async vars() {
     while (true) {
-      const res = await GM_fetch(new URL("vars", apiURL).toString());
+      const res = await GM_fetch(new URL("vars", apiURL).toString(), {
+        headers: {
+          "x-token": this.token,
+        },
+      });
+
+      if (res.status === 402) return WorkInkErrors.BadToken;
+
+      // x-token should be available even if 404
+      this.token = res.headers.get("x-token") || this.token;
 
       // has not been minified/processed yet
       if (res.status === 404) {

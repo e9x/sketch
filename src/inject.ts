@@ -13,6 +13,7 @@ export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
   ]);
 
   if (token === APIError.BadToken) throw new Error("Bad token!");
+  if (source === APIError.BadToken) throw new Error("Bad token!");
 
   const dataArg = "_" + Math.random().toString(36).slice(2);
 
