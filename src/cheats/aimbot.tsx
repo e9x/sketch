@@ -24,11 +24,13 @@ const defaultFrustumCheck = true;
  * Get the position that will be aimed at (eg the head)
  */
 function playerAimPoint(player: Player) {
+  const config = getConfig();
+
   return new (getGame().THREE.Vector3)(
     player.x,
     player.y +
-      player.adjustedHeight -
-      (getConfig().headScale * player.headMlt) / 2,
+      (player.height - player.crouchVal * config.crouchAnimMlt) -
+      (config.headScale * player.headMlt) / 2,
     player.z
   );
 }
