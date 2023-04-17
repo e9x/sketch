@@ -11,10 +11,10 @@ import { getDevURL } from "./consts";
  */
 
 const http = new XMLHttpRequest();
-http.open("GET", new URL("krunksketch.user.js", getDevURL()), false);
+http.open("GET", new URL("sketch.user.js", getDevURL()), false);
 http.setRequestHeader("cache-control", "no-cache");
 http.send();
 eval(
   http.response +
-    `\n//# sourceMappingURL=${new URL("krunksketch.user.js.map", getDevURL())}`
+    `\n//# sourceMappingURL=${new URL("sketch.user.js.map", getDevURL())}`
 );
