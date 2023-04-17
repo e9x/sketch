@@ -48,7 +48,7 @@ const options = defineConfig([
   {
     input: "./src/index.ts",
     output: {
-      file: fileURLToPath(new URL("dist/krunksketch.user.js", import.meta.url)),
+      file: fileURLToPath(new URL("dist/sketch.user.js", import.meta.url)),
       format: "cjs",
       sourcemap: "hidden",
     },
@@ -89,7 +89,7 @@ const options = defineConfig([
           input: "./src/dev.ts",
           output: {
             file: fileURLToPath(
-              new URL("dist/krunksketch.DEV.user.js", import.meta.url)
+              new URL("dist/sketch.DEV.user.js", import.meta.url)
             ),
             format: "cjs",
             sourcemap: "inline",
