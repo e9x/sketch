@@ -11,6 +11,7 @@ import {
 } from "../filters";
 import type { Player } from "../krunker/Player";
 import { isEnemy, pos2D, getXDire, getDir } from "../krunkerUtil";
+import Select from "../menu/components/Select";
 import Switch from "../menu/components/Switch";
 import { random } from "lodash";
 import type THREE from "three";
@@ -19,18 +20,21 @@ const defaultAimbot = false;
 export const defaultBot = false;
 const defaultWallbangs = false;
 const defaultFrustumCheck = true;
+const defaultHitbox = "head";
 
 /**
  * Get the position that will be aimed at (eg the head)
  */
-function playerAimPoint(player: Player) {
+function playerAimPoint(player: Player, hitbox: "head" | "chest") {
   const config = getConfig();
 
   return new (getGame().THREE.Vector3)(
     player.x,
     player.y +
       (player.height - player.crouchVal * config.crouchAnimMlt) -
-      (config.headScale * player.headMlt) / 2,
+      (hitbox === "head"
+        ? (config.headScale * player.headMlt) / 2
+        : config.headScale + config.chestScale / 2),
     player.z
   );
 }
@@ -145,10 +149,11 @@ export function aimbotHook() {
     const wallbangs =
       configGet("wallbangs", defaultWallbangs) &&
       localPlayer.weapon.pierce !== undefined;
+    const hitbox = configGet("hitbox", defaultHitbox);
 
     const target = game.players.list
       .filter(validTarget)
-      .map((player) => playerAimPoint(player))
+      .map((player) => playerAimPoint(player, hitbox))
       .filter((point) => {
         if (frustumCheck && !getRender().frustum.containPoint(point))
           return false;
@@ -209,6 +214,7 @@ export function AimbotMenu() {
     defaultFrustumCheck
   );
   const [wallbangs, setWallbangs] = useConfig("wallbangs", defaultWallbangs);
+  const [hitbox, setHitbox] = useConfig("hitbox", defaultHitbox);
 
   return (
     <>
@@ -228,6 +234,15 @@ export function AimbotMenu() {
         defaultChecked={frustumCheck}
         onChange={(event) => setFrustumCheck(event.currentTarget.checked)}
       />
+      <Select
+        title="Hitbox"
+        description="Automatically aim and fire at players"
+        defaultValue={hitbox}
+        onChange={(event) => setHitbox(event.currentTarget.value)}
+      >
+        <option value="head">Head</option>
+        <option value="chest">Chest</option>
+      </Select>
       <Switch
         title="Turret"
         description="Automatically aim and fire at players"
