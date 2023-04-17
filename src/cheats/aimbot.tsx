@@ -9,8 +9,10 @@ import {
   inputHooks,
   setMapObjectTransparencyHook,
 } from "../filters";
+import { isKeyDown } from "../keys";
 import type { Player } from "../krunker/Player";
 import { isEnemy, pos2D, getXDire, getDir } from "../krunkerUtil";
+import BindHolder, { Bind } from "../menu/components/Bind";
 import Select from "../menu/components/Select";
 import Switch from "../menu/components/Switch";
 import { random } from "lodash";
@@ -21,6 +23,7 @@ export const defaultBot = false;
 const defaultWallbangs = false;
 const defaultFrustumCheck = true;
 const defaultHitbox = "head";
+const defaultAimKey = -1;
 
 /**
  * Get the position that will be aimed at (eg the head)
@@ -108,8 +111,9 @@ export function aimbotHook() {
 
   inputHooks.push((inputs) => {
     const aimbot = configGet("aimbot", defaultAimbot);
+    const aimKey = configGet("aimKey", defaultAimKey);
 
-    if (!aimbot) return;
+    if (!aimbot || (aimKey !== -1 && !isKeyDown(aimKey))) return;
 
     const game = getGame();
     const overlay = getOverlay();
@@ -220,9 +224,18 @@ export function AimbotMenu() {
   );
   const [wallbangs, setWallbangs] = useConfig("wallbangs", defaultWallbangs);
   const [hitbox, setHitbox] = useConfig("hitbox", defaultHitbox);
+  const [aimKey, setAimKey] = useConfig("aimKey", defaultAimKey);
 
   return (
     <>
+      <BindHolder title="Aim Key">
+        <Bind
+          bind={aimKey}
+          setBind={(bind) => setAimKey(bind)}
+          reset={() => setAimKey(null)}
+          unbind={() => setAimKey(-1)}
+        />
+      </BindHolder>
       <Switch
         title="Aimbot"
         defaultChecked={aimbot}

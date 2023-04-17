@@ -42,7 +42,7 @@ export default function useConfig<T>(key: string, defaultValue?: T) {
       // null = nuke the item
       if (value === null) configDelete(key);
       else configSet(key, value);
-      setState(configGet(key));
+      setState(configGet(key, defaultValue));
       configTarget.dispatchEvent(new Event(key));
     },
   ] as [T, (value: T | null) => void];
