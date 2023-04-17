@@ -27,14 +27,19 @@ const defaultHitbox = "head";
  */
 function playerAimPoint(player: Player, hitbox: "head" | "chest") {
   const config = getConfig();
+  const game = getGame();
+  const { THREE } = game;
+  const hitboxOffset =
+    hitbox === "head"
+      ? config.headScale / 2
+      : config.playerHeight - config.headScale - config.legHeight;
 
-  return new (getGame().THREE.Vector3)(
+  return new THREE.Vector3(
     player.x,
     player.y +
-      (player.height - player.crouchVal * config.crouchAnimMlt) -
-      (hitbox === "head"
-        ? (config.headScale * player.headMlt) / 2
-        : config.headScale + config.chestScale / 2),
+      player.height -
+      hitboxOffset -
+      player.crouchVal * config.crouchAnimMlt,
     player.z
   );
 }

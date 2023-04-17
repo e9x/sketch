@@ -18,6 +18,9 @@ export declare class Player {
   isYou: boolean;
   active: boolean;
   objInstances: THREE.Object3D | null;
+  headObj: THREE.Object3D | null;
+  lowerBody: THREE.Object3D | null;
+  upperBody: THREE.Object3D | null;
   maxHealth: number;
   health: number;
   hpChase: number;
