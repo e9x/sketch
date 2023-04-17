@@ -17,7 +17,7 @@ import Switch from "../menu/components/Switch";
 import { random } from "lodash";
 import type THREE from "three";
 
-const defaultAimbot = false;
+const defaultAimbot = "off";
 export const defaultBot = false;
 const defaultWallbangs = false;
 const defaultFrustumCheck = true;
@@ -46,14 +46,22 @@ function playerAimPoint(player: Player, hitbox: string) {
   );
 }
 
-function calcRot(target: THREE.Vector3) {
+function lerp(v0: number, v1: number, t: number) {
+  return v0 * (1 - t) + v1 * t;
+}
+
+function calcRot(
+  rotation: THREE.Vector2,
+  target: THREE.Vector3,
+  aimbot: string
+) {
   const localPlayer = getLocalPlayer();
 
   const render = getRender();
 
-  const worldPos = new render.THREE.Vector3();
-
-  render.fpsCamera.getWorldPosition(worldPos);
+  const worldPos = render.fpsCamera.getWorldPosition(
+    new render.THREE.Vector3()
+  );
 
   const xDire =
     getXDire(
@@ -66,13 +74,24 @@ function calcRot(target: THREE.Vector3) {
     ) || 0;
   const yDire = getDir(localPlayer.z, localPlayer.x, target.z, target.x) || 0;
 
-  return new render.THREE.Vector2(xDire, yDire);
+  if (aimbot === "smooth") {
+    const smoothFactor = 0.1; // Adjust this value to control the smoothness (0 to 1)
+
+    rotation.set(
+      lerp(rotation.x, xDire, smoothFactor),
+      lerp(rotation.y, yDire, smoothFactor)
+    );
+  } else {
+    rotation.set(xDire, yDire);
+  }
+
+  return rotation;
 }
 
-function antiRecoil(rot: THREE.Vector2) {
-  rot.x -= getRender().shakeY;
-  rot.x -= getLocalPlayer().recoilAnimY * getConfig().recoilMlt;
-  rot.x -= getLocalPlayer().landBobY * 0.1;
+function antiRecoil(rotation: THREE.Vector2) {
+  rotation.x -= getRender().shakeY;
+  rotation.x -= getLocalPlayer().recoilAnimY * getConfig().recoilMlt;
+  rotation.x -= getLocalPlayer().landBobY * 0.1;
 }
 
 function validTarget(target: Player) {
@@ -109,11 +128,13 @@ export function aimbotHook() {
   });
 
   inputHooks.push((inputs) => {
-    const aimbot = configGet<boolean>("aimbot", defaultAimbot);
+    const aimbot = configGet<string>("aimbot", defaultAimbot);
     const aimKey = configGet<number>("aimKey", defaultAimKey);
     const game = getGame();
+    const { THREE } = game;
 
-    if (!aimbot || (aimKey !== -1 && game.controls.keys[aimKey] !== 1)) return;
+    if (aimbot === "off" || (aimKey !== -1 && game.controls.keys[aimKey] !== 1))
+      return;
 
     const overlay = getOverlay();
     const localPlayer = getLocalPlayer();
@@ -141,12 +162,20 @@ export function aimbotHook() {
       }
     } else {
       // require user input
-      if (!inputs[iInputs.shoot]) return;
+      switch (aimbot) {
+        case "silent":
+          if (!inputs[iInputs.shoot]) return;
+          break;
+        case "smooth":
+          if (!inputs[iInputs.scope]) return;
+          break;
+      }
     }
 
     // if the weapon can't shoot
     // maybe use cantShootTimer?
-    if (currentReload || localPlayer.reloadTimer) return;
+    if (aimbot === "silent" && (currentReload || localPlayer.reloadTimer))
+      return;
 
     const overlayCenter = new game.THREE.Vector2(
       overlay.canvas.width / 2,
@@ -198,10 +227,14 @@ export function aimbotHook() {
       if (bot) inputs[iInputs.shoot] = 1;
 
       // console.log("target:", target);
+      const rotation = new THREE.Vector2(
+        inputs[iInputs.xDir] / 1000,
+        inputs[iInputs.yDir] / 1000
+      );
 
-      const rot = calcRot(target);
+      calcRot(rotation, target, aimbot);
 
-      antiRecoil(rot);
+      antiRecoil(rotation);
 
       // game.controls.pchObjc.rotation.x = rot.x;
       // game.controls.object.rotation.y = rot.y;
@@ -211,14 +244,19 @@ export function aimbotHook() {
       // prevent moving in weird direction
       inputs[iInputs.moveDir] = -1;
 
-      inputs[iInputs.xDir] = rot.x * 1000;
-      inputs[iInputs.yDir] = rot.y * 1000;
+      if (aimbot === "silent") {
+        inputs[iInputs.xDir] = rotation.x * 1000;
+        inputs[iInputs.yDir] = rotation.y * 1000;
+      } else {
+        game.controls.pchObjc.rotation.x = rotation.x;
+        game.controls.object.rotation.y = rotation.y;
+      }
     }
   });
 }
 
 export function AimbotMenu() {
-  const [aimbot, setAimbot] = useConfig<boolean>("aimbot", defaultAimbot);
+  const [aimbot, setAimbot] = useConfig<string>("aimbot", defaultAimbot);
   const [bot, setBot] = useConfig<boolean>("bot", defaultBot);
   const [frustumCheck, setFrustumCheck] = useConfig<boolean>(
     "frustumCheck",
@@ -241,11 +279,15 @@ export function AimbotMenu() {
           unbind={() => setAimKey(-1)}
         />
       </BindHolder>
-      <Switch
+      <Select
         title="Aimbot"
-        defaultChecked={aimbot}
-        onChange={(event) => setAimbot(event.currentTarget.checked)}
-      />
+        defaultValue={aimbot}
+        onChange={(event) => setAimbot(event.currentTarget.value)}
+      >
+        <option value="off">Off</option>
+        <option value="smooth">Smooth</option>
+        <option value="silent">Silent</option>
+      </Select>
       <Switch
         title="Wallbangs"
         defaultChecked={wallbangs}
