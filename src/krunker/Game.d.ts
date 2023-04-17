@@ -25,6 +25,8 @@ declare class Game {
   config: unknown;
   raycaster: THREE.Raycaster;
   controls: {
+    keys: Record<string, 0 | 1>;
+    binds: unknown;
     spect: { target?: Player };
     tmpInpts: number[][];
     object: THREE.Object3D;

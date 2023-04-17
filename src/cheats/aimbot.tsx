@@ -9,7 +9,7 @@ import {
   inputHooks,
   setMapObjectTransparencyHook,
 } from "../filters";
-import { isKeyDown } from "../keys";
+import { getKeyName } from "../keys";
 import type { Player } from "../krunker/Player";
 import { isEnemy, pos2D, getXDire, getDir } from "../krunkerUtil";
 import BindHolder, { Bind } from "../menu/components/Bind";
@@ -112,10 +112,14 @@ export function aimbotHook() {
   inputHooks.push((inputs) => {
     const aimbot = configGet("aimbot", defaultAimbot);
     const aimKey = configGet("aimKey", defaultAimKey);
-
-    if (!aimbot || (aimKey !== -1 && !isKeyDown(aimKey))) return;
-
     const game = getGame();
+
+    if (
+      !aimbot ||
+      (aimKey !== -1 && game.controls.keys[getKeyName(aimKey)] !== 1)
+    )
+      return;
+
     const overlay = getOverlay();
     const localPlayer = getLocalPlayer();
 

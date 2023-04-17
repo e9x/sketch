@@ -238,28 +238,3 @@ export function getKeyCode(event: MouseEvent | KeyboardEvent) {
   if (event instanceof MouseEvent) return 10000 + event.which;
   else return event.keyCode;
 }
-
-const keys = new Set<number>();
-
-function keyDown(event: MouseEvent | KeyboardEvent) {
-  keys.add(getKeyCode(event));
-}
-
-function keyUp(event: MouseEvent | KeyboardEvent) {
-  keys.delete(getKeyCode(event));
-}
-
-window.addEventListener("keydown", keyDown);
-window.addEventListener("keyup", keyUp);
-window.addEventListener("mousedown", keyDown);
-window.addEventListener("mouseup", keyUp);
-
-window.addEventListener("focus", () => {
-  for (const key of keys) keys.delete(key);
-});
-
-export function isKeyDown(key: number) {
-  return keys.has(key);
-}
-
-export default keys;
