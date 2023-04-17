@@ -3,7 +3,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { forceNametags } from "./cheats/esp";
 import { isDevelopment } from "./consts";
 import type Game from "./krunker/Game";
 import type MapObjectModule from "./krunker/Object";
@@ -212,23 +211,6 @@ matchers.push((module: Module<typeof configModule>) => {
 
 export function matchModule(module: Module) {
   for (const matcher of matchers) matcher(module);
-}
-
-export function applyHooks(dataArg: string, src: string) {
-  src = src.replace(
-    /!(\w+)\.isYou&&\1\.objInstances\){if\(\1\.canBSeen\){/,
-    (match, player) =>
-      `!${player}.isYou&&${player}.objInstances){if(${player}.canBSeen||${dataArg}.nametags){`
-  );
-
-  return {
-    data: {
-      get nametags() {
-        return forceNametags();
-      },
-    },
-    src,
-  };
 }
 
 if (isDevelopment)

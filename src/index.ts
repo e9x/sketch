@@ -2,13 +2,13 @@ import "./menu/createUI";
 import KrunkBox, { WorkInkErrors } from "./KrunkBox";
 import { aimbotHook } from "./cheats/aimbot";
 import { bhopHook } from "./cheats/bhop";
-import { espHook } from "./cheats/esp";
+import { espHook, forceNametags } from "./cheats/esp";
 import { forceAutoHook } from "./cheats/forceAuto";
 import { triggerbotHook } from "./cheats/triggerbot";
 import { configGet } from "./config";
 import { discordURL, gameVersion, sketchVersion, workInkURL } from "./consts";
 import type { Module } from "./filters";
-import { applyHooks, matchModule } from "./filters";
+import { matchModule } from "./filters";
 import { getInit, waitForGameLoad } from "./inject";
 
 aimbotHook();
@@ -25,17 +25,23 @@ const hook = (dataArg: string, src: string) => {
     (match, module) => `,${module}.l=true,${dataArg}.extract(${module})}`
   );
 
-  const hooked = applyHooks(dataArg, src);
+  src = src.replace(
+    /!(\w+)\.isYou&&\1\.objInstances\){if\(\1\.canBSeen\){/,
+    (match, player) =>
+      `!${player}.isYou&&${player}.objInstances){if(${player}.canBSeen||${dataArg}.nametags){`
+  );
 
   return {
     data: {
-      ...hooked.data,
       extract: (module: Module) => {
         matchModule(module);
         return module.exports;
       },
+      get nametags() {
+        return forceNametags();
+      },
     },
-    src: hooked.src,
+    src,
   };
 };
 
