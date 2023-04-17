@@ -1,4 +1,4 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useState } from "react";
 
 const configTarget = new EventTarget();
 const valueCache = new Map<string, unknown>();

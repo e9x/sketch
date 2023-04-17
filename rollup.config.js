@@ -57,7 +57,6 @@ const options = defineConfig([
       esbuild({
         minify: !isDevelopment,
         jsx: "automatic",
-        jsxImportSource: "preact",
       }),
       nodeResolve({ browser: true }),
       commonjs(),

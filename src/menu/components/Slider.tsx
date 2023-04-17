@@ -1,7 +1,7 @@
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
-import type { JSX } from "preact";
-import { useState } from "preact/hooks";
+import { useState } from "react";
+import type { ChangeEventHandler } from "react";
 
 export interface SliderProps extends BaseControlProps {
   value?: number;
@@ -9,7 +9,7 @@ export interface SliderProps extends BaseControlProps {
   min?: number;
   max?: number;
   step?: number;
-  onChange?: JSX.GenericEventHandler<HTMLInputElement>;
+  onChange?: ChangeEventHandler<HTMLInputElement>;
 }
 
 export default function Slider({

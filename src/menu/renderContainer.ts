@@ -1,7 +1,7 @@
-import type { ComponentChild } from "preact";
-import { render } from "preact";
+import type { ReactNode } from "react";
+import { createRoot } from "react-dom/client";
 
-export type RenderOnDemand = () => ComponentChild;
+export type RenderOnDemand = () => ReactNode;
 
 /**
  *
@@ -17,9 +17,9 @@ export default function createRenderContainer(d: RenderOnDemand) {
 
       this.remove();
 
-      const vnode = d();
+      const root = createRoot(settHolder);
 
-      render(vnode, settHolder);
+      root.render(d());
 
       Reflect.defineProperty(settHolder, "innerHTML", {
         configurable: true,
@@ -27,7 +27,7 @@ export default function createRenderContainer(d: RenderOnDemand) {
           // remove descriptor
           Reflect.deleteProperty(settHolder, "innerHTML");
 
-          render(null, settHolder);
+          root.unmount();
 
           settHolder.innerHTML = html;
         },

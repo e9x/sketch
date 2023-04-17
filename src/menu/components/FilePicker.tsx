@@ -1,15 +1,14 @@
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
-import type { JSX } from "preact";
-import { forwardRef } from "preact/compat";
-import { useRef, useImperativeHandle } from "preact/hooks";
+import { forwardRef, useRef, useImperativeHandle } from "react";
+import type { ChangeEventHandler } from "react";
 
 export interface FilePickerProps extends BaseControlProps {
   accept?: string;
   multiple?: boolean;
   value?: string;
   defaultValue?: string;
-  onChange?: JSX.GenericEventHandler<HTMLInputElement>;
+  onChange?: ChangeEventHandler<HTMLInputElement>;
 }
 
 /**
