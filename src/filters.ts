@@ -219,4 +219,5 @@ if (isDevelopment)
     getRender,
     getLocalPlayer,
     getOverlay,
+    getConfig,
   });
