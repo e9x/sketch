@@ -1,9 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 
 const configTarget = new EventTarget();
 const valueCache = new Map<string, unknown>();
 
-export function configGet<T>(key: string, defaultValue?: T): T {
+export function configGet<T = any>(key: string): T | undefined;
+
+export function configGet<T = any>(key: string, defaultValue: T): T;
+
+export function configGet<T = any>(key: string, defaultValue?: T): T {
   if (valueCache.has(key)) return valueCache.get(key) as T;
   const value = GM_getValue(key, defaultValue);
   valueCache.set(key, value);
