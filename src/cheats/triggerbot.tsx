@@ -8,7 +8,7 @@ const defaultTriggerbot = false;
 
 export function triggerbotHook() {
   inputHooks.push((inputs) => {
-    if (!configGet("triggerbot", defaultTriggerbot)) return;
+    if (!configGet<boolean>("triggerbot", defaultTriggerbot)) return;
 
     if (!inputs[iInputs.scope]) return;
 

@@ -15,7 +15,7 @@ export function bhopHook() {
   let didCrouch = false;
 
   inputHooks.push((inputs) => {
-    if (!configGet("bhop", defaultBhop)) return;
+    if (!configGet<boolean>("bhop", defaultBhop)) return;
 
     const localPlayer = getLocalPlayer();
 

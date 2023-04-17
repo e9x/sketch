@@ -50,7 +50,7 @@ const gameLoad = waitForGameLoad();
 async function main() {
   let krunkbox: KrunkBox | undefined;
 
-  const savedToken = configGet("token", "");
+  const savedToken = configGet<string>("token", "");
 
   const version = await KrunkBox.sketchVersion(sketchVersion, gameVersion);
 

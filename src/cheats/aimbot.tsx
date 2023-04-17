@@ -9,7 +9,6 @@ import {
   inputHooks,
   setMapObjectTransparencyHook,
 } from "../filters";
-import { getKeyName } from "../keys";
 import type { Player } from "../krunker/Player";
 import { isEnemy, pos2D, getXDire, getDir } from "../krunkerUtil";
 import BindHolder, { Bind } from "../menu/components/Bind";
@@ -28,7 +27,7 @@ const defaultAimKey = -1;
 /**
  * Get the position that will be aimed at (eg the head)
  */
-function playerAimPoint(player: Player, hitbox: "head" | "chest") {
+function playerAimPoint(player: Player, hitbox: string) {
   const config = getConfig();
   const game = getGame();
   const { THREE } = game;
@@ -90,7 +89,7 @@ export function aimbotHook() {
   let reloading = 0;
 
   inputHooks.push((inputs) => {
-    const bot = configGet("bot", defaultBot);
+    const bot = configGet<boolean>("bot", defaultBot);
 
     if (!bot) return;
 
@@ -110,15 +109,11 @@ export function aimbotHook() {
   });
 
   inputHooks.push((inputs) => {
-    const aimbot = configGet("aimbot", defaultAimbot);
-    const aimKey = configGet("aimKey", defaultAimKey);
+    const aimbot = configGet<boolean>("aimbot", defaultAimbot);
+    const aimKey = configGet<number>("aimKey", defaultAimKey);
     const game = getGame();
 
-    if (
-      !aimbot ||
-      (aimKey !== -1 && game.controls.keys[getKeyName(aimKey)] !== 1)
-    )
-      return;
+    if (!aimbot || (aimKey !== -1 && game.controls.keys[aimKey] !== 1)) return;
 
     const overlay = getOverlay();
     const localPlayer = getLocalPlayer();
@@ -135,7 +130,7 @@ export function aimbotHook() {
     }
 
     // if (inputs[iInputs.frame] % 10 === 0) console.log(currentReload);
-    const bot = configGet("bot", defaultBot);
+    const bot = configGet<boolean>("bot", defaultBot);
 
     if (bot) {
       if (localPlayer.weapon.noAim === false) {
@@ -158,11 +153,14 @@ export function aimbotHook() {
       overlay.canvas.height / 2
     );
 
-    const frustumCheck = configGet("frustumCheck", defaultFrustumCheck);
+    const frustumCheck = configGet<boolean>(
+      "frustumCheck",
+      defaultFrustumCheck
+    );
     const wallbangs =
-      configGet("wallbangs", defaultWallbangs) &&
+      configGet<boolean>("wallbangs", defaultWallbangs) &&
       localPlayer.weapon.pierce !== undefined;
-    const hitbox = configGet("hitbox", defaultHitbox);
+    const hitbox = configGet<string>("hitbox", defaultHitbox);
 
     const target = game.players.list
       .filter(validTarget)
@@ -220,15 +218,18 @@ export function aimbotHook() {
 }
 
 export function AimbotMenu() {
-  const [aimbot, setAimbot] = useConfig("aimbot", defaultAimbot);
-  const [bot, setBot] = useConfig("bot", defaultBot);
-  const [frustumCheck, setFrustumCheck] = useConfig(
+  const [aimbot, setAimbot] = useConfig<boolean>("aimbot", defaultAimbot);
+  const [bot, setBot] = useConfig<boolean>("bot", defaultBot);
+  const [frustumCheck, setFrustumCheck] = useConfig<boolean>(
     "frustumCheck",
     defaultFrustumCheck
   );
-  const [wallbangs, setWallbangs] = useConfig("wallbangs", defaultWallbangs);
-  const [hitbox, setHitbox] = useConfig("hitbox", defaultHitbox);
-  const [aimKey, setAimKey] = useConfig("aimKey", defaultAimKey);
+  const [wallbangs, setWallbangs] = useConfig<boolean>(
+    "wallbangs",
+    defaultWallbangs
+  );
+  const [hitbox, setHitbox] = useConfig<string>("hitbox", defaultHitbox);
+  const [aimKey, setAimKey] = useConfig<number>("aimKey", defaultAimKey);
 
   return (
     <>

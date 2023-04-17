@@ -13,7 +13,7 @@ import Switch from "../menu/components/Switch";
 export const defaultESP = false;
 
 export function forceNametags() {
-  return configGet("esp", defaultESP);
+  return configGet<boolean>("esp", defaultESP);
 }
 
 export class PlayerRectBounds {
@@ -110,7 +110,7 @@ function playerBox(player: Player) {
 
 export function espHook() {
   renderHooks.push(() => {
-    if (!configGet("esp", defaultESP)) return;
+    if (!configGet<boolean>("esp", defaultESP)) return;
 
     try {
       const overlay = getOverlay();

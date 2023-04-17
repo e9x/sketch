@@ -9,7 +9,7 @@ export function forceAutoHook() {
   let lastShoot = 1;
 
   inputHooks.push((inputs) => {
-    if (!configGet("forceauto", defaultForceAuto)) return;
+    if (!configGet<boolean>("forceAuto", defaultForceAuto)) return;
 
     const localPlayer = getLocalPlayer();
 
@@ -21,7 +21,10 @@ export function forceAutoHook() {
 }
 
 export function ForceAutoMenu() {
-  const [triggerbot, setTriggerbot] = useConfig("forceauto", defaultForceAuto);
+  const [triggerbot, setTriggerbot] = useConfig<boolean>(
+    "forceAuto",
+    defaultForceAuto
+  );
 
   return (
     <Switch
