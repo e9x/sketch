@@ -9,6 +9,12 @@ export declare class Player {
   name: string;
   fakeName: string | null;
   getName(): string;
+  lastGround?: {
+    x: number;
+    y: number;
+    z: number;
+    height: number;
+  };
   isYou: boolean;
   active: boolean;
   objInstances: THREE.Object3D | null;
