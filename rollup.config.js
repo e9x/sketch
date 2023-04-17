@@ -62,14 +62,14 @@ const options = defineConfig([
       nodeResolve({ browser: true }),
       commonjs(),
       json(),
-      !isDevelopment &&
-        obfuscator({
-          exclude: /node_modules/,
-        }),
       replace({
         ...envReplacements,
         preventAssignment: true,
       }),
+      !isDevelopment &&
+        obfuscator({
+          exclude: /node_modules/,
+        }),
       banner(() => "/*eslint-disable*/"),
       metablock({
         file: fileURLToPath(new URL("meta.json", import.meta.url)),
