@@ -1,11 +1,11 @@
 import "./menu/createUI";
-import KrunkBox, { WorkInkErrors } from "./KrunkBox";
+import KrunkBox, { APIError, WorkInkErrors } from "./KrunkBox";
 import { aimbotHook } from "./cheats/aimbot";
 import { bhopHook } from "./cheats/bhop";
 import { espHook, forceNametags } from "./cheats/esp";
 import { forceAutoHook } from "./cheats/forceAuto";
 import { triggerbotHook } from "./cheats/triggerbot";
-import { configGet } from "./config";
+import { configDelete, configGet } from "./config";
 import { discordURL, gameVersion, sketchVersion, workInkURL } from "./consts";
 import type { Module } from "./filters";
 import { matchModule } from "./filters";
@@ -85,6 +85,12 @@ async function main() {
   }
 
   const game = await getInit(krunkbox, hook);
+
+  if (game === APIError.BadToken) {
+    console.error("Invalid token");
+    configDelete("token");
+    location.reload();
+  }
 
   await gameLoad;
 
