@@ -15,7 +15,7 @@ import BindHolder, { Bind } from "../menu/components/Bind";
 import Select from "../menu/components/Select";
 import Slider from "../menu/components/Slider";
 import Switch from "../menu/components/Switch";
-import { random } from "lodash";
+import random from "lodash/random";
 
 const defaultAimbot = "off";
 export const defaultBot = false;
