@@ -54,13 +54,6 @@ async function main() {
 
   const version = await KrunkBox.sketchVersion(sketchVersion, gameVersion);
 
-  if (!version.sketchUpdated) {
-    if (confirm("KrunkSketch isn't updated. Join the Discord for updates?"))
-      GM_openInTab(discordURL);
-
-    return;
-  }
-
   if (version.outdated) {
     if (
       confirm(
@@ -68,6 +61,13 @@ async function main() {
       )
     )
       GM_openInTab(version.updateURL);
+
+    return;
+  }
+
+  if (!version.sketchUpdated) {
+    if (confirm("KrunkSketch isn't updated. Join the Discord for updates?"))
+      GM_openInTab(discordURL);
 
     return;
   }
