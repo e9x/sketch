@@ -87,7 +87,8 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
       getAngleDst(game.controls.object.rotation.y, yD) * smoothFactor;
     render.updateFrustum();
   } else {
-    targetRotation.copy(rotation);
+    rotation.x = targetRotation.x;
+    rotation.y = targetRotation.y;
   }
 
   return rotation;
