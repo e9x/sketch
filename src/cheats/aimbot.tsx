@@ -341,7 +341,7 @@ export function aimbotHook() {
 
       // prevent moving in weird direction
       if (aimbot === "silent") {
-        inputs[iInputs.moveDir] = -1;
+        if (bot) inputs[iInputs.moveDir] = -1;
         inputs[iInputs.xDir] = rotation.x * 1000;
         inputs[iInputs.yDir] = rotation.y * 1000;
       } else {
