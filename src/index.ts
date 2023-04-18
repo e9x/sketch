@@ -90,6 +90,7 @@ async function main() {
     console.error("Invalid token");
     configDelete("token");
     location.reload();
+    return;
   }
 
   await gameLoad;
