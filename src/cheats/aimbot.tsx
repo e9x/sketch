@@ -246,10 +246,17 @@ export function aimbotHook() {
     // the players.shoot() logic does this but we need to see the value as if it already did this logic
     // currentReload isn't updated so we update it locally before shoot()
 
+    const minAimTime = 0.1;
+
+    let aimTime =
+      Math.max(minAimTime, Math.min(inputs[iInputs.frame], getConfig().dltMx)) /
+      localPlayer.deltaDiv;
+    if (!aimTime || aimTime < minAimTime) aimTime = minAimTime;
+
     let currentReload = localPlayer.reloads[localPlayer.loadoutIndex];
 
     if (currentReload) {
-      currentReload -= localPlayer.aimTime;
+      currentReload -= aimTime;
       if (currentReload < 0) currentReload = 0;
     }
 
@@ -267,7 +274,7 @@ export function aimbotHook() {
       // require user input
       switch (aimbot) {
         case "silent":
-          if (!inputs[iInputs.shoot]) return;
+          if (!bot && !inputs[iInputs.shoot]) return;
           break;
         case "smooth":
           if (!inputs[iInputs.scope]) return;

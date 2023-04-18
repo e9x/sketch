@@ -8,6 +8,7 @@ export declare class Player {
   alias: string;
   name: string;
   fakeName: string | null;
+  deltaDiv: number;
   getName(): string;
   lastGround?: {
     x: number;
