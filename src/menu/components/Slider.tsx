@@ -1,10 +1,9 @@
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
-import { useState } from "react";
+import { useRef } from "react";
 import type { ChangeEventHandler } from "react";
 
 export interface SliderProps extends BaseControlProps {
-  value?: number;
   defaultValue?: number;
   min?: number;
   max?: number;
@@ -16,14 +15,14 @@ export default function Slider({
   title,
   attention,
   description,
-  value,
   defaultValue,
   min,
   max,
   step,
   onChange,
 }: SliderProps) {
-  const [localValue, setLocalValue] = useState(value);
+  const numberInput = useRef<HTMLInputElement | null>(null);
+  const rangeInput = useRef<HTMLInputElement | null>(null);
 
   return (
     <Control title={title} attention={attention} description={description}>
@@ -33,23 +32,24 @@ export default function Slider({
         min={min}
         max={max}
         step={step}
-        value={localValue}
         defaultValue={
           typeof defaultValue === "number"
             ? defaultValue.toString()
             : defaultValue
         }
         onChange={(event) => {
-          setLocalValue(event.currentTarget.valueAsNumber);
+          if (rangeInput.current)
+            rangeInput.current.valueAsNumber =
+              event.currentTarget.valueAsNumber;
           if (onChange) onChange.call(undefined as never, event);
         }}
+        ref={numberInput}
         style={{ marginRight: 0, borderWidth: 0 }}
       />
       <div className="slidecontainer" style={{ marginTop: -8 }}>
         <input
           className="sliderM"
           type="range"
-          value={localValue}
           defaultValue={
             typeof defaultValue === "number"
               ? defaultValue.toString()
@@ -59,9 +59,12 @@ export default function Slider({
           max={max}
           step={step}
           onChange={(event) => {
-            setLocalValue(event.currentTarget.valueAsNumber);
+            if (numberInput.current)
+              numberInput.current.valueAsNumber =
+                event.currentTarget.valueAsNumber;
             if (onChange) onChange.call(undefined as never, event);
           }}
+          ref={rangeInput}
         />
       </div>
     </Control>
