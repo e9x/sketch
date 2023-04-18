@@ -112,7 +112,7 @@ async function getToken() {
       "Go to the newly opened tab and follow the instructions. When done, enter your access key here"
     );
     // cancel
-    if (typeof key !== "string") return;
+    if (typeof key !== "string") continue;
     const res = await KrunkBox.processWorkInk(key);
     if (res === WorkInkErrors.BadToken) alert("Bad access key. Try again.");
     else if (res === WorkInkErrors.DuplicateToken)
