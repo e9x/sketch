@@ -23,7 +23,7 @@ const defaultWallbangs = false;
 const defaultFrustumCheck = true;
 const defaultHitbox = "head";
 const defaultAimKey = -1;
-const defaultSmoothFactor = 0.1;
+const defaultSmoothFactor = 1;
 
 /**
  * Get the position that will be aimed at (eg the head)
@@ -46,6 +46,13 @@ function playerAimPoint(player: Player) {
       player.crouchVal * config.crouchAnimMlt,
     player.z
   );
+}
+
+function smoothnessMultiplier(smoothFactor: number) {
+  if (smoothFactor < 0 || smoothFactor > 1) {
+    throw new Error("Smooth factor must be between 0.0 and 1.0");
+  }
+  return 1 - 0.99 * smoothFactor;
 }
 
 function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
@@ -81,10 +88,12 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
   const targetRotation = new THREE.Vector2(xD, yD);
 
   if (aimbot === "smooth") {
+    const realSmoothFactor = smoothnessMultiplier(smoothFactor);
+
     rotation.x +=
-      getAngleDst(game.controls.pchObjc.rotation.x, xD) * smoothFactor;
+      getAngleDst(game.controls.pchObjc.rotation.x, xD) * realSmoothFactor;
     rotation.y +=
-      getAngleDst(game.controls.object.rotation.y, yD) * smoothFactor;
+      getAngleDst(game.controls.object.rotation.y, yD) * realSmoothFactor;
     render.updateFrustum();
   } else {
     rotation.x = targetRotation.x;
@@ -315,9 +324,9 @@ export function AimbotMenu() {
         title="Smooth Factor"
         description="Controls the speed of the aimbot's rotation"
         defaultValue={smoothFactor}
-        min={0.01}
-        max={0.1}
-        step={0.01}
+        min={0}
+        max={1}
+        step={0.05}
         onChange={(event) => setSmoothFactor(event.currentTarget.valueAsNumber)}
       />
       <Switch
