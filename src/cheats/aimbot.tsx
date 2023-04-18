@@ -175,8 +175,13 @@ export function aimbotHook() {
     const game = getGame();
     const { THREE } = game;
 
-    if (aimbot === "off" || (aimKey !== -1 && game.controls.keys[aimKey] !== 1))
+    if (
+      aimbot === "off" ||
+      (aimKey !== -1 && game.controls.keys[aimKey] !== 1)
+    ) {
+      targetPlayer = undefined;
       return;
+    }
 
     const overlay = getOverlay();
     const localPlayer = getLocalPlayer();
