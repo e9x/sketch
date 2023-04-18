@@ -7,6 +7,7 @@ import {
   getOverlay,
   getRender,
   inputHooks,
+  renderHooks,
   setMapObjectTransparencyHook,
 } from "../filters";
 import type { Player } from "../krunker/Player";
@@ -23,7 +24,31 @@ const defaultWallbangs = false;
 const defaultFrustumCheck = true;
 const defaultHitbox = "head";
 const defaultAimKey = -1;
+const defaultFOVRadius = 150;
 const defaultSmoothFactor = 1;
+const defaultDrawFOV = false;
+
+// Function to check if a 2D point is inside a circle
+function isPointInsideCircle(
+  point: THREE.Vector2,
+  circleCenter: THREE.Vector2,
+  radius: number
+) {
+  const distance = point.distanceTo(circleCenter);
+  return distance <= radius;
+}
+
+function drawAimbotCircle(
+  context: CanvasRenderingContext2D,
+  center: THREE.Vector2,
+  radius: number
+): void {
+  context.beginPath();
+  context.arc(center.x, center.y, radius, 0, Math.PI2);
+  context.strokeStyle = "red"; // Set the stroke color
+  context.lineWidth = 2; // Set the stroke width
+  context.stroke();
+}
 
 /**
  * Get the position that will be aimed at (eg the head)
@@ -31,8 +56,7 @@ const defaultSmoothFactor = 1;
 function playerAimPoint(player: Player) {
   const hitbox = configGet<string>("hitbox", defaultHitbox);
   const config = getConfig();
-  const game = getGame();
-  const { THREE } = game;
+  const { THREE } = getGame();
   const hitboxOffset =
     hitbox === "head"
       ? config.headScale / 2
@@ -113,16 +137,26 @@ function validTarget(target: Player) {
   return true;
 }
 
-function validPoint(point: THREE.Vector3) {
+function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
   const game = getGame();
   const render = getRender();
   const localPlayer = getLocalPlayer();
+
   const frustumCheck = configGet<boolean>("frustumCheck", defaultFrustumCheck);
   const wallbangs =
     configGet<boolean>("wallbangs", defaultWallbangs) &&
     localPlayer.weapon.pierce !== undefined;
 
-  if (frustumCheck && !render.frustum.containPoint(point)) return false;
+  if (frustumCheck) {
+    if (!render.frustum.containPoint(point)) return false;
+
+    const fovRadius = configGet<number>("fovRadius", defaultFOVRadius);
+
+    // TODO: reuse pos2D
+    if (!isPointInsideCircle(pos2D(point), center, fovRadius)) {
+      return false;
+    }
+  }
 
   if (wallbangs) setMapObjectTransparencyHook(true);
 
@@ -146,6 +180,29 @@ function validPoint(point: THREE.Vector3) {
 
 export function aimbotHook() {
   let reloading = 0;
+
+  renderHooks.push(() => {
+    try {
+      const overlay = getOverlay();
+      const drawFOV = configGet<boolean>("drawFOV", defaultDrawFOV);
+      if (!drawFOV) return;
+      const fovRadius = configGet<number>("fovRadius", defaultFOVRadius);
+
+      if (drawFOV) {
+        overlay.ctx.save();
+        overlay.ctx.scale(overlay.scale, overlay.scale);
+        const { THREE } = getGame();
+        const center = new THREE.Vector2(
+          innerWidth / overlay.scale / 2,
+          innerHeight / overlay.scale / 2
+        );
+        drawAimbotCircle(overlay.ctx, center, fovRadius);
+        overlay.ctx.restore();
+      }
+    } catch {
+      // sometimes we're a little early
+    }
+  });
 
   inputHooks.push((inputs) => {
     const bot = configGet<boolean>("bot", defaultBot);
@@ -183,7 +240,6 @@ export function aimbotHook() {
       return;
     }
 
-    const overlay = getOverlay();
     const localPlayer = getLocalPlayer();
 
     // calculate exactly when we can shoot
@@ -224,18 +280,20 @@ export function aimbotHook() {
     if (aimbot === "silent" && (currentReload || localPlayer.reloadTimer))
       return;
 
-    const overlayCenter = new game.THREE.Vector2(
-      overlay.canvas.width / 2,
-      overlay.canvas.height / 2
-    );
-
     if (targetPlayer && !validTarget(targetPlayer)) targetPlayer = undefined;
 
     let target: THREE.Vector3 | undefined;
 
+    const overlay = getOverlay();
+
+    const center = new THREE.Vector2(
+      innerWidth / overlay.scale / 2,
+      innerHeight / overlay.scale / 2
+    );
+
     if (targetPlayer) {
       target = playerAimPoint(targetPlayer);
-      if (!validPoint(target)) {
+      if (!validPoint(target, center)) {
         target = undefined;
         targetPlayer = undefined;
       }
@@ -245,12 +303,11 @@ export function aimbotHook() {
       const found = game.players.list
         .filter(validTarget)
         .map((player) => ({ player, point: playerAimPoint(player) }))
-        .filter(({ point }) => validPoint(point))
+        .filter(({ point }) => validPoint(point, center))
         .map(({ player, point }) => ({ player, screen: pos2D(point), point }))
         .sort(
           (p1, p2) =>
-            p1.screen.distanceTo(overlayCenter) -
-            p2.screen.distanceTo(overlayCenter)
+            p1.screen.distanceTo(center) - p2.screen.distanceTo(center)
         )[0];
 
       if (found) {
@@ -305,6 +362,11 @@ export function AimbotMenu() {
     "smoothFactor",
     defaultSmoothFactor
   );
+  const [fovRadius, setFOVRadius] = useConfig<number>(
+    "fovRadius",
+    defaultFOVRadius
+  );
+  const [drawFOV, setDrawFOV] = useConfig<boolean>("drawFOV", defaultDrawFOV);
 
   return (
     <>
@@ -325,6 +387,27 @@ export function AimbotMenu() {
         <option value="smooth">Smooth</option>
         <option value="silent">Silent</option>
       </Select>
+      <Switch
+        title="FOV check"
+        description="Checks if enemies are in your field of view"
+        defaultChecked={frustumCheck}
+        onChange={(event) => setFrustumCheck(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Show FOV"
+        description="Visualizes your FOV"
+        defaultChecked={drawFOV}
+        onChange={(event) => setDrawFOV(event.currentTarget.checked)}
+      />
+      <Slider
+        title="FOV Radius"
+        description="Controls the aimbot FOV"
+        defaultValue={fovRadius}
+        min={0}
+        max={500}
+        step={5}
+        onChange={(event) => setFOVRadius(event.currentTarget.valueAsNumber)}
+      />
       <Slider
         title="Smooth Factor"
         description="Controls the speed of the aimbot's rotation"
@@ -338,12 +421,6 @@ export function AimbotMenu() {
         title="Wallbangs"
         defaultChecked={wallbangs}
         onChange={(event) => setWallbangs(event.currentTarget.checked)}
-      />
-      <Switch
-        title="FOV check"
-        description="Checks if enemies are in your field of view"
-        defaultChecked={frustumCheck}
-        onChange={(event) => setFrustumCheck(event.currentTarget.checked)}
       />
       <Select
         title="Hitbox"
