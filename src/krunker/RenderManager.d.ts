@@ -14,6 +14,7 @@ declare class RenderManager {
     containsPoint: (point: THREE.Vector3) => false;
     containPoint: (point: THREE.Vector3) => boolean;
   };
+  updateFrustum(): void;
   shakeX: number;
   shakeY: number;
 }

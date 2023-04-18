@@ -10,12 +10,12 @@ import {
   setMapObjectTransparencyHook,
 } from "../filters";
 import type { Player } from "../krunker/Player";
-import { isEnemy, pos2D, getXDire, getDir } from "../krunkerUtil";
+import { isEnemy, pos2D, getXDire, getDir, getAngleDst } from "../krunkerUtil";
 import BindHolder, { Bind } from "../menu/components/Bind";
 import Select from "../menu/components/Select";
+import Slider from "../menu/components/Slider";
 import Switch from "../menu/components/Switch";
 import { random } from "lodash";
-import type THREE from "three";
 
 const defaultAimbot = "off";
 export const defaultBot = false;
@@ -23,6 +23,7 @@ const defaultWallbangs = false;
 const defaultFrustumCheck = true;
 const defaultHitbox = "head";
 const defaultAimKey = -1;
+const defaultSmoothFactor = 0.1;
 
 /**
  * Get the position that will be aimed at (eg the head)
@@ -46,52 +47,43 @@ function playerAimPoint(player: Player, hitbox: string) {
   );
 }
 
-function lerp(v0: number, v1: number, t: number) {
-  return v0 * (1 - t) + v1 * t;
-}
+function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
+  const aimbot = configGet<string>("aimbot", defaultAimbot);
+  const smoothFactor = configGet<number>("smoothFactor", defaultSmoothFactor);
 
-function calcRot(
-  rotation: THREE.Vector2,
-  target: THREE.Vector3,
-  aimbot: string
-) {
-  const localPlayer = getLocalPlayer();
-
+  const game = getGame();
   const render = getRender();
+  const localPlayer = getLocalPlayer();
+  const config = getConfig();
 
-  const worldPos = render.fpsCamera.getWorldPosition(
-    new render.THREE.Vector3()
-  );
+  const { THREE } = render;
 
-  const xDire =
-    getXDire(
-      worldPos.x,
-      worldPos.y,
-      worldPos.z,
+  const yD = getDir(localPlayer.z, localPlayer.x, target.z, target.x) || 0;
+
+  const xD =
+    (getXDire(
+      localPlayer.x,
+      localPlayer.y,
+      localPlayer.z,
       target.x,
-      target.y,
+      target.y + localPlayer.crouchVal * config.crouchAnimMlt,
       target.z
-    ) || 0;
-  const yDire = getDir(localPlayer.z, localPlayer.x, target.z, target.x) || 0;
+    ) || 0) -
+    localPlayer.recoilAnimY * config.recoilMlt;
+
+  const targetRotation = new THREE.Vector2(xD, yD);
 
   if (aimbot === "smooth") {
-    const smoothFactor = 0.1; // Adjust this value to control the smoothness (0 to 1)
-
-    rotation.set(
-      lerp(rotation.x, xDire, smoothFactor),
-      lerp(rotation.y, yDire, smoothFactor)
-    );
+    rotation.x +=
+      getAngleDst(game.controls.pchObjc.rotation.x, xD) * smoothFactor;
+    rotation.y +=
+      getAngleDst(game.controls.object.rotation.y, yD) * smoothFactor;
+    render.updateFrustum();
   } else {
-    rotation.set(xDire, yDire);
+    targetRotation.copy(rotation);
   }
 
   return rotation;
-}
-
-function antiRecoil(rotation: THREE.Vector2) {
-  rotation.x -= getRender().shakeY;
-  rotation.x -= getLocalPlayer().recoilAnimY * getConfig().recoilMlt;
-  rotation.x -= getLocalPlayer().landBobY * 0.1;
 }
 
 function validTarget(target: Player) {
@@ -232,9 +224,7 @@ export function aimbotHook() {
         inputs[iInputs.yDir] / 1000
       );
 
-      calcRot(rotation, target, aimbot);
-
-      antiRecoil(rotation);
+      calcRot(rotation, target);
 
       // game.controls.pchObjc.rotation.x = rot.x;
       // game.controls.object.rotation.y = rot.y;
@@ -242,9 +232,8 @@ export function aimbotHook() {
       // game.controls.yDr = game.controls.pchObjc.rotation.x % Math.PI2;
 
       // prevent moving in weird direction
-      inputs[iInputs.moveDir] = -1;
-
       if (aimbot === "silent") {
+        inputs[iInputs.moveDir] = -1;
         inputs[iInputs.xDir] = rotation.x * 1000;
         inputs[iInputs.yDir] = rotation.y * 1000;
       } else {
@@ -268,6 +257,10 @@ export function AimbotMenu() {
   );
   const [hitbox, setHitbox] = useConfig<string>("hitbox", defaultHitbox);
   const [aimKey, setAimKey] = useConfig<number>("aimKey", defaultAimKey);
+  const [smoothFactor, setSmoothFactor] = useConfig<number>(
+    "smoothFactor",
+    defaultSmoothFactor
+  );
 
   return (
     <>
@@ -288,6 +281,15 @@ export function AimbotMenu() {
         <option value="smooth">Smooth</option>
         <option value="silent">Silent</option>
       </Select>
+      <Slider
+        title="Smooth Factor"
+        description="Controls the speed of the aimbot's rotation"
+        defaultValue={smoothFactor}
+        min={0.01}
+        max={0.1}
+        step={0.01}
+        onChange={(event) => setSmoothFactor(event.currentTarget.valueAsNumber)}
+      />
       <Switch
         title="Wallbangs"
         defaultChecked={wallbangs}

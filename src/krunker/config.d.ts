@@ -83,3 +83,5 @@ export declare const spreadRecover: number;
 export declare const spreadAdj: number;
 export declare const spreadMlt: number;
 export declare const recoilMlt: number;
+export declare const camChaseTrn: number;
+export declare const camChaseSpd: number;
