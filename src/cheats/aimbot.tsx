@@ -28,7 +28,8 @@ const defaultSmoothFactor = 0.1;
 /**
  * Get the position that will be aimed at (eg the head)
  */
-function playerAimPoint(player: Player, hitbox: string) {
+function playerAimPoint(player: Player) {
+  const hitbox = configGet<string>("hitbox", defaultHitbox);
   const config = getConfig();
   const game = getGame();
   const { THREE } = game;
@@ -102,6 +103,37 @@ function validTarget(target: Player) {
   return true;
 }
 
+function validPoint(point: THREE.Vector3) {
+  const game = getGame();
+  const render = getRender();
+  const localPlayer = getLocalPlayer();
+  const frustumCheck = configGet<boolean>("frustumCheck", defaultFrustumCheck);
+  const wallbangs =
+    configGet<boolean>("wallbangs", defaultWallbangs) &&
+    localPlayer.weapon.pierce !== undefined;
+
+  if (frustumCheck && !render.frustum.containPoint(point)) return false;
+
+  if (wallbangs) setMapObjectTransparencyHook(true);
+
+  const cs = game.canSee(
+    localPlayer,
+    point.x,
+    point.y,
+    point.z,
+    undefined,
+    undefined,
+    // this sets the transparency value to the penetrable value, so this will skip all the penetrable values here
+    // can't just copy the canSee function because when stolen and used, it's sooo slow
+    wallbangs ? true : undefined
+  );
+  if (wallbangs) setMapObjectTransparencyHook(false);
+
+  if (cs !== null) return false;
+
+  return true;
+}
+
 export function aimbotHook() {
   let reloading = 0;
 
@@ -124,6 +156,8 @@ export function aimbotHook() {
       }
     } else reloading = 0;
   });
+
+  let targetPlayer: Player | undefined;
 
   inputHooks.push((inputs) => {
     const aimbot = configGet<string>("aimbot", defaultAimbot);
@@ -180,46 +214,35 @@ export function aimbotHook() {
       overlay.canvas.height / 2
     );
 
-    const frustumCheck = configGet<boolean>(
-      "frustumCheck",
-      defaultFrustumCheck
-    );
-    const wallbangs =
-      configGet<boolean>("wallbangs", defaultWallbangs) &&
-      localPlayer.weapon.pierce !== undefined;
-    const hitbox = configGet<string>("hitbox", defaultHitbox);
+    if (targetPlayer && !validTarget(targetPlayer)) targetPlayer = undefined;
 
-    const target = game.players.list
-      .filter(validTarget)
-      .map((player) => playerAimPoint(player, hitbox))
-      .filter((point) => {
-        if (frustumCheck && !getRender().frustum.containPoint(point))
-          return false;
+    let target: THREE.Vector3 | undefined;
 
-        if (wallbangs) setMapObjectTransparencyHook(true);
-        const cs = game.canSee(
-          localPlayer,
-          point.x,
-          point.y,
-          point.z,
-          undefined,
-          undefined,
-          // this sets the transparency value to the penetrable value, so this will skip all the penetrable values here
-          // can't just copy the canSee function because when stolen and used, it's sooo slow
-          wallbangs ? true : undefined
-        );
-        if (wallbangs) setMapObjectTransparencyHook(false);
+    if (targetPlayer) {
+      target = playerAimPoint(targetPlayer);
+      if (!validPoint(target)) {
+        target = undefined;
+        targetPlayer = undefined;
+      }
+    }
 
-        if (cs !== null) return false;
+    if (!targetPlayer) {
+      const found = game.players.list
+        .filter(validTarget)
+        .map((player) => ({ player, point: playerAimPoint(player) }))
+        .filter(({ point }) => validPoint(point))
+        .map(({ player, point }) => ({ player, screen: pos2D(point), point }))
+        .sort(
+          (p1, p2) =>
+            p1.screen.distanceTo(overlayCenter) -
+            p2.screen.distanceTo(overlayCenter)
+        )[0];
 
-        return true;
-      })
-      .map((point) => ({ screen: pos2D(point), point }))
-      .sort(
-        (p1, p2) =>
-          p1.screen.distanceTo(overlayCenter) -
-          p2.screen.distanceTo(overlayCenter)
-      )[0]?.point;
+      if (found) {
+        targetPlayer = found.player;
+        target = found.point;
+      }
+    }
 
     if (target) {
       if (bot) inputs[iInputs.shoot] = 1;
