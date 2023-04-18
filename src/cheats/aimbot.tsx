@@ -58,15 +58,21 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
 
   const { THREE } = render;
 
-  const yD = getDir(localPlayer.z, localPlayer.x, target.z, target.x) || 0;
+  const yD =
+    getDir(
+      game.controls.object.position.z,
+      game.controls.object.position.x,
+      target.z,
+      target.x
+    ) || 0;
 
   const xD =
     (getXDire(
-      localPlayer.x,
-      localPlayer.y,
-      localPlayer.z,
+      game.controls.object.position.x,
+      game.controls.object.position.y,
+      game.controls.object.position.z,
       target.x,
-      target.y + localPlayer.crouchVal * config.crouchAnimMlt,
+      target.y,
       target.z
     ) || 0) -
     localPlayer.recoilAnimY * config.recoilMlt;
