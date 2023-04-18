@@ -13,6 +13,12 @@ export function bhopHook() {
   // negative = still increasing in velocity
   let zeroSome = 0;
   let didCrouch = false;
+  let bhopTimer = 0;
+  let bhopping = 0;
+
+  // average recorded natural interval
+  // not wallhops
+  const bhopDelay = 100;
 
   inputHooks.push((inputs) => {
     if (!configGet<boolean>("bhop", defaultBhop)) return;
@@ -22,28 +28,46 @@ export function bhopHook() {
     if (!localPlayer) return;
 
     if (inputs[iInputs.jump]) {
-      inputs[iInputs.jump] =
-        localPlayer.onGround || (localPlayer.wallJump && localPlayer.onWall)
-          ? lastJump
-          : 0;
-      lastJump ^= 1;
+      const canWallJump = localPlayer.wallJump && localPlayer.onWall;
+      const canBhop = canWallJump || localPlayer.onGround;
 
-      // ~~if crouch isn't already held, override crouch~~
-      // if(!inputs[iInputs.crouch])
+      if (canBhop) {
+        const period = Date.now() - bhopTimer;
 
-      // if crouch is held, slidehop
-      if (inputs[iInputs.crouch]) {
-        // pick a new "zeroSome" everytime we slidehop
-        // otherwise they will randomly start/stop crouching as zeroSome is recalculated
-        // the users will appear to be relatively accurate with slidehopping
-        if (!didCrouch) zeroSome = random(-0.015, 0.005, true);
+        bhopTimer = Date.now();
 
-        inputs[iInputs.crouch] =
-          (localPlayer.velocity.y || 0) < zeroSome ? 1 : 0;
-        if (inputs[iInputs.crouch]) didCrouch = true;
-      } else {
-        didCrouch = false;
-      }
+        // keep sending the input until we hit the "time limit" for bhopping, declared when bhopping = ...
+        if (
+          (bhopping === 0 && (canWallJump || period > bhopDelay)) ||
+          inputs[iInputs.frame] < bhopping
+        ) {
+          inputs[iInputs.jump] = canBhop ? lastJump : 0;
+          lastJump ^= 1;
+
+          // reload for a random amount of frames to simulate pressing it
+          // set bhopping only as soon as we start holding the input down
+          if (bhopping === 0) bhopping = inputs[iInputs.frame] + random(3, 8);
+        }
+      } else bhopping = 0;
+    } else {
+      bhopping = 0;
+      bhopTimer = 0;
+    }
+
+    // ~~if crouch isn't already held, override crouch~~
+    // if(!inputs[iInputs.crouch])
+
+    // if crouch is held, slidehop
+    if (inputs[iInputs.crouch]) {
+      // pick a new "zeroSome" everytime we slidehop
+      // otherwise they will randomly start/stop crouching as zeroSome is recalculated
+      // the users will appear to be relatively accurate with slidehopping
+      if (!didCrouch) zeroSome = random(-0.015, 0.005, true);
+
+      inputs[iInputs.crouch] = (localPlayer.velocity.y || 0) < zeroSome ? 1 : 0;
+      if (inputs[iInputs.crouch]) didCrouch = true;
+    } else {
+      didCrouch = false;
     }
   });
 }
