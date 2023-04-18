@@ -59,8 +59,11 @@ async function main() {
       confirm(
         `KrunkSketch is outdated. You have ${sketchVersion} but the latest is ${version.latestVersion}. Update?`
       )
-    )
+    ) {
       GM_openInTab(version.updateURL);
+      alert("Click OK when done.");
+      location.reload();
+    }
 
     return;
   }
