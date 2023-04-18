@@ -93,8 +93,8 @@ export function pos2D(input: THREE.Vector3, offsetY = 0) {
   vec.project(render.camera);
   vec.x = (vec.x + 1) / 2;
   vec.y = (-vec.y + 1) / 2;
-  vec.x *= innerWidth / overlay.scale!;
-  vec.y *= innerHeight / overlay.scale!;
+  vec.x *= innerWidth / overlay.scale;
+  vec.y *= innerHeight / overlay.scale;
 
   return new render.THREE.Vector2(vec.x, vec.y);
 }
