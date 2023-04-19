@@ -105,7 +105,11 @@ function KeyBeg() {
       <h1>Get your access key for Sketch.</h1>
       <p>
         In order to pay for servers and development, we've partnered with
-        WorkInk. Click <a href={workInkURL}>here</a> to get your access key.
+        WorkInk. Click{" "}
+        <a target="_blank" href={workInkURL}>
+          here
+        </a>{" "}
+        to get your access key.
       </p>
       {error && <p style={{ fontSize: "10px", color: "red" }}>{error}</p>}
       <form
