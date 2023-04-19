@@ -46,7 +46,7 @@ const envReplacements = {
  */
 const options = defineConfig([
   {
-    input: "./src/index.ts",
+    input: "./src/index.tsx",
     output: {
       file: fileURLToPath(new URL("dist/sketch.user.js", import.meta.url)),
       format: "cjs",
