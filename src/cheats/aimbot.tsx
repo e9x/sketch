@@ -11,7 +11,14 @@ import {
   setMapObjectTransparencyHook,
 } from "../filters";
 import type { Player } from "../krunker/Player";
-import { isEnemy, pos2D, getXDire, getDir, getAngleDst } from "../krunkerUtil";
+import {
+  isEnemy,
+  pos2D,
+  getXDire,
+  getDir,
+  getAngleDst,
+  getCurrentReload,
+} from "../krunkerUtil";
 import BindHolder, { Bind } from "../menu/components/Bind";
 import Select from "../menu/components/Select";
 import Slider from "../menu/components/Slider";
@@ -242,24 +249,6 @@ export function aimbotHook() {
 
     const localPlayer = getLocalPlayer();
 
-    // calculate exactly when we can shoot
-    // the players.shoot() logic does this but we need to see the value as if it already did this logic
-    // currentReload isn't updated so we update it locally before shoot()
-
-    const minAimTime = 0.1;
-
-    let aimTime =
-      Math.max(minAimTime, Math.min(inputs[iInputs.frame], getConfig().dltMx)) /
-      localPlayer.deltaDiv;
-    if (!aimTime || aimTime < minAimTime) aimTime = minAimTime;
-
-    let currentReload = localPlayer.reloads[localPlayer.loadoutIndex];
-
-    if (currentReload) {
-      currentReload -= aimTime;
-      if (currentReload < 0) currentReload = 0;
-    }
-
     // if (inputs[iInputs.frame] % 10 === 0) console.log(currentReload);
     const bot = configGet<boolean>("bot", defaultBot);
 
@@ -284,7 +273,10 @@ export function aimbotHook() {
 
     // if the weapon can't shoot
     // maybe use cantShootTimer?
-    if (aimbot === "silent" && (currentReload || localPlayer.reloadTimer))
+    if (
+      aimbot === "silent" &&
+      (getCurrentReload(inputs) || localPlayer.reloadTimer)
+    )
       return;
 
     if (targetPlayer && !validTarget(targetPlayer)) targetPlayer = undefined;

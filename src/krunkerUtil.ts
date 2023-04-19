@@ -1,5 +1,13 @@
 /* eslint-disable no-var */
-import { getGame, getLocalPlayer, getOverlay, getRender } from "./filters";
+
+import { iInputs } from "./consts";
+import {
+  getConfig,
+  getGame,
+  getLocalPlayer,
+  getOverlay,
+  getRender,
+} from "./filters";
 import type { Player } from "./krunker/Player";
 import type THREE from "three";
 
@@ -132,4 +140,28 @@ export function progressOnLine(
     (ux * (x3 - x1) + uy * (y3 - y1)) /
     Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
   );
+}
+
+export function getCurrentReload(inputs: number[]) {
+  const localPlayer = getLocalPlayer();
+
+  // calculate exactly when we can shoot
+  // the players.shoot() logic does this but we need to see the value as if it already did this logic
+  // currentReload isn't updated so we update it locally before shoot()
+
+  const minAimTime = 0.1;
+
+  let aimTime =
+    Math.max(minAimTime, Math.min(inputs[iInputs.frame], getConfig().dltMx)) /
+    localPlayer.deltaDiv;
+  if (!aimTime || aimTime < minAimTime) aimTime = minAimTime;
+
+  let currentReload = localPlayer.reloads[localPlayer.loadoutIndex];
+
+  if (currentReload) {
+    currentReload -= aimTime;
+    if (currentReload < 0) currentReload = 0;
+  }
+
+  return currentReload;
 }
