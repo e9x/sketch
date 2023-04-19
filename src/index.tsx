@@ -5,11 +5,13 @@ import { bhopHook } from "./cheats/bhop";
 import { espHook, forceNametags } from "./cheats/esp";
 import { forceAutoHook } from "./cheats/forceAuto";
 import { triggerbotHook } from "./cheats/triggerbot";
-import { configDelete, configGet } from "./config";
+import { configDelete, configGet, configSet } from "./config";
 import { discordURL, gameVersion, sketchVersion, workInkURL } from "./consts";
 import type { Module } from "./filters";
 import { matchModule } from "./filters";
 import { getInit, waitForGameLoad } from "./inject";
+import { useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
 
 aimbotHook();
 bhopHook();
@@ -45,52 +47,105 @@ const hook = (dataArg: string, src: string) => {
   };
 };
 
+function newRoot() {
+  const overlay = document.createElement("div");
+
+  Object.assign(overlay.style, {
+    position: "fixed",
+    top: "0",
+    left: "0",
+    width: "100vw",
+    height: "100vh",
+    backgroundColor: "white",
+    zIndex: `${1e9}`,
+    padding: "8px",
+  } as CSSStyleDeclaration);
+
+  const root = createRoot(overlay);
+
+  document.documentElement.append(overlay);
+
+  return root;
+}
+
 const gameLoad = waitForGameLoad();
 
 async function main() {
-  let krunkbox: KrunkBox | undefined;
-
-  const savedToken = configGet<string>("token", "");
+  const savedToken = configGet<string>("token");
 
   const version = await KrunkBox.sketchVersion(sketchVersion, gameVersion);
 
-  if (version.outdated) {
-    if (
-      confirm(
-        `KrunkSketch is outdated. You have ${sketchVersion} but the latest is ${version.latestVersion}. Update?`
-      )
-    ) {
-      GM_openInTab(version.updateURL);
-      alert("Click OK when done.");
-      location.reload();
-    }
+  if (version.outdated) return location.assign(version.updateURL);
 
-    return;
+  if (!version.sketchUpdated)
+    return newRoot().render(
+      <>
+        <h1>Sketch isn't updated.</h1>
+        <a href={discordURL}>Discord server</a>
+      </>
+    );
+
+  if (savedToken) {
+    const krunkbox = new KrunkBox(savedToken);
+    if (await krunkbox.valid()) return init(krunkbox);
   }
 
-  if (!version.sketchUpdated) {
-    if (confirm("KrunkSketch isn't updated. Join the Discord for updates?"))
-      GM_openInTab(discordURL);
+  const root = newRoot();
 
-    return;
-  }
+  root.render(<KeyBeg />);
+}
 
-  if (savedToken) krunkbox = new KrunkBox(savedToken);
+function KeyBeg() {
+  const key = useRef<HTMLInputElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  while (!krunkbox) {
-    const apiToken = await getToken();
+  return (
+    <>
+      <h1>Get your access key for Sketch.</h1>
+      <p>
+        In order to pay for servers and development, we've partnered with
+        WorkInk. Click <a href={workInkURL}>here</a> to get your access key.
+      </p>
+      {error && <p style={{ fontSize: "10px", color: "red" }}>{error}</p>}
+      <form
+        style={{ display: "flex", flexDirection: "row", gap: 5 }}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!key.current) return;
 
-    if (!apiToken) return; // aborted
+          setBusy(true);
 
-    krunkbox = new KrunkBox(apiToken);
+          KrunkBox.processWorkInk(key.current.value)
+            .then((res) => {
+              switch (res) {
+                case WorkInkErrors.BadToken:
+                  setError("Bad access key. Try again.");
+                  break;
+                case WorkInkErrors.DuplicateToken:
+                  setError("Access key already used. Try again.");
+                  break;
+                default:
+                  configSet<string>("token", res);
+                  location.reload();
+              }
+            })
+            .finally(() => setBusy(false));
+        }}
+      >
+        <input type="text" placeholder="Access Key" disabled={busy} ref={key} />
+        <input type="submit" value="Done" disabled={busy} />
+      </form>
+    </>
+  );
+}
 
-    if (!(await krunkbox.valid())) krunkbox = undefined;
-  }
+main();
 
+async function init(krunkbox: KrunkBox) {
   const game = await getInit(krunkbox, hook);
 
   if (game === APIError.BadToken) {
-    console.error("Invalid token");
     configDelete("token");
     location.reload();
     return;
@@ -99,29 +154,4 @@ async function main() {
   await gameLoad;
 
   game();
-}
-
-main();
-
-async function getToken() {
-  let token: string | undefined;
-
-  while (!token) {
-    GM_openInTab(workInkURL);
-    const key = prompt(
-      "Go to the newly opened tab and follow the instructions. When done, enter your access key here"
-    );
-    // cancel
-    if (typeof key !== "string") continue;
-    const res = await KrunkBox.processWorkInk(key);
-    if (res === WorkInkErrors.BadToken) alert("Bad access key. Try again.");
-    else if (res === WorkInkErrors.DuplicateToken)
-      alert("Access key already used. Try again.");
-    else {
-      token = res;
-      break;
-    }
-  }
-
-  return token;
 }

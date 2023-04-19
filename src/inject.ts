@@ -1,10 +1,7 @@
 import type KrunkBox from "./KrunkBox";
 import { APIError } from "./KrunkBox";
 
-export type Hook<Data> = (
-  dataArg: string,
-  src: string
-) => { data: Data; src: string };
+type Hook<Data> = (dataArg: string, src: string) => { data: Data; src: string };
 
 export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
   const [token, source] = await Promise.all([
