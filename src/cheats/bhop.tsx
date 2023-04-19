@@ -7,7 +7,6 @@ import random from "lodash/random";
 const defaultBhop = false;
 
 export function bhopHook() {
-  let lastJump = 0;
   // value between -1 and 1 that determines the velocity to start slidehopping at
   // positive = going down
   // negative = still increasing in velocity
@@ -18,7 +17,7 @@ export function bhopHook() {
 
   // average recorded natural interval
   // not wallhops
-  const bhopDelay = 100;
+  const bhopDelay = 80;
 
   inputHooks.push((inputs) => {
     if (!configGet<boolean>("bhop", defaultBhop)) return;
@@ -31,24 +30,21 @@ export function bhopHook() {
       const canWallJump = localPlayer.wallJump && localPlayer.onWall;
       const canBhop = canWallJump || localPlayer.onGround;
 
-      if (canBhop) {
-        const period = Date.now() - bhopTimer;
+      const period = Date.now() - bhopTimer;
 
+      const bhopTime = !bhopping || period > bhopDelay;
+
+      const mustBhop = inputs[iInputs.frame] < bhopping;
+
+      // reload for a random amount of frames to simulate pressing it
+      // set bhopping only as soon as we start holding the input down
+      if (canBhop && bhopTime) {
         bhopTimer = Date.now();
-
-        // keep sending the input until we hit the "time limit" for bhopping, declared when bhopping = ...
-        if (
-          (bhopping === 0 && period > bhopDelay) ||
-          inputs[iInputs.frame] < bhopping
-        ) {
-          inputs[iInputs.jump] = canBhop ? lastJump : 0;
-          lastJump ^= 1;
-
-          // reload for a random amount of frames to simulate pressing it
-          // set bhopping only as soon as we start holding the input down
-          if (bhopping === 0) bhopping = inputs[iInputs.frame] + random(3, 8);
-        }
-      } else bhopping = 0;
+        bhopping = inputs[iInputs.frame] + random(3, 8);
+        inputs[iInputs.jump] = 1;
+      } else {
+        inputs[iInputs.jump] = mustBhop ? 1 : 0;
+      }
     } else {
       bhopping = 0;
       bhopTimer = 0;
