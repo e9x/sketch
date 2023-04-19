@@ -232,6 +232,7 @@ export function aimbotHook() {
   });
 
   let targetPlayer: Player | undefined;
+  let aimKeyHeld = false;
 
   inputHooks.push((inputs) => {
     const aimbot = configGet<string>("aimbot", defaultAimbot);
@@ -244,8 +245,13 @@ export function aimbotHook() {
       (aimKey !== -1 && game.controls.keys[aimKey] !== 1)
     ) {
       targetPlayer = undefined;
+      aimKeyHeld = false;
       return;
     }
+
+    const canPickTarget = aimKey === -1 || !aimKeyHeld;
+
+    aimKeyHeld = true;
 
     const localPlayer = getLocalPlayer();
 
@@ -298,7 +304,7 @@ export function aimbotHook() {
       }
     }
 
-    if (!targetPlayer) {
+    if (!targetPlayer && canPickTarget) {
       const found = game.players.list
         .filter(validTarget)
         .map((player) => ({ player, point: playerAimPoint(player) }))
@@ -366,6 +372,10 @@ export function AimbotMenu() {
     defaultFOVRadius
   );
   const [drawFOV, setDrawFOV] = useConfig<boolean>("drawFOV", defaultDrawFOV);
+  const [targetOnAimKey, setTargetAimOnKey] = useConfig<boolean>(
+    "targetOnAimKey",
+    defaultDrawFOV
+  );
 
   return (
     <>
@@ -392,12 +402,6 @@ export function AimbotMenu() {
         defaultChecked={frustumCheck}
         onChange={(event) => setFrustumCheck(event.currentTarget.checked)}
       />
-      <Switch
-        title="Show FOV"
-        description="Visualizes your FOV"
-        defaultChecked={drawFOV}
-        onChange={(event) => setDrawFOV(event.currentTarget.checked)}
-      />
       <Slider
         title="FOV Radius"
         description="Controls the aimbot FOV"
@@ -406,6 +410,18 @@ export function AimbotMenu() {
         max={500}
         step={5}
         onChange={(event) => setFOVRadius(event.currentTarget.valueAsNumber)}
+      />
+      <Switch
+        title="Target on Aim Key"
+        description="Picks a target as soon as the aim key is pressed, and won't lock onto a new target until it's pressed again."
+        defaultChecked={targetOnAimKey}
+        onChange={(event) => setTargetAimOnKey(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Show FOV"
+        description="Visualizes your FOV"
+        defaultChecked={drawFOV}
+        onChange={(event) => setDrawFOV(event.currentTarget.checked)}
       />
       <Slider
         title="Smooth Factor"
