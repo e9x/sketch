@@ -38,7 +38,7 @@ export function bhopHook() {
 
         // keep sending the input until we hit the "time limit" for bhopping, declared when bhopping = ...
         if (
-          (bhopping === 0 && (canWallJump || period > bhopDelay)) ||
+          (bhopping === 0 && period > bhopDelay) ||
           inputs[iInputs.frame] < bhopping
         ) {
           inputs[iInputs.jump] = canBhop ? lastJump : 0;
