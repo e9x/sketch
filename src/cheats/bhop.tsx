@@ -6,11 +6,16 @@ import random from "lodash/random";
 
 const defaultBhop = false;
 
+function pickZeroSome() {
+  return random(-0.015, 0.005, true);
+}
+
 export function bhopHook() {
   // value between -1 and 1 that determines the velocity to start slidehopping at
   // positive = going down
   // negative = still increasing in velocity
-  let zeroSome = 0;
+  let zeroSome = pickZeroSome();
+  let nextZeroSome = pickZeroSome();
   let didCrouch = false;
   let bhopTimer = 0;
   let bhopping = 0;
@@ -54,13 +59,20 @@ export function bhopHook() {
 
     // if crouch is held, slidehop
     if (inputs[iInputs.crouch]) {
+      if (!didCrouch) {
+        zeroSome = nextZeroSome;
+      }
+
       // pick a new "zeroSome" everytime we slidehop
       // otherwise they will randomly start/stop crouching as zeroSome is recalculated
       // the users will appear to be relatively accurate with slidehopping
-      if (!didCrouch) zeroSome = random(-0.015, 0.005, true);
+      const willCrouch = (localPlayer.velocity.y || 0) < zeroSome;
 
-      inputs[iInputs.crouch] = (localPlayer.velocity.y || 0) < zeroSome ? 1 : 0;
-      if (inputs[iInputs.crouch]) didCrouch = true;
+      inputs[iInputs.crouch] = willCrouch ? 1 : 0;
+
+      if (!didCrouch && willCrouch) nextZeroSome = pickZeroSome();
+
+      didCrouch = willCrouch;
     } else {
       didCrouch = false;
     }
