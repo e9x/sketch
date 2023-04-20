@@ -3,7 +3,10 @@ import { BhopMenu } from "../cheats/bhop";
 import { ESPMenu } from "../cheats/esp";
 import { ForceAutoMenu } from "../cheats/forceAuto";
 import { TriggerbotMenu } from "../cheats/triggerbot";
-import { Set } from "./components/Set";
+import { discordURL } from "../consts";
+import Control from "./components/Control";
+import Link from "./components/Link";
+import { HeadlessSet, Set } from "./components/Set";
 
 export default function Menu() {
   return (
@@ -19,6 +22,10 @@ export default function Menu() {
       <Set title="ESP">
         <ESPMenu />
       </Set>
+      <HeadlessSet>
+        <Link title="Discord Server" href={discordURL} />
+        <Control title="The Gaming Gurus" />
+      </HeadlessSet>
     </>
   );
 }
