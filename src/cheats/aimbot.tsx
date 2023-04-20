@@ -250,13 +250,6 @@ export function aimbotHook() {
       return;
     }
 
-    const canPickTarget =
-      !configGet<boolean>("targetOnAimKey", defaultTargetOnAimKey) ||
-      aimKey === -1 ||
-      !aimKeyHeld;
-
-    aimKeyHeld = true;
-
     const localPlayer = getLocalPlayer();
 
     // if (inputs[iInputs.frame] % 10 === 0) console.log(currentReload);
@@ -307,6 +300,14 @@ export function aimbotHook() {
         targetPlayer = undefined;
       }
     }
+
+    // do this logic only after checking stuff such as aimbot silent and timers
+    const canPickTarget =
+      !configGet<boolean>("targetOnAimKey", defaultTargetOnAimKey) ||
+      aimKey === -1 ||
+      !aimKeyHeld;
+
+    aimKeyHeld = true;
 
     if (!targetPlayer && canPickTarget) {
       const found = game.players.list
