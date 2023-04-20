@@ -5,12 +5,11 @@ import Switch from "../menu/components/Switch";
 import random from "lodash/random";
 
 const defaultBhop = false;
+const defaultLegitBhop = true;
 
 function pickZeroSome() {
   return random(-0.015, 0.005, true);
 }
-
-const legitBhop = true;
 
 function isBhoppable() {
   const localPlayer = getLocalPlayer();
@@ -42,7 +41,7 @@ export function bhopHook() {
 
     if (!localPlayer) return;
 
-    if (!legitBhop) {
+    if (!configGet<boolean>("legitBhop", defaultLegitBhop)) {
       if (inputs[iInputs.jump]) {
         if (isBhoppable()) {
           lastBhop ^= 1;
@@ -101,14 +100,26 @@ export function bhopHook() {
 }
 
 export function BhopMenu() {
-  const [bhop, setBhop] = useConfig("bhop", defaultBhop);
+  const [bhop, setBhop] = useConfig<boolean>("bhop", defaultBhop);
+  const [legitBhop, setLegitBhop] = useConfig<boolean>(
+    "legitBhop",
+    defaultLegitBhop
+  );
 
   return (
-    <Switch
-      title="Bhop"
-      description="Hold space to bhop and crouch to slidehop."
-      defaultChecked={bhop}
-      onChange={(event) => setBhop(event.currentTarget.checked)}
-    />
+    <>
+      <Switch
+        title="Bhop"
+        description="Hold space to bhop and crouch to slidehop."
+        defaultChecked={bhop}
+        onChange={(event) => setBhop(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Legit Bhop"
+        description="If Bhop should be super accurate or balanced."
+        defaultChecked={legitBhop}
+        onChange={(event) => setLegitBhop(event.currentTarget.checked)}
+      />
+    </>
   );
 }
