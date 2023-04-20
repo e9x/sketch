@@ -301,7 +301,7 @@ export function aimbotHook() {
       }
     }
 
-    // do this logic only after checking stuff such as aimbot silent and timers
+    // do this logic only after checking stuff such as aimbot silent and timer
     const canPickTarget =
       !configGet<boolean>("targetOnAimKey", defaultTargetOnAimKey) ||
       aimKey === -1 ||
