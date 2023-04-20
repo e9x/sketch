@@ -34,6 +34,7 @@ const defaultAimKey = -1;
 const defaultFOVRadius = 150;
 const defaultSmoothFactor = 1;
 const defaultDrawFOV = false;
+const defaultTargetOnAimKey = false;
 
 // Function to check if a 2D point is inside a circle
 function isPointInsideCircle(
@@ -249,7 +250,10 @@ export function aimbotHook() {
       return;
     }
 
-    const canPickTarget = aimKey === -1 || !aimKeyHeld;
+    const canPickTarget =
+      !configGet<boolean>("targetOnAimKey", defaultTargetOnAimKey) ||
+      aimKey === -1 ||
+      !aimKeyHeld;
 
     aimKeyHeld = true;
 
@@ -374,7 +378,7 @@ export function AimbotMenu() {
   const [drawFOV, setDrawFOV] = useConfig<boolean>("drawFOV", defaultDrawFOV);
   const [targetOnAimKey, setTargetAimOnKey] = useConfig<boolean>(
     "targetOnAimKey",
-    defaultDrawFOV
+    defaultTargetOnAimKey
   );
 
   return (
