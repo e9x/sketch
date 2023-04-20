@@ -1,3 +1,4 @@
+import type AIManager from "./AI";
 import type MapObject from "./Object";
 import type { Player, manager } from "./Player";
 import type Terrain from "./Terrain";
@@ -5,9 +6,7 @@ import type THREE from "three";
 
 declare class Game {
   constructor(...args: unknown[]);
-  AI: {
-    ais: unknown[];
-  };
+  AI: AIManager;
   mode: {
     noHPbars?: boolean;
     fakeNames?: boolean;
