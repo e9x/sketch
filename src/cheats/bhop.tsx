@@ -41,19 +41,7 @@ export function bhopHook() {
 
     if (!localPlayer) return;
 
-    if (!configGet<boolean>("legitBhop", defaultLegitBhop)) {
-      if (inputs[iInputs.jump]) {
-        if (isBhoppable()) {
-          lastBhop ^= 1;
-          inputs[iInputs.jump] = lastBhop;
-        } else {
-          lastBhop = 0;
-        }
-      }
-
-      if (inputs[iInputs.crouch])
-        inputs[iInputs.crouch] = localPlayer.velocity.y < 0 ? 1 : 0;
-    } else {
+    if (configGet<boolean>("legitBhop", defaultLegitBhop)) {
       if (inputs[iInputs.jump]) {
         const canBhop = isBhoppable() && Date.now() - bhopTimer > bhopDelay;
 
@@ -95,6 +83,18 @@ export function bhopHook() {
       } else {
         didCrouch = false;
       }
+    } else {
+      if (inputs[iInputs.jump]) {
+        if (isBhoppable()) {
+          lastBhop ^= 1;
+          inputs[iInputs.jump] = lastBhop;
+        } else {
+          lastBhop = 0;
+        }
+      }
+
+      if (inputs[iInputs.crouch])
+        inputs[iInputs.crouch] = localPlayer.velocity.y < 0 ? 1 : 0;
     }
   });
 }
