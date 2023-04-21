@@ -12,6 +12,8 @@ if (!sketchVersion) throw new TypeError("Invalid SKETCH_VERSION");
 
 export const discordURL = "https://y9x.github.io/discord/";
 
+export const docsURL = "https://sketch.sys32.dev/";
+
 export const isDevelopment = process.env.NODE_ENV !== "PRODUCTION";
 
 export function getDevURL() {
