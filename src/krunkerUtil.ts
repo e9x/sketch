@@ -142,19 +142,48 @@ export function progressOnLine(
   );
 }
 
-export function getCurrentReload(inputs: number[]) {
+export function getAimTime(inputs: number[]) {
   const localPlayer = getLocalPlayer();
-
-  // calculate exactly when we can shoot
-  // the players.shoot() logic does this but we need to see the value as if it already did this logic
-  // currentReload isn't updated so we update it locally before shoot()
-
   const minAimTime = 0.1;
 
   let aimTime =
     Math.max(minAimTime, Math.min(inputs[iInputs.frame], getConfig().dltMx)) /
     localPlayer.deltaDiv;
   if (!aimTime || aimTime < minAimTime) aimTime = minAimTime;
+
+  return aimTime;
+}
+
+export function getCurrentReloadTimer(aimTime: number) {
+  const localPlayer = getLocalPlayer();
+  let reloadTimer = localPlayer.reloadTimer;
+
+  if (reloadTimer > 0) {
+    reloadTimer -= aimTime;
+    if (reloadTimer <= 0) reloadTimer = 0;
+  }
+
+  return reloadTimer;
+}
+
+export function getCurrentSwapTime(aimTime: number) {
+  const localPlayer = getLocalPlayer();
+  let swapTime = localPlayer.swapTime;
+
+  if (swapTime > 0) {
+    swapTime -= aimTime;
+    if (swapTime < 0) swapTime = 0;
+  }
+
+  return swapTime;
+}
+
+export function getCurrentReload(aimTime: number) {
+  const localPlayer = getLocalPlayer();
+
+  // calculate exactly when we can shoot
+  // the players.shoot() logic does this but we need to see the value as if it already did this logic
+  // currentReload isn't updated so we update it locally before shoot()
 
   let currentReload = localPlayer.reloads[localPlayer.loadoutIndex];
 

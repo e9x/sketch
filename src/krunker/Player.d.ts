@@ -9,6 +9,7 @@ export declare class Player {
   name: string;
   fakeName: string | null;
   deltaDiv: number;
+  didShoot: boolean;
   getName(): string;
   lastGround?: {
     x: number;
@@ -26,6 +27,7 @@ export declare class Player {
   health: number;
   hpChase: number;
   headMlt: number;
+  swapTime: number;
   reloadTimer: number;
   isPlayer: true;
   scale: number;

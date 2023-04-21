@@ -18,6 +18,9 @@ import {
   getDir,
   getAngleDst,
   getCurrentReload,
+  getAimTime,
+  getCurrentSwapTime,
+  getCurrentReloadTimer,
 } from "../krunkerUtil";
 import BindHolder, { Bind } from "../menu/components/Bind";
 import Select from "../menu/components/Select";
@@ -276,11 +279,17 @@ export function aimbotHook() {
 
     // if the weapon can't shoot
     // maybe use cantShootTimer?
-    if (
-      aimbot === "silent" &&
-      (getCurrentReload(inputs) || localPlayer.reloadTimer)
-    )
-      return;
+    if (aimbot === "silent") {
+      const aimTime = getAimTime(inputs);
+
+      // 295.js: if (this.reloads[this.loadoutIndex] <= 0 && this.swapTime <= 0 && this.reloadTimer <= 0) {
+      if (
+        getCurrentReload(aimTime) > 0 ||
+        getCurrentSwapTime(aimTime) > 0 ||
+        getCurrentReloadTimer(aimTime) > 0
+      )
+        return;
+    }
 
     if (targetPlayer && !validTarget(targetPlayer)) targetPlayer = undefined;
 
