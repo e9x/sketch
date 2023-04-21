@@ -105,7 +105,7 @@ const options = defineConfig([
             metablock({
               file: fileURLToPath(new URL("meta.json", import.meta.url)),
               override: {
-                name: "KrunkSketch DEV",
+                name: "Sketch DEV",
                 author: pkg.author,
                 description: pkg.description,
                 version: pkg.version,
