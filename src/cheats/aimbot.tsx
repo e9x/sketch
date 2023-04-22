@@ -22,7 +22,6 @@ import {
   getCurrentSwapTime,
   getCurrentReloadTimer,
   isInMenus,
-  isInGame,
 } from "../krunkerUtil";
 import BindHolder, { Bind } from "../menu/components/Bind";
 import Select from "../menu/components/Select";
