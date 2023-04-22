@@ -1,6 +1,5 @@
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
-import { useRef } from "react";
 import type { ChangeEventHandler } from "react";
 
 export interface SliderProps extends BaseControlProps {
@@ -21,8 +20,8 @@ export default function Slider({
   step,
   onChange,
 }: SliderProps) {
-  const numberInput = useRef<HTMLInputElement | null>(null);
-  const rangeInput = useRef<HTMLInputElement | null>(null);
+  const numberInput = React.useRef<HTMLInputElement | null>(null);
+  const rangeInput = React.useRef<HTMLInputElement | null>(null);
 
   return (
     <Control title={title} attention={attention} description={description}>

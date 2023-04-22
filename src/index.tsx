@@ -10,8 +10,6 @@ import { discordURL, gameVersion, sketchVersion, workInkURL } from "./consts";
 import type { Module } from "./filters";
 import { matchModule } from "./filters";
 import { getInit, waitForGameLoad } from "./inject";
-import { useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
 
 aimbotHook();
 bhopHook();
@@ -61,7 +59,7 @@ function newRoot() {
     padding: "8px",
   } as CSSStyleDeclaration);
 
-  const root = createRoot(overlay);
+  const root = ReactDOM.createRoot(overlay);
 
   document.documentElement.append(overlay);
 
@@ -96,9 +94,9 @@ async function main() {
 }
 
 function KeyBeg() {
-  const key = useRef<HTMLInputElement | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const key = React.useRef<HTMLInputElement | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState(false);
 
   return (
     <>

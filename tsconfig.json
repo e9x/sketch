@@ -2,7 +2,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "target": "ESNext",
-    "types": ["tampermonkey"],
+    "types": ["tampermonkey", "react/next", "react-dom/next"],
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "baseUrl": "src",
     "strict": true,
@@ -11,7 +11,8 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "experimentalDecorators": true,
-    "jsx": "react-jsx"
+    "jsx": "react",
+    "allowUmdGlobalAccess": true
   },
   "include": ["src/**/*"]
 }

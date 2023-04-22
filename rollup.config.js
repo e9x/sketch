@@ -56,7 +56,7 @@ const options = defineConfig([
       eslint(),
       esbuild({
         minify: !isDevelopment,
-        jsx: "automatic",
+        jsx: "transform",
       }),
       nodeResolve({ browser: true }),
       commonjs(),
@@ -110,6 +110,10 @@ const options = defineConfig([
                 description: pkg.description,
                 version: pkg.version,
                 connect: new URL(process.env.SKETCH_API_URL).hostname,
+                require: [
+                  "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.min.js",
+                  "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.min.js",
+                ],
               },
               manager: "tampermonkey",
             }),

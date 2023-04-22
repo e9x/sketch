@@ -2,7 +2,6 @@ import { getKeyCode, getKeyName } from "../../keys";
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
 import type { ReactNode } from "react";
-import { Fragment, useEffect, useState } from "react";
 
 export interface BindProps {
   bind: number;
@@ -12,9 +11,9 @@ export interface BindProps {
 }
 
 export function Bind({ bind, reset, unbind, setBind }: BindProps) {
-  const [changing, setChanging] = useState(false);
+  const [changing, setChanging] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!changing) return;
 
     const listener = (event: KeyboardEvent | MouseEvent) => {
@@ -74,7 +73,7 @@ export default function BindHolder({
 
   if (Array.isArray(children))
     for (let i = 0; i < children.length; i++) {
-      betweens.push(<Fragment key={i}>{children[i]}</Fragment>);
+      betweens.push(<React.Fragment key={i}>{children[i]}</React.Fragment>);
       if (i + 1 !== children.length)
         betweens.push(<div className="bindSep" key={i + "_sep"}></div>);
     }

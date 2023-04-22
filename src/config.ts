@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
-
 const configTarget = new EventTarget();
 const valueCache = new Map<string, unknown>();
 
@@ -29,9 +27,9 @@ export function configDelete(key: string) {
 
 export default function useConfig<T>(key: string, defaultValue?: T) {
   // trigger re-render with useState
-  const [state, setState] = useState(configGet(key, defaultValue));
+  const [state, setState] = React.useState(configGet(key, defaultValue));
 
-  useEffect(() => {
+  React.useEffect(() => {
     function listener() {
       setState(configGet(key, defaultValue));
     }

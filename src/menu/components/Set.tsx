@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { useState } from "react";
 
 interface SetProps {
   /**
@@ -16,7 +15,7 @@ interface SetProps {
  *
  */
 export function Set({ title, children }: SetProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = React.useState(false);
 
   return (
     <>

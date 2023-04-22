@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { createRoot } from "react-dom/client";
 
 export type RenderOnDemand = () => ReactNode;
 
@@ -17,7 +16,7 @@ export default function createRenderContainer(d: RenderOnDemand) {
 
       this.remove();
 
-      const root = createRoot(settHolder);
+      const root = ReactDOM.createRoot(settHolder);
 
       root.render(d());
 
