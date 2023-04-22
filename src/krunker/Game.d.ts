@@ -17,6 +17,7 @@ declare class Game {
       objects: MapObject[];
     };
   };
+  latestData: boolean;
   isComp: boolean;
   COLLISIONS: unknown;
   THREE: typeof THREE;

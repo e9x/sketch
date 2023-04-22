@@ -7,7 +7,7 @@ import {
   renderHooks,
 } from "../filters";
 import type { Player } from "../krunker/Player";
-import { isEnemy } from "../krunkerUtil";
+import { isEnemy, isInMenus } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
 
 export const defaultESP = false;
@@ -111,6 +111,7 @@ function playerBox(player: Player) {
 export function espHook() {
   renderHooks.push(() => {
     if (!configGet<boolean>("esp", defaultESP)) return;
+    if (isInMenus()) return;
 
     try {
       const overlay = getOverlay();

@@ -194,3 +194,17 @@ export function getCurrentReload(aimTime: number) {
 
   return currentReload;
 }
+
+export function isInMenus() {
+  return (
+    document.getElementById("endUI")?.style.display !== "none" ||
+    document.getElementById("menuHolder")?.style.display !== "none"
+  );
+}
+
+/*export function isInGame() {
+  return (
+    document.getElementById("deathUIHolder")?.style.display !== "none" &&
+    !isInMenus()
+  );
+}*/

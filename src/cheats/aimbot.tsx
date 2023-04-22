@@ -21,6 +21,8 @@ import {
   getAimTime,
   getCurrentSwapTime,
   getCurrentReloadTimer,
+  isInMenus,
+  isInGame,
 } from "../krunkerUtil";
 import BindHolder, { Bind } from "../menu/components/Bind";
 import Select from "../menu/components/Select";
@@ -194,10 +196,14 @@ export function aimbotHook() {
 
   renderHooks.push(() => {
     try {
-      const overlay = getOverlay();
       const drawFOV = configGet<boolean>("drawFOV", defaultDrawFOV);
       if (!drawFOV) return;
+      if (isInMenus()) return;
+      const localPlayer = getLocalPlayer();
+      if (!localPlayer.active && !window.spectating) return;
       const fovRadius = configGet<number>("fovRadius", defaultFOVRadius);
+
+      const overlay = getOverlay();
 
       if (drawFOV) {
         overlay.ctx.save();
