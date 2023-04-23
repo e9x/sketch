@@ -7,16 +7,24 @@ declare interface GameWindow {
   // required
   header: string;
   label: string;
-  html: "";
-  gen(): string;
   // optional
   tabIndex?: number;
-  width?: number;
+  extraCls?: string;
+  width?: string | number;
+  height?: string;
+  maxHeight?: string;
   popup?: boolean;
   sticky?: boolean;
   dark?: boolean;
+  radius?: number;
   hideScroll?: boolean;
+  forceScroll?: boolean;
+  closed?: boolean;
+  menuOpen?: boolean;
 }
+
+declare type GameWindowRender = GameWindow &
+  ({ html: string } | { gen(): string });
 
 declare interface Settings extends GameWindow {
   genList(): string;
@@ -44,4 +52,4 @@ declare const SOUND: {
 
 declare function playTick(): void;
 
-declare function playSelect(): void;
+declare function playSelect(v?: number): void;
