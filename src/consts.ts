@@ -47,7 +47,7 @@ inter
 
 export const iInputs = {
   frame: 0,
-  delta: 1, // capped at 0.1-33
+  delta: 1, // capped at 0.1-33, source: var mAimTime = Math.max(varForeignSurface, Math.min(argChurchSteam[1], argCompletelyNearby.dltMx)) / this.deltaDiv;
   xDir: 2,
   yDir: 3,
   moveDir: 4,
