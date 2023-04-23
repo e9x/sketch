@@ -9,7 +9,6 @@ import {
   getRender,
   inputHooks,
   renderHooks,
-  setMapObjectTransparencyHook,
 } from "../filters";
 import type { Player } from "../krunker/Player";
 import {
@@ -127,17 +126,19 @@ function validTarget(target: Player) {
 
   if (!isEnemy(target)) return false;
 
+  if (!target.canBSeen) return false;
+
   return true;
 }
 
 function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
-  const game = getGame();
+  // const game = getGame();
   const render = getRender();
   const localPlayer = getLocalPlayer();
 
   const frustumCheck = configGet("frustumCheck");
-  const wallbangs =
-    configGet("wallbangs") && localPlayer.weapon.pierce !== undefined;
+  // const wallbangs =
+  configGet("wallbangs") && localPlayer.weapon.pierce !== undefined;
 
   if (frustumCheck) {
     if (!render.frustum.containPoint(point)) return false;
@@ -150,7 +151,7 @@ function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
     }
   }
 
-  if (wallbangs) setMapObjectTransparencyHook(true);
+  /*if (wallbangs) setMapObjectTransparencyHook(true);
 
   const cs = game.canSee(
     localPlayer,
@@ -164,8 +165,9 @@ function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
     wallbangs ? true : undefined
   );
   if (wallbangs) setMapObjectTransparencyHook(false);
+*/
 
-  if (cs !== null) return false;
+  // if (cs !== null) return false;
 
   return true;
 }
