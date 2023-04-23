@@ -18,6 +18,7 @@ export function Bind({ bind, reset, unbind, setBind }: BindProps) {
     const listener = (event: KeyboardEvent | MouseEvent) => {
       setChanging(false);
       setBind(getKeyCode(event));
+      event.preventDefault();
     };
 
     window.addEventListener("mousedown", listener, { once: true });
