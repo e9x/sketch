@@ -33,7 +33,7 @@ export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
 
   if (token === APIError.DIY) {
     configSet("diy", DIYStage.token);
-    location.reload();
+    fetchWASM();
     return APIError.DIY;
   }
 
@@ -62,6 +62,15 @@ export async function fetchToken(krunkbox: KrunkBox) {
     return await krunkbox.hash(
       await (await fetch("https://matchmaker.krunker.io/generate-token")).text()
     );
+}
+
+let doFetchWASM: (() => void) | undefined;
+
+let fetchWASMInstantly = false;
+
+function fetchWASM() {
+  if (doFetchWASM) doFetchWASM();
+  else fetchWASMInstantly = true;
 }
 
 export const gameLoad = new Promise<void>((resolveGameLoad) =>
@@ -99,7 +108,10 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
           // game has loaded
           resolveGameLoad();
           // eslint-disable-next-line @typescript-eslint/no-empty-function
-          return new Promise(() => {});
+          return new Promise((resolve, reject) => {
+            doFetchWASM = () => fetch(input, init).then(resolve).catch(reject);
+            if (fetchWASMInstantly) doFetchWASM();
+          });
         }
       }
 
