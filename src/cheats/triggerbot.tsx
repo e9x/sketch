@@ -9,6 +9,9 @@ const defaultTriggerbot = false;
 const defaultTriggerbotKey = -1;
 
 export function triggerbotHook() {
+  let detectTime = 0;
+  const detectDelay = 200;
+
   inputHooks.push((inputs) => {
     if (!configGet<boolean>("triggerbot", defaultTriggerbot)) return;
 
@@ -19,31 +22,46 @@ export function triggerbotHook() {
       defaultTriggerbotKey
     );
 
-    if (triggerbotKey !== -1 && game.controls.keys[triggerbotKey] !== 1) return;
+    if (
+      (triggerbotKey === -1 || game.controls.keys[triggerbotKey] === 1) &&
+      inputs[iInputs.scope]
+    ) {
+      const render = getRender();
 
-    if (!inputs[iInputs.scope]) return;
+      const direction = new game.THREE.Vector3();
+      const position = new game.THREE.Vector3();
 
-    const render = getRender();
+      render.camera.getWorldDirection(direction);
+      render.camera.getWorldPosition(position);
 
-    const direction = new game.THREE.Vector3();
-    const position = new game.THREE.Vector3();
+      game.raycaster.set(position, direction);
 
-    render.camera.getWorldDirection(direction);
-    render.camera.getWorldPosition(position);
+      let shoot = false;
 
-    game.raycaster.set(position, direction);
+      for (const player of game.players.list)
+        if (
+          isEnemy(player) &&
+          player.objInstances &&
+          player.canBSeen &&
+          game.raycaster.intersectObjects(player.objInstances.children, true)
+            .length
+        ) {
+          shoot = true;
+          break;
+        }
 
-    for (const player of game.players.list)
-      if (
-        isEnemy(player) &&
-        player.objInstances &&
-        player.canBSeen &&
-        game.raycaster.intersectObjects(player.objInstances.children, true)
-          .length
-      ) {
-        inputs[iInputs.shoot] = 1;
-        break;
-      }
+      if (shoot) {
+        if (!detectTime) {
+          console.log("just detected!?");
+          detectTime = Date.now() + detectDelay;
+        }
+
+        if (detectTime < Date.now()) {
+          console.log("shoot everywhere");
+          inputs[iInputs.shoot] = 1;
+        }
+      } else detectTime = 0;
+    } else detectTime = 0;
   });
 }
 
