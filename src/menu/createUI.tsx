@@ -28,6 +28,7 @@ waitFor(() => typeof windows === "object" && Array.isArray(windows)).then(
 
       if (menuKey !== -1 && code === menuKey && down) {
         event.preventDefault();
+        document.exitPointerLock();
         showWindow(sketchID);
       }
     });
