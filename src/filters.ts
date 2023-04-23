@@ -214,7 +214,7 @@ export function matchModule(module: Module) {
 }
 
 if (isDevelopment)
-  Object.assign(new Function("return window")(), {
+  Object.assign(unsafeWindow, {
     getGame,
     getRender,
     getLocalPlayer,
