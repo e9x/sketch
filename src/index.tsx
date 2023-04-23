@@ -71,7 +71,20 @@ async function main() {
 
   const version = await KrunkBox.sketchVersion(sketchVersion, gameVersion);
 
-  if (version.outdated) return location.assign(version.updateURL);
+  if (version.outdated)
+    return newRoot().render(
+      <>
+        <h1>Update Sketch.</h1>
+        <p>
+          Your version of Sketch is outdated. Click{" "}
+          <a href={version.updateURL}>this link here</a> to download the latest
+          verison. ({version.latestVersion})
+        </p>
+        <p>
+          <button onClick={() => location.reload()}>Refresh</button>
+        </p>
+      </>
+    );
 
   if (!version.sketchUpdated)
     return newRoot().render(
@@ -103,7 +116,7 @@ function KeyBeg() {
         In order to pay for servers and development, we've partnered with
         WorkInk. Click{" "}
         <a target="_blank" href={workInkURL}>
-          here
+          this link here
         </a>{" "}
         to get your access key.
       </p>
