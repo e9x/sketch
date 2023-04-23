@@ -2,6 +2,7 @@ import { AimbotMenu } from "../cheats/aimbot";
 import { BhopMenu } from "../cheats/bhop";
 import { ESPMenu } from "../cheats/esp";
 import { ForceAutoMenu } from "../cheats/forceAuto";
+import { RecoilControlMenu } from "../cheats/recoilControl";
 import { TriggerbotMenu } from "../cheats/triggerbot";
 import { discordURL, docsURL } from "../consts";
 import Control from "./components/Control";
@@ -18,6 +19,7 @@ export default function Menu() {
         <BhopMenu />
         <ForceAutoMenu />
         <TriggerbotMenu />
+        <RecoilControlMenu />
       </Set>
       <Set title="ESP">
         <ESPMenu />

@@ -4,6 +4,7 @@ import { aimbotHook } from "./cheats/aimbot";
 import { bhopHook } from "./cheats/bhop";
 import { espHook, forceNametags } from "./cheats/esp";
 import { forceAutoHook } from "./cheats/forceAuto";
+import { recoilControlHook } from "./cheats/recoilControl";
 import { triggerbotHook } from "./cheats/triggerbot";
 import { configDelete, configGet, configSet } from "./config";
 import { discordURL, gameVersion, sketchVersion, workInkURL } from "./consts";
@@ -15,6 +16,7 @@ aimbotHook();
 bhopHook();
 espHook();
 triggerbotHook();
+recoilControlHook();
 forceAutoHook();
 
 const hook = (dataArg: string, src: string) => {
