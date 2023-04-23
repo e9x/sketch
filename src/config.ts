@@ -63,6 +63,7 @@ export interface Config {
   menuButton: boolean;
   diy: DIYStage;
   diyToken?: string;
+  noAdsFovMlt: boolean;
 }
 
 /**
@@ -92,6 +93,7 @@ const defaultConfig: Config = {
   menuKey: -1,
   menuButton: true,
   diy: DIYStage.false,
+  noAdsFovMlt: false,
 };
 
 export function configGet<T extends keyof Config>(key: T) {

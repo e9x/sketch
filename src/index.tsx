@@ -15,8 +15,8 @@ import {
   sketchVersion,
   workInkURL,
 } from "./consts";
+import { matchModule, getLocalPlayer, getRender } from "./filters";
 import type { Module } from "./filters";
-import { matchModule } from "./filters";
 import { getInit, gameLoad } from "./inject";
 
 aimbotHook();
@@ -40,8 +40,20 @@ const hook = (dataArg: string, src: string) => {
       `!${player}.isYou&&${player}.objInstances){if(${player}.canBSeen||${dataArg}.nametags){`
   );
 
+  // *r.adsFovMlt[r.getPlayerWeaponId(t)]
+  src = src.replace(/\*(\w+)\.adsFovMlt/g, () => `*(${dataArg}.adsFovMlt)`);
+
   return {
     data: {
+      get adsFovMlt() {
+        if (!configGet("noAdsFovMlt")) return getRender().adsFovMlt;
+
+        const ads: number[] = [];
+
+        ads[getRender().getPlayerWeaponId(getLocalPlayer())] = 0;
+
+        return ads;
+      },
       extract: (module: Module) => {
         matchModule(module);
         return module.exports;

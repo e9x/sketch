@@ -16,6 +16,7 @@ import Switch from "./components/Switch";
 export default function Menu() {
   const [menuKey, setMenuKey] = useConfig("menuKey");
   const [menuButton] = useConfig("menuButton");
+  const [noAdsFovMlt, setNoAdsFovMlt] = useConfig("noAdsFovMlt");
 
   return (
     <Settings
@@ -93,6 +94,13 @@ export default function Menu() {
             return (
               <Set title="ESP">
                 <ESPMenu />
+                <Switch
+                  title="Disable ADS FOV multiplier"
+                  defaultChecked={noAdsFovMlt}
+                  onChange={(event) =>
+                    setNoAdsFovMlt(event.currentTarget.checked)
+                  }
+                />
               </Set>
             );
           },

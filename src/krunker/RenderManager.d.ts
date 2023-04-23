@@ -1,3 +1,4 @@
+import type { Player } from "./Player";
 import type THREE from "three";
 
 declare class RenderManager {
@@ -14,6 +15,8 @@ declare class RenderManager {
     containsPoint: (point: THREE.Vector3) => false;
     containPoint: (point: THREE.Vector3) => boolean;
   };
+  adsFovMlt: number[];
+  getPlayerWeaponId(player: Player): number;
   updateFrustum(): void;
   shakeX: number;
   shakeY: number;
