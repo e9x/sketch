@@ -14,8 +14,8 @@ import { getInit, gameLoad } from "./inject";
 aimbotHook();
 bhopHook();
 espHook();
-forceAutoHook();
 triggerbotHook();
+forceAutoHook();
 
 const hook = (dataArg: string, src: string) => {
   // hook __webpack_require__, specifically the part where it returns module.exports and when it's generating the exports, not caching it
