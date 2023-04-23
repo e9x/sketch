@@ -1,7 +1,7 @@
 import useConfig, { configGet } from "../config";
 import { iInputs } from "../consts";
 import { getLocalPlayer, inputHooks } from "../filters";
-import { getCurrentReload } from "../krunkerUtil";
+import { getAimTime, getCurrentReload } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
 
 const defaultForceAuto = false;
@@ -17,7 +17,7 @@ export function forceAutoHook() {
     if (
       localPlayer.weapon.nAuto &&
       inputs[iInputs.shoot] &&
-      !getCurrentReload(inputs) &&
+      !getCurrentReload(getAimTime(inputs)) &&
       !localPlayer.reloadTimer
     ) {
       inputs[iInputs.shoot] = lastShoot;
