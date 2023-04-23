@@ -208,3 +208,21 @@ export function isInMenus() {
     !isInMenus()
   );
 }*/
+
+export function smoothnessMultiplier(smoothFactor: number) {
+  if (smoothFactor < 0 || smoothFactor > 1) {
+    throw new Error("Smooth factor must be between 0.0 and 1.0");
+  }
+  return 1 - 0.99 * smoothFactor;
+}
+
+export function lerp(
+  rotation: THREE.Vector2,
+  from: THREE.Vector2,
+  smoothFactor: number
+) {
+  const realSmoothFactor = smoothnessMultiplier(smoothFactor);
+  rotation.setX(from.x + getAngleDst(from.x, rotation.x) * realSmoothFactor);
+  rotation.setY(from.y + getAngleDst(from.y, rotation.y) * realSmoothFactor);
+  return rotation;
+}

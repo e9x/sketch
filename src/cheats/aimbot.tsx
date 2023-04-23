@@ -16,12 +16,12 @@ import {
   pos2D,
   getXDire,
   getDir,
-  getAngleDst,
   getCurrentReload,
   getAimTime,
   getCurrentSwapTime,
   getCurrentReloadTimer,
   isInMenus,
+  lerp,
 } from "../krunkerUtil";
 import BindHolder, { Bind } from "../menu/components/Bind";
 import Select from "../menu/components/Select";
@@ -84,13 +84,6 @@ function playerAimPoint(player: Player) {
   );
 }
 
-function smoothnessMultiplier(smoothFactor: number) {
-  if (smoothFactor < 0 || smoothFactor > 1) {
-    throw new Error("Smooth factor must be between 0.0 and 1.0");
-  }
-  return 1 - 0.99 * smoothFactor;
-}
-
 function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
   const aimbot = configGet<string>("aimbot", defaultAimbot);
   const smoothFactor = configGet<number>("smoothFactor", defaultSmoothFactor);
@@ -102,15 +95,7 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
 
   const { THREE } = render;
 
-  const yD =
-    getDir(
-      game.controls.object.position.z,
-      game.controls.object.position.x,
-      target.z,
-      target.x
-    ) || 0;
-
-  const xD =
+  rotation.setX(
     (getXDire(
       game.controls.object.position.x,
       game.controls.object.position.y,
@@ -119,22 +104,27 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
       target.y,
       target.z
     ) || 0) -
-    localPlayer.recoilAnimY * config.recoilMlt;
+      localPlayer.recoilAnimY * config.recoilMlt
+  );
 
-  const targetRotation = new THREE.Vector2(xD, yD);
+  rotation.setY(
+    getDir(
+      game.controls.object.position.z,
+      game.controls.object.position.x,
+      target.z,
+      target.x
+    ) || 0
+  );
 
-  if (aimbot === "smooth") {
-    const realSmoothFactor = smoothnessMultiplier(smoothFactor);
-
-    rotation.x +=
-      getAngleDst(game.controls.pchObjc.rotation.x, xD) * realSmoothFactor;
-    rotation.y +=
-      getAngleDst(game.controls.object.rotation.y, yD) * realSmoothFactor;
-    render.updateFrustum();
-  } else {
-    rotation.x = targetRotation.x;
-    rotation.y = targetRotation.y;
-  }
+  if (aimbot === "smooth")
+    lerp(
+      rotation,
+      new THREE.Vector2(
+        game.controls.pchObjc.rotation.x,
+        game.controls.object.rotation.y
+      ),
+      smoothFactor
+    );
 
   return rotation;
 }
@@ -351,6 +341,8 @@ export function aimbotHook() {
 
       calcRot(rotation, target);
 
+      const render = getRender();
+
       // game.controls.pchObjc.rotation.x = rot.x;
       // game.controls.object.rotation.y = rot.y;
       // game.controls.xDr = game.controls.object.rotation.y % Math.PI2;
@@ -364,6 +356,8 @@ export function aimbotHook() {
       } else {
         game.controls.pchObjc.rotation.x = rotation.x;
         game.controls.object.rotation.y = rotation.y;
+
+        render.updateFrustum();
       }
     }
   });
