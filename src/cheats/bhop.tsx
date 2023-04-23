@@ -4,8 +4,6 @@ import { getLocalPlayer, inputHooks } from "../filters";
 import Switch from "../menu/components/Switch";
 import random from "lodash/random";
 
-const defaultBhop = false;
-
 function pickZeroSome() {
   return random(-0.015, 0.005, true);
 }
@@ -31,7 +29,7 @@ export function bhopHook() {
   const bhopDelay = 60;
 
   inputHooks.push((inputs) => {
-    if (!configGet<boolean>("bhop", defaultBhop)) return;
+    if (!configGet("bhop")) return;
 
     const localPlayer = getLocalPlayer();
 
@@ -82,7 +80,7 @@ export function bhopHook() {
 }
 
 export function BhopMenu() {
-  const [bhop, setBhop] = useConfig<boolean>("bhop", defaultBhop);
+  const [bhop, setBhop] = useConfig("bhop");
 
   return (
     <Switch

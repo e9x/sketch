@@ -1,27 +1,12 @@
 import type KrunkBox from "./KrunkBox";
 import { APIError } from "./KrunkBox";
-import { configDelete, configGet, configSet } from "./config";
+import { DIYStage, configDelete, configGet, configSet } from "./config";
 import { hookContext, mirrorAttributes } from "./superHook";
 
 type Hook<Data> = (dataArg: string, src: string) => { data: Data; src: string };
 
-enum DIYStage {
-  false,
-  /**
-   * Get the token
-   */
-  token,
-  /**
-   * Ready to use "token" in config
-   */
-  ready,
-}
-
-const defaultDIY = DIYStage.false;
-
 export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
-  if (configGet<DIYStage>("diy", defaultDIY) === DIYStage.token)
-    return APIError.DIY;
+  if (configGet("diy") === DIYStage.token) return APIError.DIY;
 
   const [token, source] = await Promise.all([
     fetchToken(krunkbox),
@@ -50,8 +35,8 @@ export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
 }
 
 export async function fetchToken(krunkbox: KrunkBox) {
-  if (configGet<DIYStage>("diy", defaultDIY) === DIYStage.ready) {
-    const diyToken = configGet<string>("diyToken");
+  if (configGet("diy") === DIYStage.ready) {
+    const diyToken = configGet("diyToken");
     if (!diyToken) throw new TypeError("No token");
 
     configDelete("diyToken");
@@ -83,7 +68,7 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
         location.toString()
       );
 
-      if (configGet<DIYStage>("diy", defaultDIY) === DIYStage.token) {
+      if (configGet("diy") === DIYStage.token) {
         if (
           inputURL.origin === "https://matchmaker.krunker.io" &&
           inputURL.pathname === "/seek-game"

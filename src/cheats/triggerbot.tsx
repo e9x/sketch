@@ -6,25 +6,17 @@ import BindHolder, { Bind } from "../menu/components/Bind";
 import Slider from "../menu/components/Slider";
 import Switch from "../menu/components/Switch";
 
-const defaultTriggerbot = false;
-const defaultTriggerbotKey = -1;
-const defaultTriggerbotMin = 0;
-const defaultTriggerbotMax = 0;
-
 export function triggerbotHook() {
   let detectTime = 0;
   let continueTime = 0;
   let didShoot = false;
 
   inputHooks.push((inputs) => {
-    if (!configGet<boolean>("triggerbot", defaultTriggerbot)) return;
+    if (!configGet("triggerbot")) return;
 
     const game = getGame();
 
-    const triggerbotKey = configGet<number>(
-      "triggerbotKey",
-      defaultTriggerbotKey
-    );
+    const triggerbotKey = configGet("triggerbotKey");
 
     if (
       (triggerbotKey === -1 || game.controls.keys[triggerbotKey] === 1) &&
@@ -59,9 +51,7 @@ export function triggerbotHook() {
         if (shoot) {
           if (!detectTime) {
             // Date.now() + detectDelay
-            detectTime =
-              Date.now() +
-              configGet<number>("triggerbotMin", defaultTriggerbotMin) * 1000;
+            detectTime = Date.now() + configGet("triggerbotMin") * 1000;
           }
 
           if (detectTime < Date.now()) {
@@ -72,9 +62,7 @@ export function triggerbotHook() {
         } else if (didShoot) {
           detectTime = 0;
           // Date.now() + continueFor
-          continueTime =
-            Date.now() +
-            configGet<number>("triggerbotMax", defaultTriggerbotMax) * 1000;
+          continueTime = Date.now() + configGet("triggerbotMax") * 1000;
           didShoot = false;
         }
       }
@@ -87,22 +75,10 @@ export function triggerbotHook() {
 }
 
 export function TriggerbotMenu() {
-  const [triggerbot, setTriggerbot] = useConfig<boolean>(
-    "triggerbot",
-    defaultTriggerbot
-  );
-  const [triggerbotKey, setTriggerbotKey] = useConfig<number>(
-    "triggerbotKey",
-    defaultTriggerbotKey
-  );
-  const [triggerbotMin, setTriggerbotMin] = useConfig<number>(
-    "triggerbotMin",
-    defaultTriggerbotMin
-  );
-  const [triggerbotMax, setTriggerbotMax] = useConfig<number>(
-    "triggerbotMax",
-    defaultTriggerbotMax
-  );
+  const [triggerbot, setTriggerbot] = useConfig("triggerbot");
+  const [triggerbotKey, setTriggerbotKey] = useConfig("triggerbotKey");
+  const [triggerbotMin, setTriggerbotMin] = useConfig("triggerbotMin");
+  const [triggerbotMax, setTriggerbotMax] = useConfig("triggerbotMax");
 
   return (
     <>
@@ -110,7 +86,7 @@ export function TriggerbotMenu() {
         <Bind
           bind={triggerbotKey}
           setBind={(bind) => setTriggerbotKey(bind)}
-          reset={() => setTriggerbotKey(null)}
+          reset={() => setTriggerbotKey()}
           unbind={() => setTriggerbotKey(-1)}
         />
       </BindHolder>

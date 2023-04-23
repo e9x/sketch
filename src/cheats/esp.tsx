@@ -13,7 +13,7 @@ import Switch from "../menu/components/Switch";
 export const defaultESP = false;
 
 export function forceNametags() {
-  return configGet<boolean>("esp", defaultESP);
+  return configGet("esp");
 }
 
 export class PlayerRectBounds {
@@ -110,7 +110,7 @@ function playerBox(player: Player) {
 
 export function espHook() {
   renderHooks.push(() => {
-    if (!configGet<boolean>("esp", defaultESP)) return;
+    if (!configGet("esp")) return;
     if (isInMenus()) return;
 
     try {
@@ -139,7 +139,7 @@ export function espHook() {
 }
 
 export function ESPMenu() {
-  const [esp, setESP] = useConfig("esp", defaultESP);
+  const [esp, setESP] = useConfig("esp");
 
   return (
     <Switch

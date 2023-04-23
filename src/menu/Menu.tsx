@@ -13,12 +13,9 @@ import Link from "./components/Link";
 import { HeadlessSet, Set } from "./components/Set";
 import Switch from "./components/Switch";
 
-export const defaultMenuKey = -1;
-export const defaultMenuButton = true;
-
 export default function Menu() {
-  const [menuKey, setMenuKey] = useConfig<number>("menuKey", defaultMenuKey);
-  const [menuButton] = useConfig<boolean>("menuButton", defaultMenuButton);
+  const [menuKey, setMenuKey] = useConfig("menuKey");
+  const [menuButton] = useConfig("menuButton");
 
   return (
     <Settings
@@ -33,7 +30,7 @@ export default function Menu() {
                     <Bind
                       bind={menuKey}
                       setBind={(bind) => setMenuKey(bind)}
-                      reset={() => setMenuKey(null)}
+                      reset={() => setMenuKey()}
                       unbind={() => setMenuKey(-1)}
                     />
                   </BindHolder>

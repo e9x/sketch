@@ -11,22 +11,15 @@ import BindHolder, { Bind } from "../menu/components/Bind";
 import Slider from "../menu/components/Slider";
 import Switch from "../menu/components/Switch";
 
-const defaultRecoilControl = false;
-const defaultRecoilControlKey = -1;
-const defaultRecoilSmoothFactor = 0.9;
-
 export function recoilControlHook() {
   let lastRecoilAnimY = 0;
 
   inputHooks.push(() => {
-    if (!configGet<boolean>("recoilControl", defaultRecoilControl)) return;
+    if (!configGet("recoilControl")) return;
 
     const game = getGame();
 
-    const recoilControlKey = configGet<number>(
-      "recoilControlKey",
-      defaultRecoilControlKey
-    );
+    const recoilControlKey = configGet("recoilControlKey");
 
     if (recoilControlKey !== -1 && game.controls.keys[recoilControlKey] !== 1)
       return;
@@ -52,7 +45,7 @@ export function recoilControlHook() {
         game.controls.pchObjc.rotation.x,
         game.controls.object.rotation.y
       ),
-      configGet<number>("recoilSmoothFactor", defaultRecoilSmoothFactor)
+      configGet("recoilSmoothFactor")
     );
 
     game.controls.pchObjc.rotation.x = rotation.x;
@@ -63,18 +56,10 @@ export function recoilControlHook() {
 }
 
 export function RecoilControlMenu() {
-  const [recoilControl, setRecoilControl] = useConfig<boolean>(
-    "recoilControl",
-    defaultRecoilControl
-  );
-  const [recoilControlKey, setRecoilControlKey] = useConfig<number>(
-    "recoilControlKey",
-    defaultRecoilControlKey
-  );
-  const [recoilSmoothFactor, setRecoilSmoothFactor] = useConfig<number>(
-    "recoilSmoothFactor",
-    defaultRecoilSmoothFactor
-  );
+  const [recoilControl, setRecoilControl] = useConfig("recoilControl");
+  const [recoilControlKey, setRecoilControlKey] = useConfig("recoilControlKey");
+  const [recoilSmoothFactor, setRecoilSmoothFactor] =
+    useConfig("recoilSmoothFactor");
 
   return (
     <>
@@ -82,7 +67,7 @@ export function RecoilControlMenu() {
         <Bind
           bind={recoilControlKey}
           setBind={(bind) => setRecoilControlKey(bind)}
-          reset={() => setRecoilControlKey(null)}
+          reset={() => setRecoilControlKey()}
           unbind={() => setRecoilControlKey(-1)}
         />
       </BindHolder>

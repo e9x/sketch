@@ -4,13 +4,11 @@ import { getLocalPlayer, inputHooks } from "../filters";
 import { getAimTime, getCurrentReload } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
 
-const defaultForceAuto = false;
-
 export function forceAutoHook() {
   let lastShoot = 1;
 
   inputHooks.push((inputs) => {
-    if (!configGet<boolean>("forceAuto", defaultForceAuto)) return;
+    if (!configGet("forceAuto")) return;
 
     const localPlayer = getLocalPlayer();
 
@@ -27,10 +25,7 @@ export function forceAutoHook() {
 }
 
 export function ForceAutoMenu() {
-  const [triggerbot, setTriggerbot] = useConfig<boolean>(
-    "forceAuto",
-    defaultForceAuto
-  );
+  const [triggerbot, setTriggerbot] = useConfig("forceAuto");
 
   return (
     <Switch

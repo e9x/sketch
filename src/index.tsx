@@ -76,7 +76,7 @@ function newRoot() {
 }
 
 async function main() {
-  const savedToken = configGet<string>("token");
+  const savedToken = configGet("token");
 
   const version = await KrunkBox.sketchVersion(sketchVersion, gameVersion);
 
@@ -148,7 +148,7 @@ function KeyBeg() {
                   setError("Access key already used. Try again.");
                   break;
                 default:
-                  configSet<string>("token", res);
+                  configSet("token", res);
                   location.reload();
               }
             })

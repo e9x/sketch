@@ -1,7 +1,7 @@
 import { configGet } from "../config";
 import { keyListeners } from "../keys";
 import { waitFor } from "../util";
-import Menu, { defaultMenuButton, defaultMenuKey } from "./Menu";
+import Menu from "./Menu";
 import extendWindows from "./extendWindows";
 
 waitFor(() => typeof windows === "object" && Array.isArray(windows)).then(
@@ -19,7 +19,7 @@ waitFor(() => typeof windows === "object" && Array.isArray(windows)).then(
       () => <Menu />
     );
 
-    if (configGet<boolean>("menuButton", defaultMenuButton))
+    if (configGet("menuButton"))
       waitFor(() =>
         document.querySelector<HTMLDivElement>("#menuItemContainer")
       ).then((menuItems) => {
@@ -27,7 +27,7 @@ waitFor(() => typeof windows === "object" && Array.isArray(windows)).then(
       });
 
     keyListeners.push((event, code, down) => {
-      const menuKey = configGet<number>("menuKey", defaultMenuKey);
+      const menuKey = configGet("menuKey");
 
       if (menuKey !== -1 && code === menuKey && down) {
         event.preventDefault();
