@@ -23,7 +23,7 @@ export function ControlTitle({
   children,
 }: {
   attention?: boolean;
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <>
@@ -40,7 +40,7 @@ export function ControlContainer({
   children,
 }: {
   description?: string;
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <div className="settName" title={description}>
@@ -58,7 +58,7 @@ export default function Control({
   attention,
   children,
 }: BaseControlProps & {
-  children?: ReactNode;
+  children?: React.ReactNode;
 }) {
   return (
     <div className="settName" title={description}>
