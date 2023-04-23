@@ -1,7 +1,6 @@
 import { getKeyCode, getKeyName } from "../../keys";
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
-import type { ReactNode } from "react";
 
 export interface BindProps {
   bind: number;
@@ -60,7 +59,7 @@ export function Bind({ bind, reset, unbind, setBind }: BindProps) {
 }
 
 export interface BindHolderProps extends BaseControlProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export default function BindHolder({
@@ -69,7 +68,7 @@ export default function BindHolder({
   description,
   children,
 }: BindHolderProps) {
-  const betweens: ReactNode[] = [];
+  const betweens: React.ReactNode[] = [];
 
   if (Array.isArray(children))
     for (let i = 0; i < children.length; i++) {

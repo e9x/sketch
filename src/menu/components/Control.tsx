@@ -1,12 +1,10 @@
-import type { ReactNode } from "react";
-
 export type onChange<T> = (value: T, init: boolean) => void;
 
 export interface BaseControlProps {
   /**
    * This control's title.
    */
-  title: ReactNode;
+  title: React.ReactNode;
   /**
    * Description of the control.
    */

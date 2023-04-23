@@ -1,11 +1,10 @@
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
-import type { ChangeEventHandler } from "react";
 
 export interface SwitchProps extends BaseControlProps {
   checked?: boolean;
   defaultChecked?: boolean;
-  onChange?: ChangeEventHandler<HTMLInputElement>;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
 }
 
 export default function Switch({

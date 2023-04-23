@@ -1,13 +1,12 @@
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
-import type { ChangeEventHandler } from "react";
 
 export interface FilePickerProps extends BaseControlProps {
   accept?: string;
   multiple?: boolean;
   value?: string;
   defaultValue?: string;
-  onChange?: ChangeEventHandler<HTMLInputElement>;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
 }
 
 /**

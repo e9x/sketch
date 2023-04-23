@@ -1,10 +1,9 @@
 import { ControlContainer, ControlTitle } from "./Control";
 import type { BaseControlProps } from "./Control";
-import type { MouseEventHandler } from "react";
 
 export interface LinkProps extends BaseControlProps {
   href: string;
-  onClick?: MouseEventHandler<HTMLAnchorElement>;
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
 export default function Link({

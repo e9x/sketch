@@ -1,6 +1,5 @@
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
-import type { ChangeEventHandler } from "react";
 
 export interface TextProps extends BaseControlProps {
   placeholder?: string;
@@ -10,7 +9,7 @@ export interface TextProps extends BaseControlProps {
    * False by default.
    */
   spellCheck?: boolean;
-  onChange?: ChangeEventHandler<HTMLInputElement>;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
 }
 
 export default function Text({

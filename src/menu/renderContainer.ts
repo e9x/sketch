@@ -1,6 +1,4 @@
-import type { ReactNode } from "react";
-
-export type RenderOnDemand = () => ReactNode;
+export type RenderOnDemand = () => React.ReactNode;
 
 /**
  *

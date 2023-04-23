@@ -1,13 +1,12 @@
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
-import type { ChangeEventHandler } from "react";
 
 export interface SliderProps extends BaseControlProps {
   defaultValue?: number;
   min?: number;
   max?: number;
   step?: number;
-  onChange?: ChangeEventHandler<HTMLInputElement>;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
 }
 
 export default function Slider({

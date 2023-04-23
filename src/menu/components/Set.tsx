@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 interface SetProps {
   /**
    * This set's header.
@@ -8,7 +6,7 @@ interface SetProps {
   /**
    * This set's body.
    */
-  children?: ReactNode;
+  children?: React.ReactNode;
 }
 
 /**
@@ -39,7 +37,7 @@ interface HeadlessSetProps {
   /**
    * This set's body.
    */
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export function HeadlessSet({ children }: HeadlessSetProps) {

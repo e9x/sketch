@@ -1,12 +1,11 @@
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
-import type { ReactNode, ChangeEventHandler } from "react";
 
 export interface SelectProps extends BaseControlProps {
-  children?: ReactNode;
+  children?: React.ReactNode;
   value?: string;
   defaultValue?: string;
-  onChange?: ChangeEventHandler<HTMLSelectElement>;
+  onChange?: React.ChangeEventHandler<HTMLSelectElement>;
 }
 
 export default function Select({
