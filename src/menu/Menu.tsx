@@ -45,6 +45,7 @@ export default function Menu() {
         <Switch
           title="Menu Button"
           attention
+          description="Requires Restart"
           defaultChecked={menuButton}
           onChange={(event) => {
             if (menuKey === -1) {
