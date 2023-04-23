@@ -120,10 +120,10 @@ export function hookContext(
       if (win)
         try {
           hookContext(win, extra);
-        } catch (err) {
+        } catch {
           // maybe the window is cross-origin
           // like captcha
-          console.error(err);
+          // console.error(err);
         }
 
       return win;
