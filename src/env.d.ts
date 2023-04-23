@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 /* eslint-disable no-var */
-import type * as ReactDOMClient from "react-dom/client";
 
 declare module "react-dom" {
-  var createRoot: typeof ReactDOMClient.createRoot;
-  var hydrateRoot: typeof ReactDOMClient.hydrateRoot;
+  var createRoot: typeof import("react-dom/client").createRoot;
+  var hydrateRoot: typeof import("react-dom/client").hydrateRoot;
 }
 
-declare var React: typeof import("react");
 declare var ReactDOM: typeof import("react-dom");
 
 /* eslint-disable no-var */
