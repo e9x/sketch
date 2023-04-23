@@ -151,6 +151,8 @@ async function init(krunkbox: KrunkBox) {
     return;
   }
 
+  if (game === APIError.DIY) return;
+
   await gameLoad;
 
   game();

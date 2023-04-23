@@ -9,6 +9,10 @@ export enum WorkInkErrors {
 
 export enum APIError {
   BadToken,
+  /**
+   * Do it yourself
+   */
+  DIY,
 }
 
 export default class KrunkBox {
@@ -104,6 +108,8 @@ export default class KrunkBox {
           "content-type": "text/plain",
         },
       });
+
+      if (res.status === 429) return APIError.DIY;
 
       if (res.status === 425) {
         console.log("Too early, trying again in 3s");
