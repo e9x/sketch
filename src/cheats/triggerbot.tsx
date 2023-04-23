@@ -58,7 +58,6 @@ export function triggerbotHook() {
 
         if (shoot) {
           if (!detectTime) {
-            console.log("just detected!?");
             // Date.now() + detectDelay
             detectTime =
               Date.now() +
@@ -66,14 +65,12 @@ export function triggerbotHook() {
           }
 
           if (detectTime < Date.now()) {
-            console.log("shoot everywhere");
             inputs[iInputs.shoot] = 1;
           }
 
           didShoot = true;
         } else if (didShoot) {
           detectTime = 0;
-          console.log("no shoot");
           // Date.now() + continueFor
           continueTime =
             Date.now() +
