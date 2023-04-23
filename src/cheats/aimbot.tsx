@@ -69,7 +69,7 @@ function playerAimPoint(player: Player) {
     player.y +
       player.height -
       hitboxOffset -
-      player.crouchVal * config.crouchAnimMlt,
+      player.crouchVal * config.crouchDst,
     player.z
   );
 }
@@ -120,9 +120,7 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
 }
 
 function validTarget(target: Player) {
-  const localPlayer = getLocalPlayer();
-
-  if (target === localPlayer) return false;
+  if (target.isYou) return false;
 
   if (!isEnemy(target)) return false;
 
