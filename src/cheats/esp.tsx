@@ -80,7 +80,7 @@ function playerBox(player: Player) {
         position = player.objInstances.position.clone();
         position.x += x * playerScale;
         position.z += y * playerScale;
-        position.y += z * player.height;
+        position.y += z * (player.height - player.crouchVal * config.crouchDst);
         if (!render.frustum.containPoint(position)) return;
         position.project(render.camera);
         xMin = Math.min(xMin, position.x);
