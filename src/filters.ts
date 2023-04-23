@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { configGet } from "./config";
 import { isDevelopment } from "./consts";
 import type Game from "./krunker/Game";
 import type MapObjectModule from "./krunker/Object";
@@ -127,13 +128,11 @@ matchers.push((module: Module<typeof Overlay>) => {
 
 let MapObject: typeof MapObjectModule | undefined;
 
-let mapObjectTransparencyHook = false;
-
 function doMapObjectHooks() {
   const transparentMap = new WeakMap<MapObjectModule, number | undefined>();
   Object.defineProperty(getMapObject().prototype, "transparent", {
     get(this: MapObjectModule) {
-      if (mapObjectTransparencyHook) return this.penetrable ? 1 : 0;
+      if (configGet("wallbangs")) return this.penetrable ? 1 : 0;
       return transparentMap.get(this);
     },
     set(this: MapObjectModule, value) {
@@ -145,10 +144,6 @@ function doMapObjectHooks() {
 export function getMapObject() {
   if (!MapObject) throw new Error("Too early");
   return MapObject;
-}
-
-export function setMapObjectTransparencyHook(hookEnabled: boolean) {
-  mapObjectTransparencyHook = hookEnabled;
 }
 
 matchers.push((module: Module<typeof MapObjectModule>) => {
