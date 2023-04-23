@@ -1,3 +1,4 @@
+import "./workinkBypass";
 import "./menu/createUI";
 import KrunkBox, { APIError, WorkInkErrors } from "./KrunkBox";
 import { aimbotHook } from "./cheats/aimbot";
@@ -7,7 +8,13 @@ import { forceAutoHook } from "./cheats/forceAuto";
 import { recoilControlHook } from "./cheats/recoilControl";
 import { triggerbotHook } from "./cheats/triggerbot";
 import { configDelete, configGet, configSet } from "./config";
-import { discordURL, gameVersion, sketchVersion, workInkURL } from "./consts";
+import {
+  discordURL,
+  gameVersion,
+  isKrunker,
+  sketchVersion,
+  workInkURL,
+} from "./consts";
 import type { Module } from "./filters";
 import { matchModule } from "./filters";
 import { getInit, gameLoad } from "./inject";
@@ -155,7 +162,7 @@ function KeyBeg() {
   );
 }
 
-main();
+if (isKrunker) main();
 
 async function init(krunkbox: KrunkBox) {
   const game = await getInit(krunkbox, hook);

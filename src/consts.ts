@@ -10,11 +10,15 @@ if (!gameVersion) throw new TypeError("Invalid SKETCH_GAME_VERSION");
 export const sketchVersion = process.env.SKETCH_VERSION || "";
 if (!sketchVersion) throw new TypeError("Invalid SKETCH_VERSION");
 
+export const aboutURL = "https://sketch.sys32.dev/about";
+
 export const discordURL = "https://y9x.github.io/discord/";
 
 export const docsURL = "https://sketch.sys32.dev/";
 
 export const isDevelopment = process.env.NODE_ENV !== "PRODUCTION";
+
+export const isKrunker = location.hostname === "krunker.io";
 
 export function getDevURL() {
   const devHost = process.env.SKETCH_DEV_HOST || "";
