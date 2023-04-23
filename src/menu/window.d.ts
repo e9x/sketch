@@ -43,3 +43,5 @@ declare const SOUND: {
 };
 
 declare function playTick(): void;
+
+declare function playSelect(): void;
