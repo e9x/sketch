@@ -10,16 +10,15 @@ import createRenderContainer from "./renderContainer";
  * @returns Newly created window ID.
  */
 export default function extendWindows(
-  options: Omit<Omit<GameWindow, "gen">, "html">,
+  options: GameWindow,
   render: RenderOnDemand
 ) {
   const html = createRenderContainer(render);
 
-  const window = {
+  const window: GameWindowRender = {
     ...options,
     gen: () => html,
-    html: "",
-  } as GameWindow;
+  };
 
   const id = windows.length;
 

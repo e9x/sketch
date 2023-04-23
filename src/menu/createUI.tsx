@@ -11,7 +11,10 @@ waitFor(() => typeof windows === "object" && Array.isArray(windows)).then(
         header: "✏️",
         label: "sketch",
         width: 1100,
+        height: "100%",
         popup: true,
+        sticky: true,
+        forceScroll: true,
       },
       () => <Menu />
     );

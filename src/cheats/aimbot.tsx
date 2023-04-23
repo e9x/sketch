@@ -25,6 +25,7 @@ import {
 } from "../krunkerUtil";
 import BindHolder, { Bind } from "../menu/components/Bind";
 import Select from "../menu/components/Select";
+import { Set } from "../menu/components/Set";
 import Slider from "../menu/components/Slider";
 import Switch from "../menu/components/Switch";
 import random from "lodash/random";
@@ -392,79 +393,85 @@ export function AimbotMenu() {
 
   return (
     <>
-      <BindHolder title="Aim Key">
-        <Bind
-          bind={aimKey}
-          setBind={(bind) => setAimKey(bind)}
-          reset={() => setAimKey(null)}
-          unbind={() => setAimKey(-1)}
+      <Set title="Aimbot">
+        <BindHolder title="Aim Key">
+          <Bind
+            bind={aimKey}
+            setBind={(bind) => setAimKey(bind)}
+            reset={() => setAimKey(null)}
+            unbind={() => setAimKey(-1)}
+          />
+        </BindHolder>
+        <Select
+          title="Aimbot"
+          defaultValue={aimbot}
+          onChange={(event) => setAimbot(event.currentTarget.value)}
+        >
+          <option value="off">Off</option>
+          <option value="smooth">Smooth</option>
+          <option value="silent">Silent</option>
+        </Select>
+        <Switch
+          title="Target on Aim Key"
+          description="Picks a target as soon as the aim key is pressed, and won't lock onto a new target until it's pressed again."
+          defaultChecked={targetOnAimKey}
+          onChange={(event) => setTargetAimOnKey(event.currentTarget.checked)}
         />
-      </BindHolder>
-      <Select
-        title="Aimbot"
-        defaultValue={aimbot}
-        onChange={(event) => setAimbot(event.currentTarget.value)}
-      >
-        <option value="off">Off</option>
-        <option value="smooth">Smooth</option>
-        <option value="silent">Silent</option>
-      </Select>
-      <Switch
-        title="FOV check"
-        description="Checks if enemies are in your field of view"
-        defaultChecked={frustumCheck}
-        onChange={(event) => setFrustumCheck(event.currentTarget.checked)}
-      />
-      <Slider
-        title="FOV Radius"
-        description="Controls the aimbot FOV"
-        defaultValue={fovRadius}
-        min={0}
-        max={500}
-        step={5}
-        onChange={(event) => setFOVRadius(event.currentTarget.valueAsNumber)}
-      />
-      <Switch
-        title="Target on Aim Key"
-        description="Picks a target as soon as the aim key is pressed, and won't lock onto a new target until it's pressed again."
-        defaultChecked={targetOnAimKey}
-        onChange={(event) => setTargetAimOnKey(event.currentTarget.checked)}
-      />
-      <Switch
-        title="Show FOV"
-        description="Visualizes your FOV"
-        defaultChecked={drawFOV}
-        onChange={(event) => setDrawFOV(event.currentTarget.checked)}
-      />
-      <Slider
-        title="Smooth Factor"
-        description="Controls the speed of the aimbot's rotation"
-        defaultValue={smoothFactor}
-        min={0}
-        max={1}
-        step={0.05}
-        onChange={(event) => setSmoothFactor(event.currentTarget.valueAsNumber)}
-      />
-      <Switch
-        title="Wallbangs"
-        defaultChecked={wallbangs}
-        onChange={(event) => setWallbangs(event.currentTarget.checked)}
-      />
-      <Select
-        title="Hitbox"
-        description="Automatically aim and fire at players"
-        defaultValue={hitbox}
-        onChange={(event) => setHitbox(event.currentTarget.value)}
-      >
-        <option value="head">Head</option>
-        <option value="chest">Chest</option>
-      </Select>
-      <Switch
-        title="Turret"
-        description="Automatically aim and fire at players"
-        defaultChecked={bot}
-        onChange={(event) => setBot(event.currentTarget.checked)}
-      />
+        <Slider
+          title="Smooth Factor"
+          description="Controls the speed of the aimbot's rotation"
+          defaultValue={smoothFactor}
+          min={0}
+          max={1}
+          step={0.05}
+          onChange={(event) =>
+            setSmoothFactor(event.currentTarget.valueAsNumber)
+          }
+        />
+        <Switch
+          title="Wallbangs"
+          defaultChecked={wallbangs}
+          onChange={(event) => setWallbangs(event.currentTarget.checked)}
+        />
+        <Select
+          title="Hitbox"
+          description="Automatically aim and fire at players"
+          defaultValue={hitbox}
+          onChange={(event) => setHitbox(event.currentTarget.value)}
+        >
+          <option value="head">Head</option>
+          <option value="chest">Chest</option>
+        </Select>
+        <Switch
+          title="Turret"
+          description="Automatically aim and fire at players"
+          defaultChecked={bot}
+          onChange={(event) => setBot(event.currentTarget.checked)}
+        />
+      </Set>
+      <Set title="FOV">
+        <Switch
+          title="FOV check"
+          description="Checks if enemies are in your field of view"
+          defaultChecked={frustumCheck}
+          onChange={(event) => setFrustumCheck(event.currentTarget.checked)}
+        />
+        <Slider
+          title="FOV Radius"
+          description="Controls the aimbot FOV"
+          defaultValue={fovRadius}
+          min={0}
+          max={500}
+          step={5}
+          onChange={(event) => setFOVRadius(event.currentTarget.valueAsNumber)}
+        />
+        <Switch
+          title="Show FOV"
+          description="Visualizes your FOV"
+          defaultChecked={drawFOV}
+          onChange={(event) => setDrawFOV(event.currentTarget.checked)}
+        />
+      </Set>
     </>
   );
 }
