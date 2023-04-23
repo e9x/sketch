@@ -1,5 +1,6 @@
 import type KrunkBox from "./KrunkBox";
 import { APIError } from "./KrunkBox";
+import { hookContext, mirrorAttributes } from "./superHook";
 
 type Hook<Data> = (dataArg: string, src: string) => { data: Data; src: string };
 
@@ -32,31 +33,21 @@ export async function fetchToken(krunkbox: KrunkBox) {
   return await krunkbox.hash(token);
 }
 
-export function waitForGameLoad() {
-  return new Promise<void>((resolve) => {
-    const observer = new MutationObserver((mutations, observer) => {
-      for (const mutation of mutations) {
-        for (const node of mutation.addedNodes) {
-          if (
-            node instanceof HTMLScriptElement &&
-            node.textContent?.includes("Yendis Entertainment")
-          ) {
-            // Clear the script's textContent to prevent loading.
-            node.textContent = "";
+export const gameLoad = new Promise<void>((resolve) => {
+  hookContext(unsafeWindow as unknown as typeof globalThis, (context) => {
+    const { fetch } = context;
 
-            // Resolve the promise to indicate the game is ready to load.
-            resolve();
-
-            // The observer no longer needs to check for new elements because the WASM loading has been stopped.
-            observer.disconnect();
-          }
-        }
+    context.fetch = function (input, init) {
+      if (typeof input === "string" && input.includes("loader.wasm")) {
+        // game has loaded
+        resolve();
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        return new Promise(() => {});
       }
-    });
 
-    observer.observe(document, {
-      childList: true,
-      subtree: true,
-    });
+      return fetch(input, init);
+    };
+
+    mirrorAttributes(fetch, context.fetch);
   });
-}
+});

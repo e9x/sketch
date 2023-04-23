@@ -9,7 +9,7 @@ import { configDelete, configGet, configSet } from "./config";
 import { discordURL, gameVersion, sketchVersion, workInkURL } from "./consts";
 import type { Module } from "./filters";
 import { matchModule } from "./filters";
-import { getInit, waitForGameLoad } from "./inject";
+import { getInit, gameLoad } from "./inject";
 
 aimbotHook();
 bhopHook();
@@ -65,8 +65,6 @@ function newRoot() {
 
   return root;
 }
-
-const gameLoad = waitForGameLoad();
 
 async function main() {
   const savedToken = configGet<string>("token");
