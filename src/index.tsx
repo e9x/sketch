@@ -150,7 +150,7 @@ function KeyBeg() {
 
           setBusy(true);
 
-          KrunkBox.processWorkInk(key.current.value)
+          KrunkBox.processWorkInk(key.current.value.trim())
             .then((res) => {
               switch (res) {
                 case WorkInkErrors.BadToken:
