@@ -110,8 +110,6 @@ export function pos2D(input: THREE.Vector3, offsetY = 0) {
 export function isEnemy(player: Player) {
   const localPlayer = getLocalPlayer();
 
-  if (!localPlayer) return false;
-
   if (player.isYou) return false;
 
   if (!player.active) return false;
