@@ -1,6 +1,10 @@
+import type * as THREE from "three";
+
 // private
-declare class AI {
+export declare class AI {
   isAI: true;
+  isPlayer: undefined;
+  active: boolean;
   x: number;
   y: number;
   z: number;
@@ -15,6 +19,11 @@ declare class AI {
   name: string;
   sid: number;
   index: number;
+  health: number;
+  team: number;
+  canBSeen: boolean;
+  mesh: THREE.Object3D;
+  meshRef: THREE.Object3D;
 }
 
 declare class AIManager {

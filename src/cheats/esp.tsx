@@ -6,8 +6,9 @@ import {
   getRender,
   renderHooks,
 } from "../filters";
+import type { AI } from "../krunker/AI";
 import type { Player } from "../krunker/Player";
-import { isEnemy, isInMenus } from "../krunkerUtil";
+import { isEnemy, isInMenus, playerPos, pos2D } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
 
 export const defaultESP = false;
@@ -59,52 +60,72 @@ export class PlayerRectBounds {
   }
 }
 
-function playerBox(player: Player) {
+function playerBox(entity: Player | AI) {
   const config = getConfig();
   const overlay = getOverlay();
   const render = getRender();
 
-  const playerScale =
-    (2 * config.armScale + config.chestWidth + config.armInset) / 2;
-  let xMin = Infinity;
-  let xMax = -Infinity;
-  let yMin = Infinity;
-  let yMax = -Infinity;
+  if (entity.isPlayer) {
+    const playerScale =
+      (2 * config.armScale + config.chestWidth + config.armInset) / 2;
+    let xMin = Infinity;
+    let xMax = -Infinity;
+    let yMin = Infinity;
+    let yMax = -Infinity;
 
-  if (!player.objInstances) return;
+    if (!entity.objInstances) return;
 
-  for (let j = -1; j < 2; j += 2) {
-    for (let k = -1; k < 2; k += 2) {
-      for (let l = 0; l < 2; l++) {
-        const position = player.objInstances.position.clone();
-        position.x += j * playerScale;
-        position.z += k * playerScale;
-        position.y += l * (player.height - player.crouchVal * config.crouchDst);
-        if (!render.frustum.containPoint(position)) return;
-        position.project(render.camera);
-        xMin = Math.min(xMin, position.x);
-        xMax = Math.max(xMax, position.x);
-        yMin = Math.min(yMin, position.y);
-        yMax = Math.max(yMax, position.y);
+    for (let j = -1; j < 2; j += 2) {
+      for (let k = -1; k < 2; k += 2) {
+        for (let l = 0; l < 2; l++) {
+          const position = entity.objInstances.position.clone();
+          position.x += j * playerScale;
+          position.z += k * playerScale;
+          position.y +=
+            l * (entity.height - entity.crouchVal * config.crouchDst);
+          if (!render.frustum.containPoint(position)) return;
+          position.project(render.camera);
+          xMin = Math.min(xMin, position.x);
+          xMax = Math.max(xMax, position.x);
+          yMin = Math.min(yMin, position.y);
+          yMax = Math.max(yMax, position.y);
+        }
       }
     }
+
+    xMin = (xMin + 1) / 2;
+    xMax = (xMax + 1) / 2;
+
+    yMin = (yMin + 1) / 2;
+    yMax = (yMax + 1) / 2;
+
+    yMin = -(yMin - 0.5) + 0.5;
+    yMax = -(yMax - 0.5) + 0.5;
+
+    const scaledWidth = overlay.canvas.width / overlay.scale;
+    const scaledHeight = overlay.canvas.height / overlay.scale;
+
+    xMin *= scaledWidth;
+    xMax *= scaledWidth;
+    yMin *= scaledHeight;
+    yMax *= scaledHeight;
+
+    return new PlayerRectBounds(xMin, xMax, yMin, yMax);
+  } else {
+    if (!getRender().frustum.containPoint(playerPos(entity))) return;
+
+    const minHeight = pos2D(playerPos(entity));
+    const maxHeight = pos2D(playerPos(entity), entity.height);
+    const height = ~~(minHeight.y - maxHeight.y);
+    const width = ~~(height * 0.6);
+
+    return new PlayerRectBounds(
+      minHeight.x - width / 2,
+      minHeight.x + width / 2,
+      maxHeight.y,
+      minHeight.y
+    );
   }
-
-  xMin = (xMin + 1) / 2;
-  xMax = (xMax + 1) / 2;
-
-  yMin = (yMin + 1) / 2;
-  yMax = (yMax + 1) / 2;
-
-  yMin = -(yMin - 0.5) + 0.5;
-  yMax = -(yMax - 0.5) + 0.5;
-
-  xMin *= overlay.canvas.width;
-  xMax *= overlay.canvas.width;
-  yMin *= overlay.canvas.height;
-  yMax *= overlay.canvas.height;
-
-  return new PlayerRectBounds(xMin, xMax, yMin, yMax);
 }
 
 export function espHook() {
@@ -117,13 +138,15 @@ export function espHook() {
       const game = getGame();
 
       overlay.ctx.save();
+      overlay.ctx.save();
+      overlay.ctx.scale(overlay.scale, overlay.scale);
 
-      for (const player of game.players.list) {
-        const box = playerBox(player);
+      for (const entity of [...game.players.list, ...game.AI.ais]) {
+        const box = playerBox(entity);
 
         if (!box) continue;
 
-        const enemy = isEnemy(player);
+        const enemy = isEnemy(entity);
 
         overlay.ctx.strokeStyle = enemy ? "#eb5656" : "#9eeb56";
         overlay.ctx.lineWidth = 1.5;

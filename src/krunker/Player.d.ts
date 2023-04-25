@@ -3,6 +3,7 @@ import type THREE from "three";
 export declare class Player {
   constructor(...args: unknown[]);
   isPlayer: true;
+  isAI: undefined;
   isYou: boolean;
   id: string;
   sid: string;

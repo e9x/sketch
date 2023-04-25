@@ -8,6 +8,7 @@ import {
   getOverlay,
   getRender,
 } from "./filters";
+import type { AI } from "./krunker/AI";
 import type { Player } from "./krunker/Player";
 import type THREE from "three";
 
@@ -86,7 +87,7 @@ export function getAngleDst(a1: number, a2: number) {
   return Math.atan2(Math.sin(a2 - a1), Math.cos(a1 - a2));
 }
 
-export function playerPos(player: Player) {
+export function playerPos(player: Player | AI) {
   const game = getGame();
 
   return new game.THREE.Vector3(player.x, player.y, player.z);
@@ -107,16 +108,16 @@ export function pos2D(input: THREE.Vector3, offsetY = 0) {
   return new render.THREE.Vector2(vec.x, vec.y);
 }
 
-export function isEnemy(player: Player) {
+export function isEnemy(entity: Player | AI) {
   const localPlayer = getLocalPlayer();
 
-  if (player.isYou) return false;
+  if (entity.isPlayer && entity.isYou) return false;
 
-  if (!player.active) return false;
+  if (!entity.active) return false;
 
-  if (!player.team) return true;
+  if (!entity.team) return true;
 
-  if (player.team !== localPlayer.team) return true;
+  if (entity.team !== localPlayer.team) return true;
 
   return false;
 }

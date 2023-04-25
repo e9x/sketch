@@ -28,6 +28,7 @@ import Select from "../menu/components/Select";
 import { Set } from "../menu/components/Set";
 import Slider from "../menu/components/Slider";
 import Switch from "../menu/components/Switch";
+import type { AI } from "krunker/AI";
 import random from "lodash/random";
 
 // Function to check if a 2D point is inside a circle
@@ -119,8 +120,10 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
   return rotation;
 }
 
-function validTarget(target: Player) {
-  if (target.isYou) return false;
+function validTarget(target: Player | AI) {
+  if (target.isPlayer) {
+    if (target.isYou) return false;
+  }
 
   if (target.health <= 0) return false;
 
