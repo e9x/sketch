@@ -70,14 +70,13 @@ function playerBox(player: Player) {
   let xMax = -Infinity;
   let yMin = Infinity;
   let yMax = -Infinity;
-  let position = null;
 
   if (!player.objInstances) return;
 
   for (let j = -1; j < 2; j += 2) {
     for (let k = -1; k < 2; k += 2) {
       for (let l = 0; l < 2; l++) {
-        position = player.objInstances.position.clone();
+        const position = player.objInstances.position.clone();
         position.x += j * playerScale;
         position.z += k * playerScale;
         position.y += l * (player.height - player.crouchVal * config.crouchDst);
