@@ -2,6 +2,8 @@ import type THREE from "three";
 
 export declare class Player {
   constructor(...args: unknown[]);
+  isPlayer: true;
+  isYou: boolean;
   id: string;
   sid: string;
   premiumT?: number;
@@ -17,7 +19,6 @@ export declare class Player {
     z: number;
     height: number;
   };
-  isYou: boolean;
   active: boolean;
   objInstances: THREE.Object3D | null;
   headObj: THREE.Object3D | null;
@@ -29,7 +30,6 @@ export declare class Player {
   headMlt: number;
   swapTime: number;
   reloadTimer: number;
-  isPlayer: true;
   scale: number;
   clan: number;
   level: number;
