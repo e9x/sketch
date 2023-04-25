@@ -50,6 +50,7 @@ export interface Config {
   drawFOV: boolean;
   targetOnAimKey: boolean;
   bhop: boolean;
+  slidehop: boolean;
   esp: boolean;
   forceAuto: boolean;
   recoilControl: boolean;
@@ -81,6 +82,7 @@ const defaultConfig: Config = {
   drawFOV: false,
   targetOnAimKey: false,
   bhop: false,
+  slidehop: false,
   esp: false,
   forceAuto: false,
   recoilControl: false,

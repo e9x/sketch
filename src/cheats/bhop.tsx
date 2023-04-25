@@ -29,13 +29,9 @@ export function bhopHook() {
   const bhopDelay = 60;
 
   inputHooks.push((inputs) => {
-    if (!configGet("bhop")) return;
-
     const localPlayer = getLocalPlayer();
 
-    if (!localPlayer) return;
-
-    if (inputs[iInputs.jump]) {
+    if (configGet("bhop") && inputs[iInputs.jump]) {
       const canBhop = isBhoppable() && Date.now() - bhopTimer > bhopDelay;
 
       const mustBhop = inputs[iInputs.frame] <= bhopping;
@@ -54,14 +50,9 @@ export function bhopHook() {
       bhopTimer = 0;
     }
 
-    // ~~if crouch isn't already held, override crouch~~
-    // if(!inputs[iInputs.crouch])
-
     // if crouch is held, slidehop
-    if (inputs[iInputs.crouch]) {
-      if (!didCrouch) {
-        zeroSome = nextZeroSome;
-      }
+    if (configGet("slidehop") && inputs[iInputs.crouch]) {
+      if (!didCrouch) zeroSome = nextZeroSome;
 
       // pick a new "zeroSome" everytime we slidehop
       // otherwise they will randomly start/stop crouching as zeroSome is recalculated
@@ -81,13 +72,22 @@ export function bhopHook() {
 
 export function BhopMenu() {
   const [bhop, setBhop] = useConfig("bhop");
+  const [slidehop, setSlidehop] = useConfig("slidehop");
 
   return (
-    <Switch
-      title="Bhop"
-      description="Hold space to bhop and crouch to slidehop."
-      defaultChecked={bhop}
-      onChange={(event) => setBhop(event.currentTarget.checked)}
-    />
+    <>
+      <Switch
+        title="Bhop"
+        description="Hold space to bhop"
+        defaultChecked={bhop}
+        onChange={(event) => setBhop(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Slidehop"
+        description="Hold crouch to slidehop"
+        defaultChecked={slidehop}
+        onChange={(event) => setSlidehop(event.currentTarget.checked)}
+      />
+    </>
   );
 }
