@@ -74,13 +74,13 @@ function playerBox(player: Player) {
 
   if (!player.objInstances) return;
 
-  for (let x = -1; x < 2; x += 2) {
-    for (let y = -1; y < 2; y += 2) {
-      for (let z = 0; z < 2; z++) {
+  for (let j = -1; j < 2; j += 2) {
+    for (let k = -1; k < 2; k += 2) {
+      for (let l = 0; l < 2; l++) {
         position = player.objInstances.position.clone();
-        position.x += x * playerScale;
-        position.z += y * playerScale;
-        position.y += z * (player.height - player.crouchVal * config.crouchDst);
+        position.x += j * playerScale;
+        position.z += k * playerScale;
+        position.y += l * (player.height - player.crouchVal * config.crouchDst);
         if (!render.frustum.containPoint(position)) return;
         position.project(render.camera);
         xMin = Math.min(xMin, position.x);
