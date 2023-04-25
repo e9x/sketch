@@ -208,7 +208,9 @@ export function matchModule(module: Module) {
   for (const matcher of matchers) matcher(module);
 }
 
-if (isDevelopment)
+if (isDevelopment) {
+  console.trace("DEV");
+
   Object.assign(unsafeWindow, {
     getGame,
     getRender,
@@ -216,3 +218,4 @@ if (isDevelopment)
     getOverlay,
     getConfig,
   });
+}
