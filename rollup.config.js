@@ -2,7 +2,6 @@ import commonjs from "@rollup/plugin-commonjs";
 import eslint from "@rollup/plugin-eslint";
 import json from "@rollup/plugin-json";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
-import replace from "@rollup/plugin-replace";
 import { expand } from "dotenv-expand";
 import { config } from "dotenv-flow";
 import { readFile } from "node:fs/promises";
@@ -38,7 +37,6 @@ const envReplacements = {
       r[`process.env.${key}`] = JSON.stringify(process.env[key]);
     return r;
   }, {}),
-  "process.env.": `(${JSON.stringify({ env: {} })}).`,
 };
 
 /**
@@ -57,14 +55,11 @@ const options = defineConfig([
       esbuild({
         minify: !isDevelopment,
         jsx: "transform",
+        define: envReplacements,
       }),
       nodeResolve({ browser: true }),
       commonjs(),
       json(),
-      replace({
-        ...envReplacements,
-        preventAssignment: true,
-      }),
       !isDevelopment &&
         obfuscator({
           exclude: /node_modules/,
@@ -95,12 +90,8 @@ const options = defineConfig([
           },
           plugins: [
             eslint(),
-            esbuild({ minify: true }),
+            esbuild({ minify: true, define: envReplacements }),
             nodeResolve(),
-            replace({
-              ...envReplacements,
-              preventAssignment: true,
-            }),
             banner(() => "/*eslint-disable*/"),
             metablock({
               file: fileURLToPath(new URL("meta.json", import.meta.url)),
