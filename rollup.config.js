@@ -1,9 +1,12 @@
+import { generateIdentifier } from "./schizophrenia.js";
 import commonjs from "@rollup/plugin-commonjs";
 import eslint from "@rollup/plugin-eslint";
 import json from "@rollup/plugin-json";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { expand } from "dotenv-expand";
 import { config } from "dotenv-flow";
+import times from "lodash/times.js";
+import uniq from "lodash/uniq.js";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "rollup";
@@ -62,7 +65,18 @@ const options = defineConfig([
       json(),
       !isDevelopment &&
         obfuscator({
-          exclude: /node_modules/,
+          global: true,
+          options: {
+            deadCodeInjection: false,
+            selfDefending: true,
+            target: "browser",
+            splitStrings: true,
+            stringArrayEncoding: ["rc4"],
+            identifierNamesGenerator: "dictionary",
+            identifiersDictionary: uniq(
+              times(2048, () => generateIdentifier())
+            ),
+          },
         }),
       banner(() => "/*eslint-disable*/"),
       metablock({
