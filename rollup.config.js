@@ -3,6 +3,7 @@ import commonjs from "@rollup/plugin-commonjs";
 import eslint from "@rollup/plugin-eslint";
 import json from "@rollup/plugin-json";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
+import replace from "@rollup/plugin-replace";
 import { expand } from "dotenv-expand";
 import { config } from "dotenv-flow";
 import times from "lodash/times.js";
@@ -59,6 +60,10 @@ const options = defineConfig([
         minify: !isDevelopment,
         jsx: "transform",
         define: envReplacements,
+      }),
+      replace({
+        "process.env.": "({}).",
+        preventAssignment: true,
       }),
       nodeResolve({ browser: true }),
       commonjs(),
