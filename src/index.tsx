@@ -86,7 +86,7 @@ function newRoot() {
 
   document.documentElement.append(overlay);
 
-  return root;
+  return { root, overlay };
 }
 
 async function main() {
@@ -95,7 +95,7 @@ async function main() {
   const version = await KrunkBox.sketchVersion(sketchVersion, supportedGame);
 
   if (version.outdated)
-    return newRoot().render(
+    return newRoot().root.render(
       <>
         <h1>Update Sketch.</h1>
         <p>
@@ -110,7 +110,7 @@ async function main() {
     );
 
   if (!version.sketchUpdated)
-    return newRoot().render(
+    return newRoot().root.render(
       <>
         <h1>Sketch isn't updated.</h1>
         <a href={discordURL}>Discord server</a>
@@ -122,12 +122,20 @@ async function main() {
     if (await krunkbox.valid()) return init(krunkbox);
   }
 
-  const root = newRoot();
+  const { root, overlay } = newRoot();
 
-  root.render(<KeyBeg />);
+  root.render(
+    <KeyBeg
+      done={() => {
+        root.unmount();
+        overlay.remove();
+        location.reload();
+      }}
+    />
+  );
 }
 
-function KeyBeg() {
+function KeyBeg({ done }: { done: () => void }) {
   const key = React.useRef<HTMLInputElement | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -165,7 +173,7 @@ function KeyBeg() {
                   break;
                 default:
                   configSet("token", res);
-                  location.reload();
+                  done();
               }
             })
             .finally(() => setBusy(false));
