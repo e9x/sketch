@@ -76,6 +76,20 @@ export function hookContext(
   ) => ReturnType<(typeof functionStrings)["get"]>;
 
   const hookedToString = function (this: Function) {
+    if (typeof this !== "function") {
+      const error = new TypeError(
+        "Function.prototype.toString requires that 'this' be a Function"
+      );
+
+      if (error.stack)
+        error.stack = error.stack.replace(
+          /^ {4}at toString.*?$/m,
+          "    at toString (<anonymous>)"
+        );
+
+      throw error;
+    }
+
     const spoofedString = getFuncString(this);
 
     if (spoofedString) return spoofedString;
