@@ -108,6 +108,16 @@ export function pos2D(input: THREE.Vector3, offsetY = 0) {
   return new render.THREE.Vector2(vec.x, vec.y);
 }
 
+export function entityAlive(entity: Player | AI) {
+  if (entity.isPlayer) {
+    if (entity.isYou) return false;
+  }
+
+  if (entity.health <= 0) return false;
+
+  return true;
+}
+
 export function isEnemy(entity: Player | AI) {
   const localPlayer = getLocalPlayer();
 

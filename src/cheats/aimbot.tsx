@@ -12,6 +12,7 @@ import {
 } from "../filters";
 import type { Player } from "../krunker/Player";
 import {
+  entityAlive,
   isEnemy,
   pos2D,
   getXDire,
@@ -121,11 +122,7 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
 }
 
 function validTarget(target: Player | AI) {
-  if (target.isPlayer) {
-    if (target.isYou) return false;
-  }
-
-  if (target.health <= 0) return false;
+  if (!entityAlive(target)) return false;
 
   if (!isEnemy(target)) return false;
 
@@ -139,11 +136,11 @@ function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
   const render = getRender();
   const localPlayer = getLocalPlayer();
 
-  const fovCheck = configGet("fovCheck");
+  const frustumCheck = configGet("frustumCheck");
   // const wallbangs =
   configGet("wallbangs") && localPlayer.weapon.pierce !== undefined;
 
-  if (fovCheck) {
+  if (frustumCheck) {
     if (!render.frustum.containPoint(point)) return false;
 
     const fovRadius = configGet("fovRadius");
@@ -359,7 +356,7 @@ export function aimbotHook() {
 export function AimbotMenu() {
   const [aimbot, setAimbot] = useConfig("aimbot");
   const [bot, setBot] = useConfig("bot");
-  const [fovCheck, setfovCheck] = useConfig("fovCheck");
+  const [frustumCheck, setFrustumCheck] = useConfig("frustumCheck");
   const [wallbangs, setWallbangs] = useConfig("wallbangs");
   const [hitbox, setHitbox] = useConfig("hitbox");
   const [aimKey, setAimKey] = useConfig("aimKey");
@@ -434,8 +431,8 @@ export function AimbotMenu() {
         <Switch
           title="FOV check"
           description="Checks if enemies are in your field of view"
-          defaultChecked={fovCheck}
-          onChange={(event) => setfovCheck(event.currentTarget.checked)}
+          defaultChecked={frustumCheck}
+          onChange={(event) => setFrustumCheck(event.currentTarget.checked)}
         />
         <Slider
           title="FOV Radius"
