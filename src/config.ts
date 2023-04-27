@@ -43,7 +43,7 @@ export interface Config {
   hitbox: "head" | "chest";
   bot: boolean;
   wallbangs: boolean;
-  frustumCheck: boolean;
+  fovCheck: boolean;
   aimKey: number;
   fovRadius: number;
   smoothFactor: number;
@@ -75,7 +75,7 @@ const defaultConfig: Config = {
   hitbox: "head",
   bot: false,
   wallbangs: false,
-  frustumCheck: false,
+  fovCheck: true,
   aimKey: -1,
   fovRadius: 150,
   smoothFactor: 1,
