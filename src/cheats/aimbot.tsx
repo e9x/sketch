@@ -136,11 +136,11 @@ function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
   const render = getRender();
   const localPlayer = getLocalPlayer();
 
-  const frustumCheck = configGet("frustumCheck");
+  const fovCheck = configGet("fovCheck");
   // const wallbangs =
   configGet("wallbangs") && localPlayer.weapon.pierce !== undefined;
 
-  if (frustumCheck) {
+  if (fovCheck) {
     if (!render.frustum.containPoint(point)) return false;
 
     const fovRadius = configGet("fovRadius");
@@ -356,7 +356,7 @@ export function aimbotHook() {
 export function AimbotMenu() {
   const [aimbot, setAimbot] = useConfig("aimbot");
   const [bot, setBot] = useConfig("bot");
-  const [frustumCheck, setFrustumCheck] = useConfig("frustumCheck");
+  const [fovCheck, setfovCheck] = useConfig("fovCheck");
   const [wallbangs, setWallbangs] = useConfig("wallbangs");
   const [hitbox, setHitbox] = useConfig("hitbox");
   const [aimKey, setAimKey] = useConfig("aimKey");
@@ -431,8 +431,8 @@ export function AimbotMenu() {
         <Switch
           title="FOV check"
           description="Checks if enemies are in your field of view"
-          defaultChecked={frustumCheck}
-          onChange={(event) => setFrustumCheck(event.currentTarget.checked)}
+          defaultChecked={fovCheck}
+          onChange={(event) => setfovCheck(event.currentTarget.checked)}
         />
         <Slider
           title="FOV Radius"
