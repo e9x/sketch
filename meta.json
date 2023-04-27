@@ -5,7 +5,7 @@
   "match": ["https://krunker.io/*", "https://work.ink/4lH/krunker"],
   "exclude": [
     "https://krunker.io/social.html*",
-    "https://krunker.io/editor.html*"
+    "https://krunker.io/editor.html*",
     "https://krunker.io/viewer.html*"
   ],
   "grant": [
