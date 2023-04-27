@@ -92,47 +92,6 @@ export default class KrunkBox {
     else GM_setValue("token", value);
   }
   /**
-   *
-   * Hash a token
-   */
-  async hash(token: string) {
-    while (true) {
-      const res = await GM_fetch(new URL("hash", apiURL).toString(), {
-        method: "POST",
-        body: token,
-        headers: {
-          "x-token": this.token,
-          "content-type": "text/plain",
-        },
-      });
-
-      if (res.status === 429) return APIError.DIY;
-
-      if (res.status === 425) {
-        console.log("Too early, trying again in 3s");
-        await sleep(3e3);
-        continue;
-      }
-
-      if (res.status === 402) return APIError.BadToken;
-
-      if (!res.ok) {
-        // server error, try again in some
-        console.log("Server error, trying again in 3s");
-        await sleep(3e3);
-        continue;
-      }
-
-      // x-token should be available if eg fastify crashes
-      // but if we don't get x-token, just don't change it
-      this.token = res.headers.get("x-token") || this.token;
-
-      if (!res.ok) throw new Error("Unknown error");
-
-      return await res.text();
-    }
-  }
-  /**
    * Validates the token. Should be called before making any requests to Krunker's matchmaker
    */
   async valid() {

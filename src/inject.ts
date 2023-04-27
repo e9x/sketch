@@ -6,21 +6,28 @@ import { hookContext, mirrorAttributes } from "./superHook";
 type Hook<Data> = (dataArg: string, src: string) => { data: Data; src: string };
 
 export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
-  if (configGet("diy") === DIYStage.token) return APIError.DIY;
+  let token: string;
 
-  const [token, source] = await Promise.all([
-    fetchToken(krunkbox),
-    krunkbox.source(),
-  ]);
-
-  if (token === APIError.BadToken || source === APIError.BadToken)
-    return APIError.BadToken;
-
-  if (token === APIError.DIY) {
-    configSet("diy", DIYStage.token);
-    fetchWASM();
-    return APIError.DIY;
+  switch (configGet("diy")) {
+    case DIYStage.false:
+    case DIYStage.token:
+      configSet("diy", DIYStage.token);
+      fetchWASM();
+      return APIError.DIY;
+    case DIYStage.ready:
+      {
+        const diyToken = configGet("diyToken");
+        if (!diyToken) throw new TypeError("No token");
+        token = diyToken;
+        configDelete("diyToken");
+        configDelete("diy");
+      }
+      break;
   }
+
+  const source = await krunkbox.source();
+
+  if (source === APIError.BadToken) return APIError.BadToken;
 
   const dataArg = "_" + Math.random().toString(36).slice(2);
 
@@ -32,21 +39,6 @@ export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
   ) => void;
 
   return () => game(token, data);
-}
-
-export async function fetchToken(krunkbox: KrunkBox) {
-  if (configGet("diy") === DIYStage.ready) {
-    const diyToken = configGet("diyToken");
-    if (!diyToken) throw new TypeError("No token");
-
-    configDelete("diyToken");
-    configDelete("diy");
-
-    return diyToken;
-  } else
-    return await krunkbox.hash(
-      await (await fetch("https://matchmaker.krunker.io/generate-token")).text()
-    );
 }
 
 let doFetchWASM: (() => void) | undefined;
