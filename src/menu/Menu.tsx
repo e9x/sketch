@@ -76,6 +76,8 @@ function pickFile() {
   });
 }
 
+let defaultTabID: number | undefined;
+
 export default function Menu() {
   const [menuKey, setMenuKey] = useConfig("menuKey");
   const [menuButton] = useConfig("menuButton");
@@ -83,6 +85,10 @@ export default function Menu() {
 
   return (
     <Settings
+      defaultTabID={defaultTabID}
+      onTabChange={(tabID) => {
+        defaultTabID = tabID;
+      }}
       header={
         <>
           <div

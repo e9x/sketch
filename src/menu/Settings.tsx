@@ -6,11 +6,15 @@ export interface Tab {
 export default function Settings({
   header,
   tabs,
+  defaultTabID = 0,
+  onTabChange,
 }: {
+  defaultTabID?: number;
+  onTabChange?: (tabID: number) => void;
   header?: React.ReactNode;
   tabs: Tab[];
 }) {
-  const [tabID, setTabID] = React.useState<number>(0);
+  const [tabID, setTabID] = React.useState<number>(defaultTabID);
   const tab = tabs[tabID];
   if (!tab) throw new TypeError("Bad tab");
   const { body: Body } = tab;
@@ -27,6 +31,7 @@ export default function Settings({
               onClick={() => {
                 playSelect(0.1);
                 setTabID(i);
+                if (onTabChange) onTabChange(i);
               }}
               key={i}
             >
