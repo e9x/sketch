@@ -124,7 +124,6 @@ export function configReset() {
 export function configImport(config: Config) {
   for (const key in defaultConfig)
     if (key in config) {
-      console.log({ key }, config[key as keyof Config]);
       configSet(key as keyof Config, config[key as keyof Config]);
     } else configDelete(key as keyof Config);
 }
@@ -148,7 +147,6 @@ export default function useConfig<T extends keyof Config>(
 
   React.useEffect(() => {
     function listener() {
-      console.log("trip hook for", key, configGet(key));
       setState(configGet(key));
     }
 
