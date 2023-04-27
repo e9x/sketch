@@ -66,6 +66,8 @@ const hook = (dataArg: string, src: string) => {
   };
 };
 
+if (isKrunker) main();
+
 function newRoot() {
   const overlay = document.createElement("div");
 
@@ -173,8 +175,6 @@ function KeyBeg() {
     </>
   );
 }
-
-if (isKrunker) main();
 
 async function init(krunkbox: KrunkBox) {
   const game = await getInit(krunkbox, hook);
