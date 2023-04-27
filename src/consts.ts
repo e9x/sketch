@@ -4,8 +4,8 @@ if (!apiURL) throw new TypeError("Invalid SKETCH_API_URL");
 export const workInkURL = process.env.SKETCH_WORKINK_URL || "";
 if (!workInkURL) throw new TypeError("Invalid SKETCH_API_URL");
 
-export const gameVersion = process.env.SKETCH_GAME_VERSION || "";
-if (!gameVersion) throw new TypeError("Invalid SKETCH_GAME_VERSION");
+export const supportedGame = process.env.SKETCH_SUPPORTED_GAME || "";
+if (!supportedGame) throw new TypeError("Invalid SKETCH_SUPPORTED_GAME");
 
 export const sketchVersion = process.env.SKETCH_VERSION || "";
 if (!sketchVersion) throw new TypeError("Invalid SKETCH_VERSION");

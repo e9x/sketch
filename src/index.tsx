@@ -10,9 +10,9 @@ import { triggerbotHook } from "./cheats/triggerbot";
 import { configDelete, configGet, configSet } from "./config";
 import {
   discordURL,
-  gameVersion,
   isKrunker,
   sketchVersion,
+  supportedGame,
   workInkURL,
 } from "./consts";
 import { matchModule, getLocalPlayer, getRender } from "./filters";
@@ -90,7 +90,7 @@ function newRoot() {
 async function main() {
   const savedToken = configGet("token");
 
-  const version = await KrunkBox.sketchVersion(sketchVersion, gameVersion);
+  const version = await KrunkBox.sketchVersion(sketchVersion, supportedGame);
 
   if (version.outdated)
     return newRoot().render(

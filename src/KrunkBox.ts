@@ -40,17 +40,14 @@ export default class KrunkBox {
       return await res.text();
     }
   }
-  static async sketchVersion(
-    currentVersion: string,
-    currentGameVersion: string
-  ) {
+  static async sketchVersion(currentVersion: string, supportedGame: string) {
     while (true) {
       const res = await GM_fetch(new URL("sketchVersion", apiURL).toString(), {
         method: "POST",
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify({ currentVersion, currentGameVersion }),
+        body: JSON.stringify({ currentVersion, supportedGame }),
       });
 
       if (res.status === 425) {
