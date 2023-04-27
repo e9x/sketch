@@ -137,11 +137,13 @@ function KeyBeg() {
       <h1>Get your access key for Sketch.</h1>
       <p>
         In order to pay for servers and development, we've partnered with
-        WorkInk. Click{" "}
-        <a target="_blank" href={workInkURL}>
-          this link here
-        </a>{" "}
-        to get your access key.
+        WorkInk.
+      </p>
+      <p>
+        <a href={workInkURL}>Get Access Key</a>
+      </p>
+      <p>
+        <a href="https://sketch.sys32.dev/docs/quick-start/">Video Tutorial</a>
       </p>
       {error && <p style={{ fontSize: "10px", color: "red" }}>{error}</p>}
       <form
