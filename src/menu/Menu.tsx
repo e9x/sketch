@@ -4,7 +4,12 @@ import { ESPMenu } from "../cheats/esp";
 import { ForceAutoMenu } from "../cheats/forceAuto";
 import { RecoilControlMenu } from "../cheats/recoilControl";
 import { TriggerbotMenu } from "../cheats/triggerbot";
-import useConfig, { configSet } from "../config";
+import useConfig, {
+  configExport,
+  configImport,
+  configReset,
+  configSet,
+} from "../config";
 import { discordURL, docsURL } from "../consts";
 import Settings from "./Settings";
 import BindHolder, { Bind } from "./components/Bind";
@@ -13,6 +18,64 @@ import Link from "./components/Link";
 import { HeadlessSet, Set } from "./components/Set";
 import Switch from "./components/Switch";
 
+function downloadFile(fileName: string, fileData: string) {
+  const downloadLink = document.createElement("a");
+  downloadLink.setAttribute(
+    "href",
+    "data:text/plain;charset=utf-8," + encodeURIComponent(fileData)
+  );
+  downloadLink.setAttribute("download", fileName);
+  downloadLink.style.display = "none";
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+}
+
+function pickFile() {
+  return new Promise<string>((resolve, reject) => {
+    // Create an HTML file picker input element
+    const filePicker = document.createElement("input");
+    filePicker.type = "file";
+    filePicker.accept = ".json";
+    filePicker.style.display = "none";
+    filePicker.addEventListener("change", handleFileSelect);
+
+    // Add the file picker input to the DOM
+    document.documentElement.appendChild(filePicker);
+
+    // Click the file picker input to open the file selection dialog
+    filePicker.click();
+
+    // Handle the file selection
+    function handleFileSelect(event: Event) {
+      const target = event.target as HTMLInputElement;
+      if (!target.files || target.files.length === 0) {
+        reject(new Error("No file selected"));
+        return;
+      }
+
+      // Read the contents of the selected file as text
+      const file = target.files[0];
+      const reader = new FileReader();
+
+      reader.addEventListener("load", (event) => {
+        const contents = event.target?.result as string;
+        resolve(contents);
+      });
+
+      reader.addEventListener("error", (event) => {
+        reject(event.target?.error || new Error("Failed to read file"));
+      });
+
+      reader.readAsText(file);
+
+      // Clean up after finishing
+      filePicker.removeEventListener("change", handleFileSelect);
+      filePicker.remove();
+    }
+  });
+}
+
 export default function Menu() {
   const [menuKey, setMenuKey] = useConfig("menuKey");
   const [menuButton] = useConfig("menuButton");
@@ -20,6 +83,38 @@ export default function Menu() {
 
   return (
     <Settings
+      header={
+        <>
+          <div
+            style={{
+              display: "inline-block",
+              textAlign: "right",
+              float: "right",
+              height: 48, // we have to set this because we don't have the search buttons
+            }}
+          >
+            <div className="settingsBtn" onClick={() => configReset()}>
+              Reset
+            </div>
+            <div
+              className="settingsBtn"
+              onClick={() => {
+                downloadFile("sketch.json", JSON.stringify(configExport()));
+              }}
+            >
+              Export
+            </div>
+            <div
+              className="settingsBtn"
+              onClick={() =>
+                pickFile().then((data) => configImport(JSON.parse(data)))
+              }
+            >
+              Import
+            </div>
+          </div>
+        </>
+      }
       tabs={[
         {
           name: "Menu",

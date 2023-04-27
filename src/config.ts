@@ -117,6 +117,25 @@ export function configDelete(key: keyof Config) {
   configTarget.dispatchEvent(new Event(key));
 }
 
+export function configReset() {
+  for (const key in defaultConfig) configDelete(key as keyof Config);
+}
+
+export function configImport(config: Config) {
+  for (const key in defaultConfig)
+    if (key in config) {
+      console.log({ key }, config[key as keyof Config]);
+      configSet(key as keyof Config, config[key as keyof Config]);
+    } else configDelete(key as keyof Config);
+}
+
+export function configExport() {
+  const exported: Partial<Config> = {};
+  for (const key in defaultConfig)
+    exported[key as keyof Config] = configGet(key as keyof Config) as any;
+  return exported as Config;
+}
+
 // internal
 // passing no arguments to the callback will result in the key being deleted
 // checked by (...args) and args.length
@@ -129,6 +148,7 @@ export default function useConfig<T extends keyof Config>(
 
   React.useEffect(() => {
     function listener() {
+      console.log("trip hook for", key, configGet(key));
       setState(configGet(key));
     }
 

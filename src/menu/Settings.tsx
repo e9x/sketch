@@ -3,7 +3,13 @@ export interface Tab {
   body: React.ComponentType;
 }
 
-export default function Settings({ tabs }: { tabs: Tab[] }) {
+export default function Settings({
+  header,
+  tabs,
+}: {
+  header?: React.ReactNode;
+  tabs: Tab[];
+}) {
   const [tabID, setTabID] = React.useState<number>(0);
   const tab = tabs[tabID];
   if (!tab) throw new TypeError("Bad tab");
@@ -12,6 +18,7 @@ export default function Settings({ tabs }: { tabs: Tab[] }) {
   return (
     <>
       <div className="settingsHeader">
+        {header}
         <div id="settingsTabLayout">
           {tabs.map((tab, i) => (
             <div
