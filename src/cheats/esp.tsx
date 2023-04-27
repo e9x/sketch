@@ -8,7 +8,13 @@ import {
 } from "../filters";
 import type { AI } from "../krunker/AI";
 import type { Player } from "../krunker/Player";
-import { isEnemy, isInMenus, playerPos, pos2D } from "../krunkerUtil";
+import {
+  entityAlive,
+  isEnemy,
+  isInMenus,
+  playerPos,
+  pos2D,
+} from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
 
 export const defaultESP = false;
@@ -142,6 +148,8 @@ export function espHook() {
       overlay.ctx.scale(overlay.scale, overlay.scale);
 
       for (const entity of [...game.players.list, ...game.AI.ais]) {
+        if (!entityAlive(entity)) continue;
+
         const box = playerBox(entity);
 
         if (!box) continue;
