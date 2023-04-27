@@ -110,6 +110,10 @@ const options = defineConfig([
           plugins: [
             eslint(),
             esbuild({ minify: true, define: envReplacements }),
+            replace({
+              "process.env.": "({}).",
+              preventAssignment: true,
+            }),
             nodeResolve(),
             banner(() => "/*eslint-disable*/"),
             metablock({
