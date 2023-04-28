@@ -10,13 +10,12 @@ if (isDevelopment) console.trace("DEV");
 const container = document.createElement("div");
 
 const width = 400;
-const height = 200;
+const height = 210;
 
 Object.assign(container.style, {
   position: "fixed",
   top: "0",
   right: "0",
-  margin: "10px",
   boxShadow: "content-box",
   zIndex: `${1e9}`,
 } as CSSStyleDeclaration);
@@ -33,13 +32,21 @@ enum BoolBits {
   reload = 2 ** 4,
 }
 
+const boolBits: [bit: BoolBits, color: string, name: string][] = [
+  [BoolBits.shoot, "red", "Shoot"],
+  [BoolBits.scope, "orange", "Scope"],
+  [BoolBits.jump, "blue", "Jump"],
+  [BoolBits.crouch, "green", "Crouch"],
+  [BoolBits.reload, "purple", "Reload"],
+];
+
 type Entry = [mouseDiff: number, bit: number];
 
 const data = [...Array(width)].map(() => [0, 0] as Entry);
 
 let lastInputs: number[] | undefined;
 
-root.render(<Tracker />);
+root.render(<TrackerMenu />);
 
 hookContext(unsafeWindow as unknown as typeof globalThis, (context) => {
   const { defineProperty } = context.Object;
@@ -93,9 +100,8 @@ function hookInputs(inputs: number[]) {
   lastInputs = inputs;
 }
 
-function Tracker() {
+function Tracker({ clamp }: { clamp: React.MutableRefObject<number> }) {
   const canvas = React.useRef<HTMLCanvasElement | null>(null);
-  const clamp = React.useRef(10000);
 
   React.useEffect(() => {
     if (!canvas.current) return;
@@ -108,13 +114,6 @@ function Tracker() {
     const blockWidth = width / data.length;
 
     const boolHeight = 5;
-    const boolBits: [bit: BoolBits, color: string][] = [
-      [BoolBits.shoot, "red"],
-      [BoolBits.scope, "orange"],
-      [BoolBits.jump, "blue"],
-      [BoolBits.crouch, "green"],
-      [BoolBits.reload, "purple"],
-    ];
 
     const diffHeight = height - boolHeight * boolBits.length;
 
@@ -157,27 +156,89 @@ function Tracker() {
     }
   }, [canvas]);
 
+  return <canvas width={width} height={height} ref={canvas} />;
+}
+
+function LegendKey({
+  name,
+  style,
+}: {
+  name: string;
+  style?: Omit<Omit<React.CSSProperties, "width">, "height">;
+}) {
   return (
     <div
       style={{
-        width,
-        backgroundColor: "#353535",
+        margin: "0 10px",
+        alignItems: "center",
         display: "flex",
         flexDirection: "column",
-        fontSize: 10,
       }}
     >
-      <canvas width={width} height={height} ref={canvas} />
-      <TinyRange
-        title="Aim Clamp"
-        step={25}
-        min={25}
-        max={10000}
-        defaultValue={clamp.current}
-        onChange={(e) => {
-          clamp.current = e.target.valueAsNumber;
+      <span style={{ color: "white", fontSize: 8, marginTop: 3 }}>{name}</span>
+      <div style={{ width: 60, height: 15, ...style }} />
+    </div>
+  );
+}
+
+function TrackerMenu() {
+  const clamp = React.useRef(10000);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "row", gap: 5, margin: 10 }}>
+      <div
+        style={{
+          backgroundColor: "#353535",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
         }}
-      />
+      >
+        <span style={{ color: "white", fontSize: 10, margin: "8px 0" }}>
+          Legend
+        </span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          <LegendKey
+            style={{
+              backgroundSize: "10px 1px",
+              backgroundRepeat: "repeat",
+              backgroundPosition: "1px 0",
+              backgroundImage:
+                "linear-gradient(90deg, blue 75%, transparent 1%)",
+              backgroundColor: "white",
+            }}
+            name="Aim Difference"
+          />
+          {boolBits.map((bit, i) => (
+            <LegendKey
+              key={i}
+              style={{ backgroundColor: bit[1] }}
+              name={bit[2]}
+            />
+          ))}
+        </div>
+      </div>
+      <div
+        style={{
+          width,
+          backgroundColor: "#353535",
+          display: "flex",
+          flexDirection: "column",
+          fontSize: 10,
+        }}
+      >
+        <Tracker clamp={clamp} />
+        <TinyRange
+          title="Aim Clamp"
+          step={25}
+          min={25}
+          max={10000}
+          defaultValue={clamp.current}
+          onChange={(e) => {
+            clamp.current = e.target.valueAsNumber;
+          }}
+        />
+      </div>
     </div>
   );
 }
