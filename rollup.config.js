@@ -43,6 +43,8 @@ const envReplacements = {
   }, {}),
 };
 
+const funnyIDs = uniq(times(8 ** 6, () => generateIdentifier()));
+
 /**
  * @type {import("rollup").RollupOptions}
  */
@@ -72,15 +74,19 @@ const options = defineConfig([
         obfuscator({
           global: true,
           options: {
-            deadCodeInjection: false,
-            selfDefending: true,
             target: "browser",
-            splitStrings: true,
-            stringArrayEncoding: ["rc4"],
+            deadCodeInjection: false,
+            selfDefending: false,
+            splitStrings: false,
+            transformObjectKeys: false,
+            renameProperties: false,
+            renameGlobals: false,
+            numbersToExpressions: false,
+            controlFlowFlattening: false,
+            stringArray: false,
+            simplify: false,
             identifierNamesGenerator: "dictionary",
-            identifiersDictionary: uniq(
-              times(2048, () => generateIdentifier())
-            ),
+            identifiersDictionary: funnyIDs,
           },
         }),
       banner(() => "/*eslint-disable*/"),
