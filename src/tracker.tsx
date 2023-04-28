@@ -10,13 +10,12 @@ if (isDevelopment) console.trace("DEV");
 const container = document.createElement("div");
 
 const width = 400;
-const height = 210;
+const height = 201;
 
 Object.assign(container.style, {
   position: "fixed",
   top: "0",
   right: "0",
-  boxShadow: "content-box",
   zIndex: `${1e9}`,
 } as CSSStyleDeclaration);
 
@@ -164,7 +163,7 @@ function LegendKey({
   style,
 }: {
   name: string;
-  style?: Omit<Omit<React.CSSProperties, "width">, "height">;
+  style?: React.CSSProperties;
 }) {
   return (
     <div
@@ -175,8 +174,8 @@ function LegendKey({
         flexDirection: "column",
       }}
     >
-      <span style={{ color: "white", fontSize: 8, marginTop: 3 }}>{name}</span>
-      <div style={{ width: 60, height: 15, ...style }} />
+      <span style={{ color: "white", fontSize: 8 }}>{name}</span>
+      <div style={{ width: 50, height: 10, marginTop: 2, ...style }} />
     </div>
   );
 }
@@ -197,7 +196,14 @@ function TrackerMenu() {
         <span style={{ color: "white", fontSize: 10, margin: "8px 0" }}>
           Legend
         </span>
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 5,
+            marginBottom: 8,
+          }}
+        >
           <LegendKey
             style={{
               backgroundSize: "10px 1px",
