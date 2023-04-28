@@ -237,8 +237,8 @@ function TrackerMenu() {
         <Tracker clamp={clamp} />
         <TinyRange
           title="Aim Clamp"
-          step={0.1}
-          min={0.1}
+          step={0.01}
+          min={0.01}
           max={7}
           defaultValue={clamp.current}
           onChange={(e) => {
