@@ -112,7 +112,7 @@ function Tracker({ clamp }: { clamp: React.MutableRefObject<number> }) {
 
     const blockWidth = width / data.length;
 
-    const boolHeight = 5;
+    const boolHeight = 8;
 
     const diffHeight = height - boolHeight * boolBits.length;
 
