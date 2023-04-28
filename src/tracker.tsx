@@ -1,0 +1,261 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { iInputs, isDevelopment } from "./consts";
+import type Game from "./krunker/Game";
+import { hookContext, mirrorAttributes } from "./superHook";
+
+if (isDevelopment) console.trace("DEV");
+
+const container = document.createElement("div");
+
+const width = 400;
+const height = 200;
+
+Object.assign(container.style, {
+  position: "fixed",
+  top: "0",
+  right: "0",
+  margin: "10px",
+  boxShadow: "content-box",
+  zIndex: `${1e9}`,
+} as CSSStyleDeclaration);
+
+const root = ReactDOM.createRoot(container);
+
+document.documentElement.append(container);
+
+enum BoolBits {
+  shoot = 2 ** 0,
+  scope = 2 ** 1,
+  jump = 2 ** 2,
+  crouch = 2 ** 3,
+  reload = 2 ** 4,
+}
+
+type Entry = [mouseDiff: number, bit: number];
+
+const data = [...Array(width)].map(() => [0, 0] as Entry);
+
+let lastInputs: number[] | undefined;
+
+root.render(<Tracker />);
+
+hookContext(unsafeWindow as unknown as typeof globalThis, (context) => {
+  const { defineProperty } = context.Object;
+  const definePropertyApply = defineProperty.apply.bind(defineProperty);
+
+  Object.defineProperty(Object, "defineProperty", {
+    configurable: true,
+    writable: true,
+    enumerable: false,
+    value: mirrorAttributes(context.Object.defineProperty, function <
+      T
+    >(this: typeof Object, ...args: [o: T, p: PropertyKey, attributes: PropertyDescriptor & ThisType<any>]): T {
+      const defined = definePropertyApply(this, args) as T;
+      if (args[1] === "tmpPlayer") hookGame(args[0] as Game);
+      return defined;
+    }),
+  });
+});
+
+function hookGame(game: Game) {
+  const { push } = game.controls.tmpInpts;
+
+  game.controls.tmpInpts.push = function (inputs) {
+    hookInputs(inputs);
+    return push.call(this, inputs);
+  };
+}
+
+function hookInputs(inputs: number[]) {
+  if (lastInputs) {
+    const x1 = inputs[iInputs.xDir];
+    const y1 = inputs[iInputs.yDir];
+
+    const x2 = lastInputs[iInputs.xDir];
+    const y2 = lastInputs[iInputs.yDir];
+
+    const distance = ~~Math.hypot(x2 - x1, y2 - y1);
+
+    data.push([
+      distance,
+      (inputs[iInputs.shoot] === 1 ? BoolBits.shoot : 0) |
+        (inputs[iInputs.scope] === 1 ? BoolBits.scope : 0) |
+        (inputs[iInputs.jump] === 1 ? BoolBits.jump : 0) |
+        (inputs[iInputs.crouch] === 1 ? BoolBits.crouch : 0) |
+        (inputs[iInputs.reload] === 1 ? BoolBits.reload : 0),
+    ]);
+
+    data.splice(0, 1);
+  }
+
+  lastInputs = inputs;
+}
+
+function Tracker() {
+  const canvas = React.useRef<HTMLCanvasElement | null>(null);
+  const clamp = React.useRef(10000);
+
+  React.useEffect(() => {
+    if (!canvas.current) return;
+
+    const ctx = canvas.current.getContext("2d")!;
+    if (!ctx) throw new TypeError("no ctx");
+
+    ctx.imageSmoothingEnabled = false;
+
+    const blockWidth = width / data.length;
+
+    const boolHeight = 5;
+    const boolBits: [bit: BoolBits, color: string][] = [
+      [BoolBits.shoot, "red"],
+      [BoolBits.scope, "orange"],
+      [BoolBits.jump, "blue"],
+      [BoolBits.crouch, "green"],
+      [BoolBits.reload, "purple"],
+    ];
+
+    const diffHeight = height - boolHeight * boolBits.length;
+
+    requestAnimationFrame(frame);
+
+    function frame() {
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+
+      for (let i = 0; i < data.length; i++) {
+        const val = data[i];
+
+        const x = blockWidth * i;
+
+        // diff
+        if (val[0]) {
+          const h = ~~(
+            diffHeight *
+            (Math.min(val[0], clamp.current) / clamp.current)
+          );
+          ctx.fillStyle = "blue";
+          ctx.fillRect(x, diffHeight - h, blockWidth, h);
+        }
+
+        // draw bits
+        for (let b = 0; b < boolBits.length; b++)
+          if (val[1] & boolBits[b][0]) {
+            ctx.fillStyle = boolBits[b][1];
+            ctx.fillRect(
+              x,
+              diffHeight + boolHeight * b,
+              blockWidth,
+              boolHeight
+            );
+          }
+      }
+
+      requestAnimationFrame(frame);
+    }
+  }, [canvas]);
+
+  return (
+    <div
+      style={{
+        width,
+        backgroundColor: "#353535",
+        display: "flex",
+        flexDirection: "column",
+        fontSize: 10,
+      }}
+    >
+      <canvas width={width} height={height} ref={canvas} />
+      <TinyRange
+        title="Aim Clamp"
+        step={25}
+        min={25}
+        max={10000}
+        defaultValue={clamp.current}
+        onChange={(e) => {
+          clamp.current = e.target.valueAsNumber;
+        }}
+      />
+    </div>
+  );
+}
+
+function TinyRange({
+  title,
+  onChange,
+  defaultValue,
+  min,
+  max,
+  step,
+}: {
+  title: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  defaultValue?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
+  const numberInput = React.useRef<HTMLInputElement | null>(null);
+  const rangeInput = React.useRef<HTMLInputElement | null>(null);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        padding: "4px 12px",
+      }}
+    >
+      <span
+        style={{
+          color: "#ffffff",
+        }}
+      >
+        {title}
+      </span>
+      <input
+        type="range"
+        defaultValue={
+          typeof defaultValue === "number"
+            ? defaultValue.toString()
+            : defaultValue
+        }
+        min={min}
+        max={max}
+        step={step}
+        onChange={(event) => {
+          if (numberInput.current)
+            numberInput.current.valueAsNumber =
+              event.currentTarget.valueAsNumber;
+          if (onChange) onChange.call(undefined as never, event);
+        }}
+        style={{ marginLeft: "auto", marginRight: 5 }}
+        ref={rangeInput}
+      />
+      <input
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        defaultValue={
+          typeof defaultValue === "number"
+            ? defaultValue.toString()
+            : defaultValue
+        }
+        onChange={(event) => {
+          if (rangeInput.current)
+            rangeInput.current.valueAsNumber =
+              event.currentTarget.valueAsNumber;
+          if (onChange) onChange.call(undefined as never, event);
+        }}
+        style={{
+          fontSize: "inherit",
+        }}
+        ref={numberInput}
+      />
+    </div>
+  );
+}

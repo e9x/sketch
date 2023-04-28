@@ -1,0 +1,17 @@
+{
+  "name": "Aimbot Tracker",
+  "namespace": "https://sys32.dev",
+  "icon": "https://www.google.com/s2/favicons?sz=64&domain=krunker.io",
+  "match": ["https://krunker.io/*"],
+  "exclude": [
+    "https://krunker.io/social.html*",
+    "https://krunker.io/editor.html*"
+  ],
+  "run-at": "document-start",
+  "grant": ["unsafeWindow"],
+  "require": [
+    "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.2.1/chart.umd.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"
+  ]
+}

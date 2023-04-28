@@ -45,16 +45,92 @@ const envReplacements = {
 
 const funnyIDs = uniq(times(8 ** 6, () => generateIdentifier()));
 
+const transformerFactory = (name) => (relativeSourcePath) =>
+  new URL(relativeSourcePath, `sketch-${name}://`).toString();
+
 /**
  * @type {import("rollup").RollupOptions}
  */
 const options = defineConfig([
+  {
+    input: "./src/tracker.tsx",
+    output: {
+      file: fileURLToPath(new URL("dist/tracker.user.js", import.meta.url)),
+      format: "cjs",
+      sourcemap: "hidden",
+      sourcemapPathTransform: transformerFactory("tracker"),
+    },
+    plugins: [
+      eslint(),
+      esbuild({
+        minify: !isDevelopment,
+        jsx: "transform",
+        define: envReplacements,
+      }),
+      replace({
+        "process.env.": "({}).",
+        preventAssignment: true,
+      }),
+      nodeResolve({ browser: true }),
+      commonjs(),
+      banner(() => "/*eslint-disable*/"),
+      metablock({
+        file: fileURLToPath(new URL("tracker.json", import.meta.url)),
+        override: {
+          author: pkg.author,
+          description: pkg.description,
+          version: pkg.version,
+        },
+        manager: "tampermonkey",
+      }),
+    ],
+  },
+  ...(isDevelopment
+    ? [
+        {
+          input: "./src/trackerDev.ts",
+          output: {
+            file: fileURLToPath(
+              new URL("dist/tracker.DEV.user.js", import.meta.url)
+            ),
+            format: "cjs",
+            sourcemap: "inline",
+            sourcemapPathTransform: transformerFactory("tracker-loader"),
+          },
+          plugins: [
+            eslint(),
+            esbuild({ minify: true, define: envReplacements }),
+            replace({
+              "process.env.": "({}).",
+              preventAssignment: true,
+            }),
+            nodeResolve(),
+            banner(() => "/*eslint-disable*/"),
+            metablock({
+              file: fileURLToPath(new URL("tracker.json", import.meta.url)),
+              override: {
+                name: "Tracker DEV",
+                author: pkg.author,
+                description: pkg.description,
+                version: pkg.version,
+                require: [
+                  "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.min.js",
+                  "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.min.js",
+                ],
+              },
+              manager: "tampermonkey",
+            }),
+          ],
+        },
+      ]
+    : []),
   {
     input: "./src/index.tsx",
     output: {
       file: fileURLToPath(new URL("dist/sketch.user.js", import.meta.url)),
       format: "cjs",
       sourcemap: "hidden",
+      sourcemapPathTransform: transformerFactory("main"),
     },
     plugins: [
       eslint(),
@@ -112,6 +188,7 @@ const options = defineConfig([
             ),
             format: "cjs",
             sourcemap: "inline",
+            sourcemapPathTransform: transformerFactory("main-loader"),
           },
           plugins: [
             eslint(),
