@@ -39,7 +39,7 @@ const boolBits: [bit: BoolBits, color: string, name: string][] = [
   [BoolBits.reload, "purple", "Reload"],
 ];
 
-type Entry = [mouseDiff: number, bit: number];
+type Entry = [distance: number, bit: number];
 
 const data = [...Array(width)].map(() => [0, 0] as Entry);
 
