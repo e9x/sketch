@@ -76,13 +76,13 @@ function hookGame(game: Game) {
 
 function hookInputs(inputs: number[]) {
   if (lastInputs) {
-    const x1 = inputs[iInputs.xDir];
-    const y1 = inputs[iInputs.yDir];
+    const x1 = inputs[iInputs.xDir] / 1000;
+    const y1 = inputs[iInputs.yDir] / 1000;
 
-    const x2 = lastInputs[iInputs.xDir];
-    const y2 = lastInputs[iInputs.yDir];
+    const x2 = lastInputs[iInputs.xDir] / 1000;
+    const y2 = lastInputs[iInputs.yDir] / 1000;
 
-    const distance = ~~Math.hypot(x2 - x1, y2 - y1);
+    const distance = Math.hypot(x2 - x1, y2 - y1);
 
     data.push([
       distance,
@@ -181,7 +181,8 @@ function LegendKey({
 }
 
 function TrackerMenu() {
-  const clamp = React.useRef(10000);
+  // Highest value possible is Math.PI2 or 6.283
+  const clamp = React.useRef(7);
 
   return (
     <div style={{ display: "flex", flexDirection: "row", gap: 5, margin: 10 }}>
@@ -236,9 +237,9 @@ function TrackerMenu() {
         <Tracker clamp={clamp} />
         <TinyRange
           title="Aim Clamp"
-          step={25}
-          min={25}
-          max={10000}
+          step={0.1}
+          min={0.1}
+          max={7}
           defaultValue={clamp.current}
           onChange={(e) => {
             clamp.current = e.target.valueAsNumber;
