@@ -80,13 +80,8 @@ function isWebpackRequire(e: unknown): e is WebpackRequire {
 
 let hookedRequire = false;
 
-const iiiiiii = /(?:i|[^\sa-z0-9]){4,}$/i;
-
 function hookWebpackRequire(require: WebpackRequire) {
-  if (!iiiiiii.test(require.toString())) return;
-
   if (hookedRequire) return;
-  hookedRequire = true;
 
   for (let i = 0; i < require.m.length; i++) {
     const entry = require.m[i];
@@ -102,6 +97,8 @@ function hookWebpackRequire(require: WebpackRequire) {
           return result;
         };
       };
+
+      hookedRequire = true;
     }
   }
 }
