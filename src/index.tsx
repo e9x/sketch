@@ -41,18 +41,29 @@ const hook = (dataArg: string, src: string) => {
   );
 
   // *r.adsFovMlt[r.getPlayerWeaponId(t)]
-  src = src.replace(/\*(\w+)\.adsFovMlt/g, () => `*(${dataArg}.adsFovMlt)`);
+  src = src.replace(
+    /\*(\w+)\.adsFovMlt/g,
+    (match, render) =>
+      `*(${dataArg}.noAdsFovMlt?${dataArg}:${render}).adsFovMlt`
+  );
+
+  const genericAdsArray = [...Array(64)].fill(0);
 
   return {
     data: {
+      get noAdsFovMlt() {
+        return configGet("noAdsFovMlt");
+      },
       get adsFovMlt() {
-        if (!configGet("noAdsFovMlt")) return getRender().adsFovMlt;
+        try {
+          const ads: number[] = [];
 
-        const ads: number[] = [];
+          ads[getRender().getPlayerWeaponId(getLocalPlayer())] = 0;
 
-        ads[getRender().getPlayerWeaponId(getLocalPlayer())] = 0;
-
-        return ads;
+          return ads;
+        } catch {
+          return genericAdsArray;
+        }
       },
       extract: (module: Module) => {
         matchModule(module);
