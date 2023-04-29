@@ -47,23 +47,102 @@ let lastInputs: number[] | undefined;
 
 root.render(<TrackerMenu />);
 
-hookContext(unsafeWindow as unknown as typeof globalThis, (context) => {
-  const { defineProperty } = context.Object;
-  const definePropertyApply = defineProperty.apply.bind(defineProperty);
+// JSON.parse is easy hook
+// there's no strict mode on JSON modules
+// start to end: module.exports = JSON.parse('"4FgX6d931s0EzfUWGtZ4QkiJglWpDl5V"');
+// see, no use strict
+// but it can be tripped like:
+// JSON.parse({ toString() { console.log("Got you:", new Error().stack); } })
+// JSON.parse("1", () => { console.log("Got you:", new Error().stack); })
 
-  Object.defineProperty(Object, "defineProperty", {
-    configurable: true,
-    writable: true,
-    enumerable: false,
-    value: mirrorAttributes(context.Object.defineProperty, function <
-      T
-    >(this: typeof Object, ...args: [o: T, p: PropertyKey, attributes: PropertyDescriptor & ThisType<any>]): T {
-      const defined = definePropertyApply(this, args) as T;
-      if (args[1] === "tmpPlayer") hookGame(args[0] as Game);
-      return defined;
-    }),
-  });
+function argsFunction(
+  callback: (
+    thisArg: any,
+    args: IArguments,
+    calleeCallerArgs: IArguments | undefined
+  ) => void
+) {
+  return new Function(
+    "_81xd",
+    "return function kpal(){let a;try{a=arguments.callee.caller.arguments}catch{}return _81xd(this,arguments,a)}"
+  )(callback);
+}
+
+type WebpackModule = {
+  i: number;
+  l: boolean;
+  exports: any;
+};
+
+type WebpackRequire = ((i: number) => unknown) & {
+  m: (
+    | ((
+        this: WebpackModule,
+        module: WebpackModule,
+        exports: WebpackModule["exports"],
+        require: WebpackRequire
+      ) => void)
+    | undefined
+  )[];
+};
+
+function isWebpackRequire(e: unknown): e is WebpackRequire {
+  return typeof e === "function" && "c" in e && "m" in e && Array.isArray(e.m);
+}
+
+let hookedRequire = false;
+
+function hookWebpackRequire(require: WebpackRequire) {
+  if (hookedRequire) return;
+  hookedRequire = true;
+
+  for (let i = 0; i < require.m.length; i++) {
+    const entry = require.m[i];
+
+    if (entry?.toString().includes("this.players=new ")) {
+      require.m[i] = function (module, exports, require) {
+        entry.call(this, module, exports, require);
+        const oldExports = module.exports;
+
+        module.exports = function (this: any, ...args: any[]) {
+          const result = oldExports.call(this, ...args);
+          setTimeout(() => hookGame(this));
+          return result;
+        };
+      };
+    }
+  }
+}
+
+hookContext(unsafeWindow as unknown as typeof globalThis, (context) => {
+  const parseApply = Function.prototype.apply.bind(context.JSON.parse);
+
+  // wtf always tripped:
+  // super detect:
+  // new URLSearchParams().get({ toString(){ console.trace("got you") }})
+
+  context.JSON.parse = mirrorAttributes(
+    context.JSON.parse,
+    argsFunction((thisArg, args, calleeCallerArgs) => {
+      // function(this: URL, ...args: [name: string]): string | null {
+
+      if (calleeCallerArgs?.length === 3) {
+        // this.players=new
+        const webpackRequire = [...calleeCallerArgs].find(isWebpackRequire);
+        if (webpackRequire) hookWebpackRequire(webpackRequire);
+      }
+
+      try {
+        return parseApply(thisArg, [...args]);
+      } catch (e) {
+        console.error(e);
+        throw e;
+      }
+    })
+  );
 });
+
+// Error.captureStackTrace(new Proxy(new Error(), { defineProperty: console.trace }))
 
 function hookGame(game: Game) {
   const { push } = game.controls.tmpInpts;
