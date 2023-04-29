@@ -1,5 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
 export const functionStrings = new WeakMap<Function, string>();
+
+export function prototypelessFunction(
+  callback: (thisArg: any, args: IArguments) => void
+) {
+  return new Function("_81xd", "return{kpal(){return _81xd(this,arguments)}}")(
+    callback
+  )["kpal"];
+}
 
 export function mirrorAttributes<From extends Function, To extends Function>(
   from: From,
@@ -54,18 +63,6 @@ export function hookContext(
   // hook new Function() and Function() to catch the game loading
   const { Function } = context;
 
-  // use array to avoid V8 from inferring the function name based on the var name
-  const [HookedFunction] = [
-    function (...args: string[]) {
-      if (new.target) return new Function(...args);
-      else return Function(...args);
-    },
-  ];
-
-  mirrorAttributes(Function, HookedFunction, true);
-
-  context.Function = HookedFunction as typeof Function;
-
   // Hook toString
   // need to be very careful
 
@@ -78,35 +75,38 @@ export function hookContext(
     arg0: Function
   ) => ReturnType<(typeof functionStrings)["get"]>;
 
-  const hookedToString = function (this: Function) {
-    if (typeof this !== "function") {
-      const error = new TypeError(
-        "Function.prototype.toString requires that 'this' be a Function"
-      );
-
-      if (error.stack)
-        error.stack = error.stack.replace(
-          /^ {4}at toString.*?$/m,
-          "    at toString (<anonymous>)"
+  // use short-hand method so .prototype isn't created
+  const hookedToString = {
+    toString(this: Function) {
+      if (typeof this !== "function") {
+        const error = new TypeError(
+          "Function.prototype.toString requires that 'this' be a Function"
         );
 
-      throw error;
-    }
+        if (error.stack)
+          error.stack = error.stack.replace(
+            /^ {4}at toString.*?$/m,
+            "    at toString (<anonymous>)"
+          );
 
-    const spoofedString = getFuncString(this);
+        throw error;
+      }
 
-    if (spoofedString) return spoofedString;
+      const spoofedString = getFuncString(this);
 
-    const string = toStringCall(this);
+      if (spoofedString) return spoofedString;
 
-    /*if (
-        !string.includes("[native code]") &&
-        !string.includes("methodCaller")
-      )
-        console.error(string);*/
+      const string = toStringCall(this);
 
-    return string;
-  };
+      /*if (
+          !string.includes("[native code]") &&
+          !string.includes("methodCaller")
+        )
+          console.error(string);*/
+
+      return string;
+    },
+  }.toString;
 
   mirrorAttributes(toString, hookedToString);
 
