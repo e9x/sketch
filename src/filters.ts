@@ -14,7 +14,7 @@ import type * as Overlay from "./krunker/overlay";
 
 export interface Module<T = any> {
   exports: T;
-  i: string;
+  i: number;
 }
 
 type Matcher = (module: Module) => void;
@@ -66,7 +66,7 @@ function doGameHooks() {
 matchers.push((module: Module<typeof Game>) => {
   if (
     typeof module.exports !== "function" ||
-    !module.exports.toString().includes("this.players=")
+    !module.exports.toString().includes("this.players=new")
   )
     return;
 
