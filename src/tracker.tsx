@@ -104,15 +104,7 @@ function hookWebpackRequire(require: WebpackRequire) {
             return result;
           }
         );
-
-        console.log("Hook:", module.exports.toString());
-        console.log(
-          "Still viable:",
-          module.exports.toString().includes("this.players=new ")
-        );
       } as WebpackModuleFactory);
-
-      setTimeout(() => console.log("hook:", require.m[i]?.toString()));
 
       hookedRequire = true;
     }
