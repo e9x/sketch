@@ -10,6 +10,10 @@ declare class Game {
   mode: {
     noHPbars?: boolean;
     fakeNames?: boolean;
+    bonuses: {
+      firerate: 0;
+    };
+    forceCharge: boolean;
   };
   map: {
     terrain: Terrain | null;
@@ -22,7 +26,9 @@ declare class Game {
   COLLISIONS: unknown;
   THREE: typeof THREE;
   players: manager;
-  config: unknown;
+  config: {
+    fiRat?: number;
+  };
   raycaster: THREE.Raycaster;
   controls: {
     keys: Record<string, 0 | 1>;

@@ -204,6 +204,36 @@ export function getCurrentReload(aimTime: number) {
   return currentReload;
 }
 
+export function getChargeMlt() {
+  const e = getLocalPlayer();
+  const game = getGame();
+
+  let mlt = 1;
+
+  if (e.weapon && e.weapon.rateChrg) {
+    mlt = 1 - Math.min(1, e.chargeTime / e.weapon.chrgTime!);
+    if (game.mode.forceCharge) mlt = 0;
+
+    mlt = Math.max(0.7, 1.5 * mlt);
+  }
+
+  return mlt;
+}
+
+export function getReload() {
+  const e = getLocalPlayer();
+  const game = getGame();
+
+  return (
+    (e.burstCount && e.weapon.burst ? e.weapon.burstR! : e.weapon.rate!) *
+    (game.config.fiRat || 1) *
+    e.attributes.fRate *
+    (e.perks.includes(1) ? 0.66 : 1) *
+    (e.isKranked ? game.mode.bonuses.firerate : 1) *
+    getChargeMlt()
+  );
+}
+
 export function isInMenus() {
   return (
     document.getElementById("endUI")?.style.display !== "none" ||

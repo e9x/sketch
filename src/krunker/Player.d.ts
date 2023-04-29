@@ -1,7 +1,40 @@
 import type THREE from "three";
 
+interface Weapon {
+  /**
+   * true or undefined = can't aim
+   * false = can aim
+   */
+  noAim?: boolean;
+  nAuto?: boolean;
+  /**
+   * 0 - 1 or unset if no pierce
+   */
+  pierce?: number;
+  burst?: boolean;
+  burstR?: number;
+  rate?: number;
+  rateChrg?: boolean;
+  chrgTime?: number;
+}
+
 export declare class Player {
   constructor(...args: unknown[]);
+  perks: number[];
+  isKranked: boolean;
+  chargeTime: number;
+  attributes: {
+    dmg: 1 | 0;
+    drunk: 1 | 0;
+    enraged: 1 | 0;
+    fRate: 1 | 0;
+    jump: 1 | 0;
+    reload: 1 | 0;
+    rooted: 1 | 0;
+    siphon: 1 | 0;
+    speed: 1 | 0;
+    zap: 1 | 0;
+  };
   isPlayer: true;
   isAI: undefined;
   isYou: boolean;
@@ -20,6 +53,7 @@ export declare class Player {
     z: number;
     height: number;
   };
+  burstCount: number;
   active: boolean;
   objInstances: THREE.Object3D | null;
   headObj: THREE.Object3D | null;
@@ -61,18 +95,7 @@ export declare class Player {
   height: number;
   landBobY: number;
   recoilAnimY: number;
-  weapon: {
-    /**
-     * true or undefined = can't aim
-     * false = can aim
-     */
-    noAim?: boolean;
-    nAuto?: boolean;
-    /**
-     * 0 - 1 or unset if no pierce
-     */
-    pierce?: number;
-  };
+  weapon: Weapon;
 }
 
 export declare class manager {

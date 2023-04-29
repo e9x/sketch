@@ -1,25 +1,43 @@
 import useConfig, { configGet } from "../config";
 import { iInputs } from "../consts";
 import { getLocalPlayer, inputHooks } from "../filters";
-import { getAimTime, getCurrentReload } from "../krunkerUtil";
+import { getAimTime, getCurrentReload, getReload } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
+import random from "lodash/random";
+
+function canShoot(aimTime: number) {
+  return !getCurrentReload(aimTime) && !getLocalPlayer().reloadTimer;
+}
 
 export function forceAutoHook() {
-  let lastShoot = 1;
+  let shootTimer = 0;
+  let shootStart = 0;
 
   inputHooks.push((inputs) => {
     if (!configGet("forceAuto")) return;
 
     const localPlayer = getLocalPlayer();
 
-    if (
-      localPlayer.weapon.nAuto &&
-      inputs[iInputs.shoot] &&
-      !getCurrentReload(getAimTime(inputs)) &&
-      !localPlayer.reloadTimer
-    ) {
-      inputs[iInputs.shoot] = lastShoot;
-      lastShoot ^= 1;
+    if (inputs[iInputs.shoot] && localPlayer.weapon.nAuto) {
+      const now = Date.now();
+
+      if (shootTimer <= now) {
+        shootTimer = 0;
+        shootStart = 0;
+      }
+
+      if (!shootTimer && canShoot(getAimTime(inputs))) {
+        shootTimer = now + getReload() * random(0.8, 0.9);
+        shootStart = inputs[iInputs.frame] + random(1, 3);
+        inputs[iInputs.shoot] = 0;
+      } else {
+        const mustBhop =
+          inputs[iInputs.frame] >= shootStart && now < shootTimer;
+        inputs[iInputs.shoot] = mustBhop ? 1 : 0;
+      }
+    } else {
+      shootTimer = 0;
+      shootStart = 0;
     }
   });
 }
