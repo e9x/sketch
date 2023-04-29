@@ -54,10 +54,13 @@ export function hookContext(
   // hook new Function() and Function() to catch the game loading
   const { Function } = context;
 
-  const HookedFunction = function (...args: string[]) {
-    if (new.target) return new Function(...args);
-    else return Function(...args);
-  };
+  // use array to avoid V8 from inferring the function name based on the var name
+  const [HookedFunction] = [
+    function (...args: string[]) {
+      if (new.target) return new Function(...args);
+      else return Function(...args);
+    },
+  ];
 
   mirrorAttributes(Function, HookedFunction, true);
 
