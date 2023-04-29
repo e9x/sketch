@@ -56,19 +56,6 @@ root.render(<TrackerMenu />);
 // JSON.parse("1", () => { console.log("Got you:", new Error().stack); })
 // Object.create(() => { }, new Proxy({}, { ownKeys: () => { console.log("Got you:", new Error().stack); } }))
 
-function argsFunction(
-  callback: (
-    thisArg: any,
-    args: IArguments,
-    calleeCallerArgs: IArguments | undefined
-  ) => void
-) {
-  return new Function(
-    "_81xd",
-    "return function kpal(){let a;try{a=arguments.callee.caller.arguments}catch{}return _81xd(this,arguments,a)}"
-  )(callback);
-}
-
 type WebpackModule = {
   i: number;
   l: boolean;
@@ -153,29 +140,56 @@ function mBuffer(argDistanceNow, argAngrySoil, argConsiderTell) {
 mBuffer.prototype = Object.create(p_Buffer.prototype);
 */
 
-// Hook some class that accepts NO PARAMETERS
+// Hook some global class that accepts NO PARAMETERS
+
+// 292.js:
+// - no use strict
+// - new Image
+// hook the setter/getter? no, prototype will be there
+
+// new Image({ [Symbol.toPrimitive](){ console.log("Got you:", new Error().stack); } });
+
+// find a constructor that has NO arguments.
+// Hook all the Error constructors.... but won't fix errors thrown from the engine
+// eg new HTMLElement() will return an error that was constructed without using the constructor
+// and Error.captureStackTrace
+
+// const freak = Reflect.construct(Image, [], HTMLDocument)??
 
 hookContext(unsafeWindow as unknown as typeof globalThis, (context) => {
-  const create = Function.prototype.apply.bind(context.Object.create);
+  const { Image } = context;
 
-  context.Object.create = mirrorAttributes(
-    context.Object.create,
-    argsFunction((thisArg, args, calleeCallerArgs) => {
-      if (calleeCallerArgs?.length === 3) {
-        console.log("TEST", calleeCallerArgs);
-        // this.players=new
-        const webpackRequire = [...calleeCallerArgs].find(isWebpackRequire);
-        if (webpackRequire) hookWebpackRequire(webpackRequire);
-      }
-
+  const HookedImage = new Function(
+    "kpal",
+    "_81xd",
+    "return function Image(){try{kpal(arguments.callee.caller.arguments)}catch{}return _81xd(arguments, new.target)}"
+  )(
+    (calleeCallerArgs: IArguments | undefined) => {
       try {
-        return create(thisArg, [...args]);
-      } catch (e) {
-        console.error(e);
-        throw e;
+        if (calleeCallerArgs?.length === 3) {
+          // this.players=new
+          const webpackRequire = [...calleeCallerArgs].find(isWebpackRequire);
+          if (webpackRequire) hookWebpackRequire(webpackRequire);
+        }
+      } catch (err) {
+        console.error(err);
       }
-    })
-  );
+    },
+    (args: IArguments, newTarget: HTMLImageElement) => {
+      if (!newTarget)
+        throw new TypeError(
+          "Failed to construct 'Image': Please use the 'new' operator, this DOM object constructor cannot be called as a function."
+        );
+      // @ts-ignore
+      return Reflect.construct(Image, args, newTarget);
+    }
+  ) as any;
+
+  mirrorAttributes(context.Image, HookedImage, true);
+
+  HookedImage.prototype = Image.prototype;
+
+  context.Image = HookedImage;
 });
 
 // Error.captureStackTrace(new Proxy(new Error(), { defineProperty: console.trace }))
