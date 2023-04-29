@@ -22,32 +22,36 @@ export function bhopHook() {
   let nextZeroSome = pickZeroSome();
   let didCrouch = false;
   let bhopTimer = 0;
-  let bhopping = 0;
+  let bhopStart = 0;
 
   // average recorded natural interval
   // not wallhops
-  const bhopDelay = 60;
+  const bhopDelay = 100;
 
   inputHooks.push((inputs) => {
     const localPlayer = getLocalPlayer();
 
     if (configGet("bhop") && inputs[iInputs.jump]) {
-      const canBhop = isBhoppable() && Date.now() - bhopTimer > bhopDelay;
+      const now = Date.now();
 
-      const mustBhop = inputs[iInputs.frame] <= bhopping;
+      if (bhopTimer <= now) {
+        bhopTimer = 0;
+        bhopStart = 0;
+      }
 
       // reload for a random amount of frames to simulate pressing it
       // set bhopping only as soon as we start holding the input down
-      if (canBhop && (!bhopping || !mustBhop)) {
-        //console.log("set mustBhop");
-        bhopTimer = Date.now();
-        bhopping = inputs[iInputs.frame] + random(3, 8);
+      if (!bhopTimer && isBhoppable()) {
+        bhopTimer = now + bhopDelay;
+        bhopStart = inputs[iInputs.frame] + random(1, 3);
+        inputs[iInputs.jump] = 0;
+      } else {
+        const mustBhop = inputs[iInputs.frame] >= bhopStart && now < bhopTimer;
+        inputs[iInputs.jump] = mustBhop ? 1 : 0;
       }
-
-      inputs[iInputs.jump] = mustBhop ? 1 : 0;
     } else {
-      bhopping = 0;
       bhopTimer = 0;
+      bhopStart = 0;
     }
 
     // if crouch is held, slidehop
