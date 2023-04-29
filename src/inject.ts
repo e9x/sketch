@@ -8,22 +8,27 @@ type Hook<Data> = (dataArg: string, src: string) => { data: Data; src: string };
 export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
   let token: string;
 
-  switch (configGet("diy")) {
-    case DIYStage.false:
-    case DIYStage.token:
-      configSet("diy", DIYStage.token);
-      fetchWASM();
-      return APIError.DIY;
-    case DIYStage.ready:
-      {
-        const diyToken = configGet("diyToken");
-        if (!diyToken) throw new TypeError("No token");
-        token = diyToken;
-        configDelete("diyToken");
-        configDelete("diy");
-      }
-      break;
-  }
+  if (new URLSearchParams(location.search).has("sandbox")) {
+    token = "";
+    configDelete("diyToken");
+    configDelete("diy");
+  } else
+    switch (configGet("diy")) {
+      case DIYStage.false:
+      case DIYStage.token:
+        configSet("diy", DIYStage.token);
+        fetchWASM();
+        return APIError.DIY;
+      case DIYStage.ready:
+        {
+          const diyToken = configGet("diyToken");
+          if (!diyToken) throw new TypeError("No token");
+          token = diyToken;
+          configDelete("diyToken");
+          configDelete("diy");
+        }
+        break;
+    }
 
   const source = await krunkbox.source();
 

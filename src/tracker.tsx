@@ -10,7 +10,7 @@ if (isDevelopment) console.trace("DEV");
 const container = document.createElement("div");
 
 const width = 400;
-const height = 201;
+const height = 173; // has to be manually calculated
 
 Object.assign(container.style, {
   position: "fixed",
@@ -175,7 +175,7 @@ function LegendKey({
       }}
     >
       <span style={{ color: "white", fontSize: 8 }}>{name}</span>
-      <div style={{ width: 50, height: 10, marginTop: 2, ...style }} />
+      <div style={{ width: 35, height: 10, marginTop: 2, ...style }} />
     </div>
   );
 }
@@ -183,68 +183,94 @@ function LegendKey({
 function TrackerMenu() {
   // Highest value possible is Math.PI2 or 6.283
   const clamp = React.useRef(7);
+  const [visible, setVisible] = React.useState(true);
 
   return (
-    <div style={{ display: "flex", flexDirection: "row", gap: 5, margin: 10 }}>
+    <div style={{ display: "flex", flexDirection: "column", margin: 10 }}>
       <div
         style={{
-          backgroundColor: "#353535",
+          maxHeight: visible ? undefined : 0,
+          overflow: "hidden",
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
+          marginBottom: visible ? 5 : 0,
+          flexDirection: "row",
+          gap: 5,
         }}
       >
-        <span style={{ color: "white", fontSize: 10, margin: "8px 0" }}>
-          Legend
-        </span>
         <div
           style={{
+            backgroundColor: "#353535",
             display: "flex",
             flexDirection: "column",
-            gap: 5,
-            marginBottom: 8,
+            alignItems: "center",
           }}
         >
-          <LegendKey
+          <span style={{ color: "white", fontSize: 10, margin: "8px 0" }}>
+            Legend
+          </span>
+          <div
             style={{
-              backgroundSize: "10px 1px",
-              backgroundRepeat: "repeat",
-              backgroundPosition: "1px 0",
-              backgroundImage:
-                "linear-gradient(90deg, blue 75%, transparent 1%)",
-              backgroundColor: "white",
+              display: "flex",
+              flexDirection: "column",
+              gap: 5,
+              marginBottom: 8,
             }}
-            name="Aim Difference"
-          />
-          {boolBits.map((bit, i) => (
+          >
             <LegendKey
-              key={i}
-              style={{ backgroundColor: bit[1] }}
-              name={bit[2]}
+              style={{
+                backgroundSize: "10px 1px",
+                backgroundRepeat: "repeat",
+                backgroundPosition: "1px 0",
+                backgroundImage:
+                  "linear-gradient(90deg, blue 75%, transparent 1%)",
+                backgroundColor: "white",
+              }}
+              name="Mouse"
             />
-          ))}
+            {boolBits.map((bit, i) => (
+              <LegendKey
+                key={i}
+                style={{ backgroundColor: bit[1] }}
+                name={bit[2]}
+              />
+            ))}
+          </div>
+        </div>
+        <div
+          style={{
+            width,
+            backgroundColor: "#353535",
+            display: "flex",
+            flexDirection: "column",
+            fontSize: 10,
+          }}
+        >
+          <Tracker clamp={clamp} />
+          <TinyRange
+            title="Mouse Scale"
+            step={0.01}
+            min={0.01}
+            max={7}
+            defaultValue={clamp.current}
+            onChange={(e) => {
+              clamp.current = e.target.valueAsNumber;
+            }}
+          />
         </div>
       </div>
       <div
         style={{
-          width,
+          width: "100%",
+          height: 25,
+          color: "white",
+          textAlign: "center",
           backgroundColor: "#353535",
-          display: "flex",
-          flexDirection: "column",
-          fontSize: 10,
+          cursor: "pointer",
         }}
+        onClick={() => setVisible(!visible)}
+        className="material-icons"
       >
-        <Tracker clamp={clamp} />
-        <TinyRange
-          title="Aim Clamp"
-          step={0.01}
-          min={0.01}
-          max={7}
-          defaultValue={clamp.current}
-          onChange={(e) => {
-            clamp.current = e.target.valueAsNumber;
-          }}
-        />
+        {visible ? "expand_less" : "expand_more"}
       </div>
     </div>
   );
