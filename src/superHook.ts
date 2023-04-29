@@ -127,24 +127,44 @@ export function hookContext(
       set: undefined;
     }
   ).get;
+  const callGetContentWindow =
+    context.Function.prototype.call.bind(getContentWindow);
 
   Object.defineProperty(HTMLIFrameElement.prototype, "contentWindow", {
     configurable: true,
     enumerable: true,
-    get: mirrorAttributes(getContentWindow, function (this: HTMLIFrameElement) {
-      const win = getContentWindow.call(this) as typeof globalThis | null;
+    get: mirrorAttributes(
+      getContentWindow,
+      {
+        // use shorthand to prevent prototype:
+        "get contentWindow"(this: HTMLIFrameElement) {
+          try {
+            const win = callGetContentWindow(this) as typeof globalThis | null;
 
-      if (win)
-        try {
-          hookContext(win, extra);
-        } catch {
-          // maybe the window is cross-origin
-          // like captcha
-          // console.error(err);
-        }
+            if (win)
+              try {
+                hookContext(win, extra);
+              } catch {
+                // maybe the window is cross-origin
+                // like captcha
+                // console.error(err);
+              }
 
-      return win;
-    }),
+            return win;
+          } catch {
+            const error = new TypeError("Illegal invocation");
+
+            if (error.stack)
+              error.stack = error.stack.replace(
+                / {4}at get contentWindow.*?\n/m,
+                ""
+              );
+
+            throw error;
+          }
+        },
+      }["get contentWindow"]
+    ),
   });
 
   if (extra) extra(context);
