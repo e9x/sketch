@@ -62,16 +62,15 @@ type WebpackModule = {
   exports: any;
 };
 
+type WebpackModuleFactory = (
+  this: WebpackModule,
+  module: WebpackModule,
+  exports: WebpackModule["exports"],
+  require: WebpackRequire
+) => void;
+
 type WebpackRequire = ((i: number) => unknown) & {
-  m: (
-    | ((
-        this: WebpackModule,
-        module: WebpackModule,
-        exports: WebpackModule["exports"],
-        require: WebpackRequire
-      ) => void)
-    | undefined
-  )[];
+  m: (WebpackModuleFactory | undefined)[];
 };
 
 function isWebpackRequire(e: unknown): e is WebpackRequire {
@@ -87,16 +86,33 @@ function hookWebpackRequire(require: WebpackRequire) {
     const entry = require.m[i];
 
     if (entry?.toString().includes("this.players=new ")) {
-      require.m[i] = function (module, exports, require) {
+      // hook the toString value for anything else hooking this module based on this.players=
+      require.m[i] = mirrorAttributes(entry, function (
+        module,
+        exports,
+        require
+      ) {
         entry.call(this, module, exports, require);
+
         const oldExports = module.exports;
 
-        module.exports = function (this: any, ...args: any[]) {
-          const result = oldExports.call(this, ...args);
-          setTimeout(() => hookGame(this));
-          return result;
-        };
-      };
+        module.exports = mirrorAttributes(
+          oldExports,
+          function (this: any, ...args: any[]) {
+            const result = oldExports.call(this, ...args);
+            setTimeout(() => hookGame(this));
+            return result;
+          }
+        );
+
+        console.log("Hook:", module.exports.toString());
+        console.log(
+          "Still viable:",
+          module.exports.toString().includes("this.players=new ")
+        );
+      } as WebpackModuleFactory);
+
+      setTimeout(() => console.log("hook:", require.m[i]?.toString()));
 
       hookedRequire = true;
     }
