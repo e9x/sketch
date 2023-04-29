@@ -41,7 +41,7 @@ const boolBits: [bit: BoolBits, color: string, name: string][] = [
 
 type Entry = [distance: number, bit: number];
 
-const data = [...Array(width)].map(() => [0, 0] as Entry);
+const data = [...Array(width / 2)].map(() => [0, 0] as Entry);
 
 let lastInputs: number[] | undefined;
 
