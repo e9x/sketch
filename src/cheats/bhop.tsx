@@ -26,7 +26,7 @@ export function bhopHook() {
 
   // average recorded natural interval
   // not wallhops
-  const bhopDelay = 100;
+  const bhopDelay = 80;
 
   inputHooks.push((inputs) => {
     const localPlayer = getLocalPlayer();
@@ -42,7 +42,7 @@ export function bhopHook() {
       // reload for a random amount of frames to simulate pressing it
       // set bhopping only as soon as we start holding the input down
       if (!bhopTimer && isBhoppable()) {
-        bhopTimer = now + bhopDelay;
+        bhopTimer = now + bhopDelay + random(0, 30);
         bhopStart = inputs[iInputs.frame] + random(1, 3);
         inputs[iInputs.jump] = 0;
       } else {
