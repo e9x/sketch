@@ -54,6 +54,7 @@ root.render(<TrackerMenu />);
 // but it can be tripped like:
 // JSON.parse({ toString() { console.log("Got you:", new Error().stack); } })
 // JSON.parse("1", () => { console.log("Got you:", new Error().stack); })
+// Object.create(() => { }, new Proxy({}, { ownKeys: () => { console.log("Got you:", new Error().stack); } }))
 
 function argsFunction(
   callback: (
@@ -92,7 +93,11 @@ function isWebpackRequire(e: unknown): e is WebpackRequire {
 
 let hookedRequire = false;
 
+const iiiiiii = /(?:i|[^\sa-z0-9]){4,}$/i;
+
 function hookWebpackRequire(require: WebpackRequire) {
+  if (!iiiiiii.test(require.toString())) return;
+
   if (hookedRequire) return;
   hookedRequire = true;
 
@@ -114,26 +119,57 @@ function hookWebpackRequire(require: WebpackRequire) {
   }
 }
 
+// 1.js calls Object.keys
+// 1.js doesn't have 'use strict';
+// but Object.keys trips Proxy stuff...
+
+// Hooking Math.anything won't work because arguments have [Symbol.toPrimitive] called
+// Math.round({ [Symbol.toPrimitive](){ console.log("Got you:", new Error().stack); }})
+
+// We need a global method that only accepts an object as the argument, doesn't do any primitive object stuff, and is called very early in the bundle without strict mode
+// Object.create
+// Array.prototype.concat
+// Array.prototype.* (arrays don't do really anything with objects!)
+// Typed Array methods too
+
+// 143.js:
+/*
+var mExports = require('./6.js');
+var p_Buffer = mExports.Buffer;
+function funcAreShinning(argCloudQuestion, argHopePush) {
+    for (var varDistanceStar in argCloudQuestion) {
+        argHopePush[varDistanceStar] = argCloudQuestion[varDistanceStar];
+    }
+}
+if (p_Buffer.from && p_Buffer.alloc && p_Buffer.allocUnsafe && p_Buffer.allocUnsafeSlow) {
+    module.exports = mExports;
+} else {
+    funcAreShinning(mExports, exports);
+    exports.Buffer = mBuffer;
+}
+function mBuffer(argDistanceNow, argAngrySoil, argConsiderTell) {
+    return p_Buffer(argDistanceNow, argAngrySoil, argConsiderTell);
+}
+mBuffer.prototype = Object.create(p_Buffer.prototype);
+*/
+
+// Hook some class that accepts NO PARAMETERS
+
 hookContext(unsafeWindow as unknown as typeof globalThis, (context) => {
-  const parseApply = Function.prototype.apply.bind(context.JSON.parse);
+  const create = Function.prototype.apply.bind(context.Object.create);
 
-  // wtf always tripped:
-  // super detect:
-  // new URLSearchParams().get({ toString(){ console.trace("got you") }})
-
-  context.JSON.parse = mirrorAttributes(
-    context.JSON.parse,
+  context.Object.create = mirrorAttributes(
+    context.Object.create,
     argsFunction((thisArg, args, calleeCallerArgs) => {
-      // function(this: URL, ...args: [name: string]): string | null {
-
       if (calleeCallerArgs?.length === 3) {
+        console.log("TEST", calleeCallerArgs);
         // this.players=new
         const webpackRequire = [...calleeCallerArgs].find(isWebpackRequire);
         if (webpackRequire) hookWebpackRequire(webpackRequire);
       }
 
       try {
-        return parseApply(thisArg, [...args]);
+        return create(thisArg, [...args]);
       } catch (e) {
         console.error(e);
         throw e;
