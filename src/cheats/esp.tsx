@@ -139,32 +139,28 @@ export function espHook() {
     if (!configGet("esp")) return;
     if (isInMenus()) return;
 
-    try {
-      const overlay = getOverlay();
-      const game = getGame();
+    const overlay = getOverlay();
+    const game = getGame();
 
-      overlay.ctx.save();
-      overlay.ctx.save();
-      overlay.ctx.scale(overlay.scale, overlay.scale);
+    overlay.ctx.save();
+    overlay.ctx.save();
+    overlay.ctx.scale(overlay.scale, overlay.scale);
 
-      for (const entity of [...game.players.list, ...game.AI.ais]) {
-        if (!entityAlive(entity)) continue;
+    for (const entity of [...game.players.list, ...game.AI.ais]) {
+      if (!entityAlive(entity)) continue;
 
-        const box = playerBox(entity);
+      const box = playerBox(entity);
 
-        if (!box) continue;
+      if (!box) continue;
 
-        const enemy = isEnemy(entity);
+      const enemy = isEnemy(entity);
 
-        overlay.ctx.strokeStyle = enemy ? "#eb5656" : "#9eeb56";
-        overlay.ctx.lineWidth = 1.5;
-        overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
-      }
-
-      overlay.ctx.restore();
-    } catch {
-      // sometimes we're a little early
+      overlay.ctx.strokeStyle = enemy ? "#eb5656" : "#9eeb56";
+      overlay.ctx.lineWidth = 1.5;
+      overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
     }
+
+    overlay.ctx.restore();
   });
 }
 

@@ -58,7 +58,7 @@ function doGameHooks() {
   const { push } = getGame().controls.tmpInpts;
 
   getGame().controls.tmpInpts.push = function (inputs) {
-    for (const hook of inputHooks) hook(inputs);
+    if (localPlayer) for (const hook of inputHooks) hook(inputs);
     return push.call(this, inputs);
   };
 }
@@ -100,9 +100,7 @@ function doOverlayHooks() {
 
   getOverlay().render = function (...args) {
     const result = render.call(this, ...args);
-
-    for (const hook of renderHooks) hook();
-
+    if (localPlayer) for (const hook of renderHooks) hook();
     return result;
   };
 }

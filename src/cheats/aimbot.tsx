@@ -176,29 +176,25 @@ export function aimbotHook() {
   let reloading = 0;
 
   renderHooks.push(() => {
-    try {
-      const drawFOV = configGet("drawFOV");
-      if (!drawFOV) return;
-      if (isInMenus()) return;
-      const localPlayer = getLocalPlayer();
-      if (!localPlayer.active && !window.spectating) return;
-      const fovRadius = configGet("fovRadius");
+    const drawFOV = configGet("drawFOV");
+    if (!drawFOV) return;
+    if (isInMenus()) return;
+    const localPlayer = getLocalPlayer();
+    if (!localPlayer.active && !window.spectating) return;
+    const fovRadius = configGet("fovRadius");
 
-      const overlay = getOverlay();
+    const overlay = getOverlay();
 
-      if (drawFOV) {
-        overlay.ctx.save();
-        overlay.ctx.scale(overlay.scale, overlay.scale);
-        const { THREE } = getGame();
-        const center = new THREE.Vector2(
-          innerWidth / overlay.scale / 2,
-          innerHeight / overlay.scale / 2
-        );
-        drawAimbotCircle(overlay.ctx, center, fovRadius);
-        overlay.ctx.restore();
-      }
-    } catch {
-      // sometimes we're a little early
+    if (drawFOV) {
+      overlay.ctx.save();
+      overlay.ctx.scale(overlay.scale, overlay.scale);
+      const { THREE } = getGame();
+      const center = new THREE.Vector2(
+        innerWidth / overlay.scale / 2,
+        innerHeight / overlay.scale / 2
+      );
+      drawAimbotCircle(overlay.ctx, center, fovRadius);
+      overlay.ctx.restore();
     }
   });
 
