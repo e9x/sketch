@@ -61,7 +61,8 @@ export function bhopHook() {
       // pick a new "zeroSome" everytime we slidehop
       // otherwise they will randomly start/stop crouching as zeroSome is recalculated
       // the users will appear to be relatively accurate with slidehopping
-      const willCrouch = (localPlayer.velocity.y || 0) < zeroSome;
+      const willCrouch =
+        !localPlayer.onGround && (localPlayer.velocity.y || 0) < zeroSome;
 
       inputs[iInputs.crouch] = willCrouch ? 1 : 0;
 
