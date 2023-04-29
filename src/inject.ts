@@ -59,46 +59,55 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
   hookContext(unsafeWindow as unknown as typeof globalThis, (context) => {
     const { fetch } = context;
 
-    context.fetch = function (input, init) {
-      const inputURL = new URL(
-        typeof input === "string" || input instanceof URL ? input : input.url,
-        location.toString()
-      );
-
-      if (configGet("diy") === DIYStage.token) {
-        if (
-          inputURL.origin === "https://matchmaker.krunker.io" &&
-          inputURL.pathname === "/seek-game"
-        ) {
-          const validationToken = inputURL.searchParams.get("validationToken");
-          if (!validationToken) throw new TypeError("");
-          const diyToken = String.fromCharCode(
-            ...validationToken.split("").map((e) => e.charCodeAt(0) + 10)
+    // use short-hand method so .prototype isn't created
+    context.fetch = (
+      {
+        fetch(input, init) {
+          const inputURL = new URL(
+            typeof input === "string" || input instanceof URL
+              ? input
+              : input.url,
+            location.toString()
           );
 
-          configSet("diyToken", diyToken);
-          configSet("diy", DIYStage.ready);
-          location.reload();
-          // eslint-disable-next-line @typescript-eslint/no-empty-function
-          return new Promise(() => {});
-        }
-      } else {
-        if (
-          inputURL.origin === location.origin &&
-          inputURL.pathname === "/pkg/loader.wasm"
-        ) {
-          // game has loaded
-          resolveGameLoad();
-          // eslint-disable-next-line @typescript-eslint/no-empty-function
-          return new Promise((resolve, reject) => {
-            doFetchWASM = () => fetch(input, init).then(resolve).catch(reject);
-            if (fetchWASMInstantly) doFetchWASM();
-          });
-        }
-      }
+          if (configGet("diy") === DIYStage.token) {
+            if (
+              inputURL.origin === "https://matchmaker.krunker.io" &&
+              inputURL.pathname === "/seek-game"
+            ) {
+              const validationToken =
+                inputURL.searchParams.get("validationToken");
+              if (!validationToken) throw new TypeError("");
+              const diyToken = String.fromCharCode(
+                ...validationToken.split("").map((e) => e.charCodeAt(0) + 10)
+              );
 
-      return fetch(input, init);
-    };
+              configSet("diyToken", diyToken);
+              configSet("diy", DIYStage.ready);
+              location.reload();
+              // eslint-disable-next-line @typescript-eslint/no-empty-function
+              return new Promise(() => {});
+            }
+          } else {
+            if (
+              inputURL.origin === location.origin &&
+              inputURL.pathname === "/pkg/loader.wasm"
+            ) {
+              // game has loaded
+              resolveGameLoad();
+              // eslint-disable-next-line @typescript-eslint/no-empty-function
+              return new Promise((resolve, reject) => {
+                doFetchWASM = () =>
+                  fetch(input, init).then(resolve).catch(reject);
+                if (fetchWASMInstantly) doFetchWASM();
+              });
+            }
+          }
+
+          return fetch(input, init);
+        },
+      } as { fetch: typeof fetch }
+    ).fetch;
 
     mirrorAttributes(fetch, context.fetch);
   })
