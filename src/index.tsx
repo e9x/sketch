@@ -18,6 +18,7 @@ import { matchModule, getLocalPlayer, getRender } from "./filters";
 import type { Module } from "./filters";
 import { getInit, gameLoad } from "./inject";
 import sketchConfig from "./sketchConfig";
+import tokenConfig from "./tokenConfig";
 
 aimbotHook();
 bhopHook();
@@ -101,7 +102,7 @@ function newRoot() {
 }
 
 async function main() {
-  const savedToken = sketchConfig.get("token");
+  const savedToken = tokenConfig.get("token");
 
   const version = await KrunkBox.sketchVersion(sketchVersion, supportedGame);
 
@@ -183,7 +184,7 @@ function KeyBeg({ done }: { done: () => void }) {
                   setError("Access key already used. Try again.");
                   break;
                 default:
-                  sketchConfig.set("token", res);
+                  tokenConfig.set("token", res);
                   done();
               }
             })
@@ -201,7 +202,7 @@ async function init(krunkbox: KrunkBox) {
   const game = await getInit(krunkbox, hook);
 
   if (game === APIError.BadToken) {
-    sketchConfig.delete("token");
+    tokenConfig.delete("token");
     location.reload();
     return;
   }

@@ -1,20 +1,7 @@
 import type { DataHook } from "./Config";
 import Config, { useConfig } from "./Config";
 
-export enum DIYStage {
-  false,
-  /**
-   * Get the token
-   */
-  token,
-  /**
-   * Ready to use "token" in config
-   */
-  ready,
-}
-
 export interface SketchConfig {
-  token?: string;
   aimbot: "off" | "smooth" | "silent";
   hitbox: "head" | "chest";
   bot: boolean;
@@ -38,8 +25,6 @@ export interface SketchConfig {
   triggerbotMax: number;
   menuKey: number;
   menuButton: boolean;
-  diy: DIYStage;
-  diyToken?: string;
   noAdsFovMlt: boolean;
 }
 
@@ -70,7 +55,6 @@ const defaultConfig: SketchConfig = {
   triggerbotMax: 0,
   menuKey: -1,
   menuButton: true,
-  diy: DIYStage.false,
   noAdsFovMlt: false,
 };
 
