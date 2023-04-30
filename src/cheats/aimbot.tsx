@@ -290,7 +290,7 @@ export function aimbotHook() {
           player,
           screen: pos2D(point),
           point,
-          inFrustum: fovCheck ? NaN : render.frustum.containsPoint(point),
+          inFrustum: fovCheck ? false : render.frustum.containsPoint(point),
         }))
         .sort((p1, p2) => {
           const distComparison =
