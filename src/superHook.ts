@@ -47,7 +47,7 @@ export function mirrorAttributes<From extends Function, To extends Function>(
     });
   }
 
-  return to;
+  return to as unknown as From;
 }
 
 const hookedContexts = new WeakSet<typeof globalThis>();
