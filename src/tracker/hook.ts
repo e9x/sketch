@@ -138,10 +138,20 @@ hookContext(unsafeWindow as unknown as typeof globalThis, (context) => {
       }
     },
     (args: IArguments, newTarget: HTMLImageElement) => {
-      if (!newTarget)
-        throw new TypeError(
+      if (!newTarget) {
+        const error = new TypeError(
           "Failed to construct 'Image': Please use the 'new' operator, this DOM object constructor cannot be called as a function."
         );
+
+        if (error.stack)
+          error.stack = error.stack.replace(
+            / {4}at eval.*?\n {4}at Image.*?\n/,
+            ""
+          );
+
+        throw error;
+      }
+
       // @ts-ignore
       return Reflect.construct(Image, args, newTarget);
     }
