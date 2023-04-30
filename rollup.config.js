@@ -45,6 +45,27 @@ const envReplacements = {
 
 const funnyIDs = uniq(times(8 ** 6, () => generateIdentifier()));
 
+const obfuscation = () =>
+  !isDevelopment &&
+  obfuscator({
+    global: true,
+    options: {
+      target: "browser",
+      deadCodeInjection: false,
+      selfDefending: false,
+      splitStrings: false,
+      transformObjectKeys: false,
+      renameProperties: false,
+      renameGlobals: false,
+      numbersToExpressions: false,
+      controlFlowFlattening: false,
+      stringArray: false,
+      simplify: false,
+      identifierNamesGenerator: "dictionary",
+      identifiersDictionary: funnyIDs,
+    },
+  });
+
 const transformerFactory = (name) => (relativeSourcePath) =>
   new URL(relativeSourcePath, `sketch-${name}://`).toString();
 
@@ -73,6 +94,7 @@ const options = defineConfig([
       }),
       nodeResolve({ browser: true }),
       commonjs(),
+      obfuscation(),
       banner(() => "/*eslint-disable*/"),
       metablock({
         file: fileURLToPath(new URL("tracker.json", import.meta.url)),
@@ -146,25 +168,7 @@ const options = defineConfig([
       nodeResolve({ browser: true }),
       commonjs(),
       json(),
-      !isDevelopment &&
-        obfuscator({
-          global: true,
-          options: {
-            target: "browser",
-            deadCodeInjection: false,
-            selfDefending: false,
-            splitStrings: false,
-            transformObjectKeys: false,
-            renameProperties: false,
-            renameGlobals: false,
-            numbersToExpressions: false,
-            controlFlowFlattening: false,
-            stringArray: false,
-            simplify: false,
-            identifierNamesGenerator: "dictionary",
-            identifiersDictionary: funnyIDs,
-          },
-        }),
+      obfuscation(),
       banner(() => "/*eslint-disable*/"),
       metablock({
         file: fileURLToPath(new URL("meta.json", import.meta.url)),
