@@ -8,6 +8,7 @@
     "https://krunker.io/editor.html*",
     "https://krunker.io/viewer.html*"
   ],
+  "antifeature": "ads",
   "grant": [
     "GM_getValue",
     "GM_setValue",
