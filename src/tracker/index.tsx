@@ -60,10 +60,10 @@ function Tracker({ scale }: { scale: number }) {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, width, height);
 
-      for (const { i, mouse, flags } of data) {
+      for (const { i, distance, flags } of data) {
         const x = blockWidth * i;
 
-        const h = ~~(diffHeight * ((mouse / Math.PI) * scaleRef.current));
+        const h = ~~(diffHeight * ((distance / Math.PI) * scaleRef.current));
         ctx.fillStyle = "blue";
         ctx.fillRect(x, diffHeight - h, blockWidth, h);
 

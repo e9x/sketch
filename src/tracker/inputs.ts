@@ -70,7 +70,7 @@ export function hookInputs(inputs: number[]) {
       (inputs[iInputs.crouch] === 1 ? InputFlags.crouch : 0) |
       (inputs[iInputs.reload] === 1 ? InputFlags.reload : 0);
 
-    data.add(distance, flags);
+    data.push(distance, flags);
   }
 
   lastInputs = inputs;
