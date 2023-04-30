@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Player } from "./Player";
 import type THREE from "three";
 
