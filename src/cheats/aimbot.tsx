@@ -286,15 +286,21 @@ export function aimbotHook() {
         .filter(validTarget)
         .map((player) => ({ player, point: playerAimPoint(player) }))
         .filter(({ point }) => validPoint(point, center))
-        .map(({ player, point }) => ({ player, screen: pos2D(point), point }))
+        .map(({ player, point }) => ({
+          player,
+          screen: pos2D(point),
+          point,
+          inFrustum: fovCheck ? NaN : render.frustum.containsPoint(point),
+        }))
         .sort((p1, p2) => {
           const distComparison =
             p1.screen.distanceTo(center) - p2.screen.distanceTo(center);
 
+          // no fovCheck = we'll at least weigh the players based on if they're in the FOV
           if (!fovCheck) {
             // prefer things on screen
-            const p1InFrustum = render.frustum.containsPoint(p1.point) ? 0 : 1;
-            const p2InFrustum = render.frustum.containsPoint(p2.point) ? 0 : 1;
+            const p1InFrustum = p1.inFrustum ? 0 : 1;
+            const p2InFrustum = p2.inFrustum ? 0 : 1;
 
             return distComparison + p1InFrustum - p2InFrustum;
           }
