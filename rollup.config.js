@@ -131,7 +131,7 @@ const options = defineConfig([
             metablock({
               file: fileURLToPath(new URL("tracker.json", import.meta.url)),
               override: {
-                name: "Tracker DEV",
+                name: "Krunker Inputs DEV",
                 author: pkg.author,
                 description: pkg.description,
                 version: pkg.version,

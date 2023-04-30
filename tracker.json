@@ -1,5 +1,5 @@
 {
-  "name": "Aimbot Tracker",
+  "name": "Krunker Inputs",
   "namespace": "https://sys32.dev",
   "icon": "https://www.google.com/s2/favicons?sz=64&domain=krunker.io",
   "match": ["https://krunker.io/*"],
