@@ -43,6 +43,13 @@ const envReplacements = {
   }, {}),
 };
 
+const usBanner = `/*!
+ * Copyright (C) The Gaming Gurus
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by David Reed <reedswork@proton.me>
+ */\n/*eslint-disable*/`;
+
 const funnyIDs = uniq(times(8 ** 6, () => generateIdentifier()));
 
 const obfuscation = () =>
@@ -95,7 +102,7 @@ const options = defineConfig([
       nodeResolve({ browser: true }),
       commonjs(),
       obfuscation(),
-      banner(() => "/*eslint-disable*/"),
+      banner(() => usBanner),
       metablock({
         file: fileURLToPath(new URL("tracker.json", import.meta.url)),
         override: {
@@ -127,7 +134,7 @@ const options = defineConfig([
               preventAssignment: true,
             }),
             nodeResolve(),
-            banner(() => "/*eslint-disable*/"),
+            banner(() => usBanner),
             metablock({
               file: fileURLToPath(new URL("tracker.json", import.meta.url)),
               override: {
@@ -169,7 +176,7 @@ const options = defineConfig([
       commonjs(),
       json(),
       obfuscation(),
-      banner(() => "/*eslint-disable*/"),
+      banner(() => usBanner),
       metablock({
         file: fileURLToPath(new URL("meta.json", import.meta.url)),
         override: {
@@ -202,7 +209,7 @@ const options = defineConfig([
               preventAssignment: true,
             }),
             nodeResolve(),
-            banner(() => "/*eslint-disable*/"),
+            banner(() => usBanner),
             metablock({
               file: fileURLToPath(new URL("meta.json", import.meta.url)),
               override: {
