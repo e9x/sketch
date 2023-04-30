@@ -10,7 +10,42 @@ if (isDevelopment) console.trace("DEV");
 const container = document.createElement("div");
 
 const width = 400;
-const height = 173; // has to be manually calculated
+
+const dataEntries = 400;
+
+/*
+Data:
+
+int mouse;
+char flags;
+*/
+
+const dataSize = 4 + 1;
+
+/**
+ * Circular buffer
+ */
+const data = new Uint8Array(dataEntries * dataSize);
+
+/**
+ * Shift everything in the buffer to the right.
+ */
+function shiftData() {
+  // Copy memory from the beginning of the data array to index 'dataSize'
+  data.copyWithin(dataSize, 0, dataEntries * dataSize - dataSize);
+}
+
+/**
+ * Add the new data to the end of the buffer.
+ */
+function addData(distance: number, flags: number) {
+  shiftData();
+
+  // add mouse and flags as the first element in data
+  const view = new DataView(data.buffer, 0, dataSize);
+  view.setUint32(0, distance, true);
+  view.setUint8(4, flags);
+}
 
 Object.assign(container.style, {
   position: "fixed",
@@ -23,7 +58,7 @@ const root = ReactDOM.createRoot(container);
 
 document.documentElement.append(container);
 
-enum BoolBits {
+enum InputFlags {
   shoot = 2 ** 0,
   scope = 2 ** 1,
   jump = 2 ** 2,
@@ -31,17 +66,13 @@ enum BoolBits {
   reload = 2 ** 4,
 }
 
-const boolBits: [bit: BoolBits, color: string, name: string][] = [
-  [BoolBits.shoot, "red", "Shoot"],
-  [BoolBits.scope, "orange", "Scope"],
-  [BoolBits.jump, "blue", "Jump"],
-  [BoolBits.crouch, "green", "Crouch"],
-  [BoolBits.reload, "purple", "Reload"],
+const inputFlags: [flag: InputFlags, color: string, name: string][] = [
+  [InputFlags.shoot, "red", "Shoot"],
+  [InputFlags.scope, "orange", "Scope"],
+  [InputFlags.jump, "blue", "Jump"],
+  [InputFlags.crouch, "green", "Crouch"],
+  [InputFlags.reload, "purple", "Reload"],
 ];
-
-type Entry = [distance: number, bit: number];
-
-const data = [...Array(width / 2)].map(() => [0, 0] as Entry);
 
 let lastInputs: number[] | undefined;
 
@@ -218,16 +249,14 @@ function hookInputs(inputs: number[]) {
 
     const distance = Math.hypot(x2 - x1, y2 - y1);
 
-    data.push([
-      distance,
-      (inputs[iInputs.shoot] === 1 ? BoolBits.shoot : 0) |
-        (inputs[iInputs.scope] === 1 ? BoolBits.scope : 0) |
-        (inputs[iInputs.jump] === 1 ? BoolBits.jump : 0) |
-        (inputs[iInputs.crouch] === 1 ? BoolBits.crouch : 0) |
-        (inputs[iInputs.reload] === 1 ? BoolBits.reload : 0),
-    ]);
+    const flags =
+      (inputs[iInputs.shoot] === 1 ? InputFlags.shoot : 0) |
+      (inputs[iInputs.scope] === 1 ? InputFlags.scope : 0) |
+      (inputs[iInputs.jump] === 1 ? InputFlags.jump : 0) |
+      (inputs[iInputs.crouch] === 1 ? InputFlags.crouch : 0) |
+      (inputs[iInputs.reload] === 1 ? InputFlags.reload : 0);
 
-    data.splice(0, 1);
+    addData(distance * 1000, flags);
   }
 
   lastInputs = inputs;
@@ -239,16 +268,20 @@ function Tracker({ clamp }: { clamp: React.MutableRefObject<number> }) {
   React.useEffect(() => {
     if (!canvas.current) return;
 
+    const height = canvas.current.clientHeight;
+
+    canvas.current.height = height;
+
     const ctx = canvas.current.getContext("2d")!;
     if (!ctx) throw new TypeError("no ctx");
 
     ctx.imageSmoothingEnabled = false;
 
-    const blockWidth = width / data.length;
+    const blockWidth = width / dataEntries;
 
     const boolHeight = 8;
 
-    const diffHeight = height - boolHeight * boolBits.length;
+    const diffHeight = height - boolHeight * inputFlags.length;
 
     requestAnimationFrame(frame);
 
@@ -257,25 +290,29 @@ function Tracker({ clamp }: { clamp: React.MutableRefObject<number> }) {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, width, height);
 
-      for (let i = 0; i < data.length; i++) {
-        const val = data[i];
+      for (let i = 0; i < dataEntries; i++) {
+        const view = new DataView(data.buffer, i * dataSize, dataSize);
 
         const x = blockWidth * i;
 
         // diff
-        if (val[0]) {
+        const diff = view.getUint32(0, true) / 1000;
+
+        if (diff) {
           const h = ~~(
             diffHeight *
-            (Math.min(val[0], clamp.current) / clamp.current)
+            (Math.min(diff, clamp.current) / clamp.current)
           );
           ctx.fillStyle = "blue";
           ctx.fillRect(x, diffHeight - h, blockWidth, h);
         }
 
-        // draw bits
-        for (let b = 0; b < boolBits.length; b++)
-          if (val[1] & boolBits[b][0]) {
-            ctx.fillStyle = boolBits[b][1];
+        // draw flags
+        const flags = view.getUint8(4);
+
+        for (let b = 0; b < inputFlags.length; b++)
+          if (flags & inputFlags[b][0]) {
+            ctx.fillStyle = inputFlags[b][1];
             ctx.fillRect(
               x,
               diffHeight + boolHeight * b,
@@ -289,7 +326,9 @@ function Tracker({ clamp }: { clamp: React.MutableRefObject<number> }) {
     }
   }, [canvas]);
 
-  return <canvas width={width} height={height} ref={canvas} />;
+  return (
+    <canvas width={width} height={0} style={{ height: "100%" }} ref={canvas} />
+  );
 }
 
 function LegendKey({
@@ -328,7 +367,7 @@ function TrackerMenu() {
           display: "flex",
           marginBottom: visible ? 5 : 0,
           flexDirection: "row",
-          gap: 5,
+          gap: 6,
         }}
       >
         <div
@@ -337,38 +376,29 @@ function TrackerMenu() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            padding: 8,
+            gap: 6,
           }}
         >
-          <span style={{ color: "white", fontSize: 10, margin: "8px 0" }}>
-            Legend
-          </span>
-          <div
+          <LegendKey
             style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 5,
-              marginBottom: 8,
+              backgroundSize: "10px 1px",
+              backgroundRepeat: "repeat",
+              backgroundPosition: "1px 0",
+              backgroundImage:
+                "linear-gradient(90deg, blue 75%, transparent 1%)",
+              backgroundColor: "white",
+              gap: 6,
             }}
-          >
+            name="Mouse"
+          />
+          {inputFlags.map((bit, i) => (
             <LegendKey
-              style={{
-                backgroundSize: "10px 1px",
-                backgroundRepeat: "repeat",
-                backgroundPosition: "1px 0",
-                backgroundImage:
-                  "linear-gradient(90deg, blue 75%, transparent 1%)",
-                backgroundColor: "white",
-              }}
-              name="Mouse"
+              key={i}
+              style={{ backgroundColor: bit[1] }}
+              name={bit[2]}
             />
-            {boolBits.map((bit, i) => (
-              <LegendKey
-                key={i}
-                style={{ backgroundColor: bit[1] }}
-                name={bit[2]}
-              />
-            ))}
-          </div>
+          ))}
         </div>
         <div
           style={{
