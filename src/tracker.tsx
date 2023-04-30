@@ -343,10 +343,7 @@ function Tracker({ scale }: { scale: React.MutableRefObject<number> }) {
         const diff = view.getUint32(0, true) / 1000;
 
         if (diff) {
-          const h = ~~(
-            diffHeight *
-            (Math.min(diff, scale.current) / scale.current)
-          );
+          const h = ~~(diffHeight * ((diff / Math.PI) * scale.current));
           ctx.fillStyle = "blue";
           ctx.fillRect(x, diffHeight - h, blockWidth, h);
         }
@@ -399,7 +396,7 @@ function LegendKey({
 
 function TrackerMenu() {
   // Highest value possible is PI
-  const scale = React.useRef(3.2);
+  const scale = React.useRef(1);
   const [visible, setVisible] = React.useState(true);
 
   return (
@@ -456,9 +453,9 @@ function TrackerMenu() {
           <Tracker scale={scale} />
           <TinyRange
             title="Mouse Scale"
-            step={0.01}
-            min={0.01}
-            max={3.2}
+            step={1}
+            min={1}
+            max={30}
             defaultValue={scale.current}
             onChange={(e) => {
               scale.current = e.target.valueAsNumber;
