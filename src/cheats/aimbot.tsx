@@ -134,11 +134,8 @@ function validTarget(target: Player | AI) {
 function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
   // const game = getGame();
   const render = getRender();
-  const localPlayer = getLocalPlayer();
 
   const fovCheck = sketchConfig.get("fovCheck");
-  // const wallbangs =
-  sketchConfig.get("wallbangs") && localPlayer.weapon.pierce !== undefined;
 
   if (fovCheck) {
     if (!render.frustum.containPoint(point)) return false;
@@ -150,24 +147,6 @@ function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
       return false;
     }
   }
-
-  /*if (wallbangs) setMapObjectTransparencyHook(true);
-
-  const cs = game.canSee(
-    localPlayer,
-    point.x,
-    point.y,
-    point.z,
-    undefined,
-    undefined,
-    // this sets the transparency value to the penetrable value, so this will skip all the penetrable values here
-    // can't just copy the canSee function because when stolen and used, it's sooo slow
-    wallbangs ? true : undefined
-  );
-  if (wallbangs) setMapObjectTransparencyHook(false);
-*/
-
-  // if (cs !== null) return false;
 
   return true;
 }
@@ -300,15 +279,28 @@ export function aimbotHook() {
     aimKeyHeld = true;
 
     if (!targetPlayer && canPickTarget) {
+      const render = getRender();
+      const fovCheck = sketchConfig.get("fovCheck");
+
       const found = game.players.list
         .filter(validTarget)
         .map((player) => ({ player, point: playerAimPoint(player) }))
         .filter(({ point }) => validPoint(point, center))
         .map(({ player, point }) => ({ player, screen: pos2D(point), point }))
-        .sort(
-          (p1, p2) =>
-            p1.screen.distanceTo(center) - p2.screen.distanceTo(center)
-        )[0];
+        .sort((p1, p2) => {
+          const distComparison =
+            p1.screen.distanceTo(center) - p2.screen.distanceTo(center);
+
+          if (!fovCheck) {
+            // prefer things on screen
+            const p1InFrustum = render.frustum.containsPoint(p1.point) ? 0 : 1;
+            const p2InFrustum = render.frustum.containsPoint(p2.point) ? 0 : 1;
+
+            return distComparison + p1InFrustum - p2InFrustum;
+          }
+
+          return distComparison;
+        })[0];
 
       if (found) {
         targetPlayer = found.player;
@@ -434,7 +426,7 @@ export function AimbotMenu() {
           title="FOV Radius"
           description="Controls the aimbot FOV"
           defaultValue={fovRadius}
-          min={0}
+          min={10}
           max={500}
           step={5}
           onChange={(event) => setFOVRadius(event.currentTarget.valueAsNumber)}
