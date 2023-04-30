@@ -3,6 +3,7 @@ import { isDevelopment } from "../consts";
 import TinyRange from "./components/TinyRange";
 import { inputFlags } from "./flags";
 import { data } from "./inputs";
+import { useTrackerConfig } from "./trackerConfig";
 
 if (isDevelopment) console.trace("DEV");
 
@@ -26,8 +27,13 @@ root.render(<TrackerMenu />);
 // optimize call (tampermonkey is slow)
 const { requestAnimationFrame, Math } = window;
 
-function Tracker({ scale }: { scale: React.MutableRefObject<number> }) {
+function Tracker({ scale }: { scale: number }) {
   const canvas = React.useRef<HTMLCanvasElement | null>(null);
+  const scaleRef = React.useRef<number>(scale);
+
+  React.useEffect(() => {
+    scaleRef.current = scale;
+  }, [scale]);
 
   React.useEffect(() => {
     if (!canvas.current) return;
@@ -57,7 +63,7 @@ function Tracker({ scale }: { scale: React.MutableRefObject<number> }) {
       for (const { i, mouse, flags } of data) {
         const x = blockWidth * i;
 
-        const h = ~~(diffHeight * ((mouse / Math.PI) * scale.current));
+        const h = ~~(diffHeight * ((mouse / Math.PI) * scaleRef.current));
         ctx.fillStyle = "blue";
         ctx.fillRect(x, diffHeight - h, blockWidth, h);
 
@@ -75,7 +81,7 @@ function Tracker({ scale }: { scale: React.MutableRefObject<number> }) {
 
       requestAnimationFrame(frame);
     }
-  }, [canvas]);
+  }, [canvas, scaleRef]);
 
   return (
     <canvas width={width} height={0} style={{ height: "100%" }} ref={canvas} />
@@ -105,8 +111,7 @@ function LegendKey({
 }
 
 function TrackerMenu() {
-  // Highest value possible is PI
-  const scale = React.useRef(1);
+  const [scale, setScale] = useTrackerConfig("scale");
   const [visible, setVisible] = React.useState(true);
 
   return (
@@ -166,9 +171,9 @@ function TrackerMenu() {
             step={1}
             min={1}
             max={30}
-            defaultValue={scale.current}
+            defaultValue={scale}
             onChange={(e) => {
-              scale.current = e.target.valueAsNumber;
+              setScale(e.target.valueAsNumber);
             }}
           />
         </div>

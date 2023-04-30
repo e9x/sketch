@@ -7,8 +7,8 @@
     "https://krunker.io/social.html*",
     "https://krunker.io/editor.html*"
   ],
+  "grant": ["GM_getValue", "GM_setValue", "GM_listValues", "GM_deleteValue"],
   "run-at": "document-start",
-  "grant": ["unsafeWindow"],
   "require": [
     "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.2.1/chart.umd.js",
     "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
