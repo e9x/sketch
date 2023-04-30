@@ -1,5 +1,6 @@
 import type KrunkBox from "./KrunkBox";
 import { APIError } from "./KrunkBox";
+import { isDevelopment } from "./consts";
 import { hookContext, mirrorAttributes } from "./superHook";
 import tokenConfig, { DIYStage } from "./tokenConfig";
 
@@ -38,10 +39,11 @@ export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
 
   const { src, data } = hook(dataArg, source);
 
-  const game = new Function("WP_MMToken", dataArg, src) as (
-    WP_MMToken: string,
-    dataArg: Data
-  ) => void;
+  const game = new Function(
+    "WP_MMToken",
+    dataArg,
+    src + (isDevelopment ? "//# sourceURL=https://krunker.io/js/game.js" : "")
+  ) as (WP_MMToken: string, dataArg: Data) => void;
 
   return () => game(token, data);
 }
