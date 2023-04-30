@@ -306,7 +306,7 @@ function hookInputs(inputs: number[]) {
   lastInputs = inputs;
 }
 
-function Tracker({ clamp }: { clamp: React.MutableRefObject<number> }) {
+function Tracker({ scale }: { scale: React.MutableRefObject<number> }) {
   const canvas = React.useRef<HTMLCanvasElement | null>(null);
 
   React.useEffect(() => {
@@ -345,7 +345,7 @@ function Tracker({ clamp }: { clamp: React.MutableRefObject<number> }) {
         if (diff) {
           const h = ~~(
             diffHeight *
-            (Math.min(diff, clamp.current) / clamp.current)
+            (Math.min(diff, scale.current) / scale.current)
           );
           ctx.fillStyle = "blue";
           ctx.fillRect(x, diffHeight - h, blockWidth, h);
@@ -398,8 +398,8 @@ function LegendKey({
 }
 
 function TrackerMenu() {
-  // Highest value possible is Math.PI2 or 6.283
-  const clamp = React.useRef(7);
+  // Highest value possible is PI
+  const scale = React.useRef(3.2);
   const [visible, setVisible] = React.useState(true);
 
   return (
@@ -453,15 +453,15 @@ function TrackerMenu() {
             fontSize: 10,
           }}
         >
-          <Tracker clamp={clamp} />
+          <Tracker scale={scale} />
           <TinyRange
             title="Mouse Scale"
             step={0.01}
             min={0.01}
-            max={7}
-            defaultValue={clamp.current}
+            max={3.2}
+            defaultValue={scale.current}
             onChange={(e) => {
-              clamp.current = e.target.valueAsNumber;
+              scale.current = e.target.valueAsNumber;
             }}
           />
         </div>
