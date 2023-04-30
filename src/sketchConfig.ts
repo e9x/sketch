@@ -1,0 +1,83 @@
+import type { DataHook } from "./Config";
+import Config, { useConfig } from "./Config";
+
+export enum DIYStage {
+  false,
+  /**
+   * Get the token
+   */
+  token,
+  /**
+   * Ready to use "token" in config
+   */
+  ready,
+}
+
+export interface SketchConfig {
+  token?: string;
+  aimbot: "off" | "smooth" | "silent";
+  hitbox: "head" | "chest";
+  bot: boolean;
+  wallbangs: boolean;
+  fovCheck: boolean;
+  aimKey: number;
+  fovRadius: number;
+  smoothFactor: number;
+  drawFOV: boolean;
+  targetOnAimKey: boolean;
+  bhop: boolean;
+  slidehop: boolean;
+  esp: boolean;
+  forceAuto: boolean;
+  recoilControl: boolean;
+  recoilControlKey: number;
+  recoilSmoothFactor: number;
+  triggerbot: boolean;
+  triggerbotKey: number;
+  triggerbotMin: number;
+  triggerbotMax: number;
+  menuKey: number;
+  menuButton: boolean;
+  diy: DIYStage;
+  diyToken?: string;
+  noAdsFovMlt: boolean;
+}
+
+/**
+ * Default config. Also serves as a source of all the config keys (you can't iterate over an interface so this is the next best thing)
+ */
+const defaultConfig: SketchConfig = {
+  aimbot: "off",
+  hitbox: "head",
+  bot: false,
+  wallbangs: false,
+  fovCheck: true,
+  aimKey: -1,
+  fovRadius: 150,
+  smoothFactor: 1,
+  drawFOV: false,
+  targetOnAimKey: false,
+  bhop: false,
+  slidehop: false,
+  esp: false,
+  forceAuto: false,
+  recoilControl: false,
+  recoilControlKey: -1,
+  recoilSmoothFactor: 0.9,
+  triggerbot: false,
+  triggerbotKey: -1,
+  triggerbotMin: 0,
+  triggerbotMax: 0,
+  menuKey: -1,
+  menuButton: true,
+  diy: DIYStage.false,
+  noAdsFovMlt: false,
+};
+
+const sketchConfig = new Config<SketchConfig>(defaultConfig);
+
+export const useSketchConfig = <K extends keyof SketchConfig>(
+  key: K
+): DataHook<SketchConfig, K> => useConfig(sketchConfig, key);
+
+export default sketchConfig;

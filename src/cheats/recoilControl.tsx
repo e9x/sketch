@@ -1,4 +1,3 @@
-import useConfig, { configGet } from "../config";
 import {
   getConfig,
   getGame,
@@ -10,16 +9,17 @@ import { lerp } from "../krunkerUtil";
 import BindHolder, { Bind } from "../menu/components/Bind";
 import Slider from "../menu/components/Slider";
 import Switch from "../menu/components/Switch";
+import sketchConfig, { useSketchConfig } from "../sketchConfig";
 
 export function recoilControlHook() {
   let lastRecoilAnimY = 0;
 
   inputHooks.push(() => {
-    if (!configGet("recoilControl")) return;
+    if (!sketchConfig.get("recoilControl")) return;
 
     const game = getGame();
 
-    const recoilControlKey = configGet("recoilControlKey");
+    const recoilControlKey = sketchConfig.get("recoilControlKey");
 
     if (recoilControlKey !== -1 && game.controls.keys[recoilControlKey] !== 1)
       return;
@@ -45,7 +45,7 @@ export function recoilControlHook() {
         game.controls.pchObjc.rotation.x,
         game.controls.object.rotation.y
       ),
-      configGet("recoilSmoothFactor")
+      sketchConfig.get("recoilSmoothFactor")
     );
 
     game.controls.pchObjc.rotation.x = rotation.x;
@@ -56,10 +56,11 @@ export function recoilControlHook() {
 }
 
 export function RecoilControlMenu() {
-  const [recoilControl, setRecoilControl] = useConfig("recoilControl");
-  const [recoilControlKey, setRecoilControlKey] = useConfig("recoilControlKey");
+  const [recoilControl, setRecoilControl] = useSketchConfig("recoilControl");
+  const [recoilControlKey, setRecoilControlKey] =
+    useSketchConfig("recoilControlKey");
   const [recoilSmoothFactor, setRecoilSmoothFactor] =
-    useConfig("recoilSmoothFactor");
+    useSketchConfig("recoilSmoothFactor");
 
   return (
     <>

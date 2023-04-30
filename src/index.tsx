@@ -7,7 +7,6 @@ import { espHook, forceNametags } from "./cheats/esp";
 import { forceAutoHook } from "./cheats/forceAuto";
 import { recoilControlHook } from "./cheats/recoilControl";
 import { triggerbotHook } from "./cheats/triggerbot";
-import { configDelete, configGet, configSet } from "./config";
 import {
   discordURL,
   isKrunker,
@@ -18,6 +17,7 @@ import {
 import { matchModule, getLocalPlayer, getRender } from "./filters";
 import type { Module } from "./filters";
 import { getInit, gameLoad } from "./inject";
+import sketchConfig from "./sketchConfig";
 
 aimbotHook();
 bhopHook();
@@ -52,7 +52,7 @@ const hook = (dataArg: string, src: string) => {
   return {
     data: {
       get noAdsFovMlt() {
-        return configGet("noAdsFovMlt");
+        return sketchConfig.get("noAdsFovMlt");
       },
       get adsFovMlt() {
         try {
@@ -101,7 +101,7 @@ function newRoot() {
 }
 
 async function main() {
-  const savedToken = configGet("token");
+  const savedToken = sketchConfig.get("token");
 
   const version = await KrunkBox.sketchVersion(sketchVersion, supportedGame);
 
@@ -183,7 +183,7 @@ function KeyBeg({ done }: { done: () => void }) {
                   setError("Access key already used. Try again.");
                   break;
                 default:
-                  configSet("token", res);
+                  sketchConfig.set("token", res);
                   done();
               }
             })
@@ -201,7 +201,7 @@ async function init(krunkbox: KrunkBox) {
   const game = await getInit(krunkbox, hook);
 
   if (game === APIError.BadToken) {
-    configDelete("token");
+    sketchConfig.delete("token");
     location.reload();
     return;
   }

@@ -1,6 +1,6 @@
 import type KrunkBox from "./KrunkBox";
 import { APIError } from "./KrunkBox";
-import { DIYStage, configDelete, configGet, configSet } from "./config";
+import sketchConfig, { DIYStage } from "./sketchConfig";
 import { hookContext, mirrorAttributes } from "./superHook";
 
 type Hook<Data> = (dataArg: string, src: string) => { data: Data; src: string };
@@ -10,22 +10,22 @@ export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
 
   if (new URLSearchParams(location.search).has("sandbox")) {
     token = "";
-    configDelete("diyToken");
-    configDelete("diy");
+    sketchConfig.delete("diyToken");
+    sketchConfig.delete("diy");
   } else
-    switch (configGet("diy")) {
+    switch (sketchConfig.get("diy")) {
       case DIYStage.false:
       case DIYStage.token:
-        configSet("diy", DIYStage.token);
+        sketchConfig.set("diy", DIYStage.token);
         fetchWASM();
         return APIError.DIY;
       case DIYStage.ready:
         {
-          const diyToken = configGet("diyToken");
+          const diyToken = sketchConfig.get("diyToken");
           if (!diyToken) throw new TypeError("No token");
           token = diyToken;
-          configDelete("diyToken");
-          configDelete("diy");
+          sketchConfig.delete("diyToken");
+          sketchConfig.delete("diy");
         }
         break;
     }
@@ -70,7 +70,7 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
             location.toString()
           );
 
-          if (configGet("diy") === DIYStage.token) {
+          if (sketchConfig.get("diy") === DIYStage.token) {
             if (
               inputURL.origin === "https://matchmaker.krunker.io" &&
               inputURL.pathname === "/seek-game"
@@ -82,8 +82,8 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
                 ...validationToken.split("").map((e) => e.charCodeAt(0) + 10)
               );
 
-              configSet("diyToken", diyToken);
-              configSet("diy", DIYStage.ready);
+              sketchConfig.set("diyToken", diyToken);
+              sketchConfig.set("diy", DIYStage.ready);
               location.reload();
               // eslint-disable-next-line @typescript-eslint/no-empty-function
               return new Promise(() => {});

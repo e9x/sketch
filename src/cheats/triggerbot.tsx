@@ -1,10 +1,10 @@
-import useConfig, { configGet } from "../config";
 import { iInputs } from "../consts";
 import { getGame, getRender, inputHooks } from "../filters";
 import { isEnemy } from "../krunkerUtil";
 import BindHolder, { Bind } from "../menu/components/Bind";
 import Slider from "../menu/components/Slider";
 import Switch from "../menu/components/Switch";
+import sketchConfig, { useSketchConfig } from "../sketchConfig";
 
 export function triggerbotHook() {
   let detectTime = 0;
@@ -12,11 +12,11 @@ export function triggerbotHook() {
   let didShoot = false;
 
   inputHooks.push((inputs) => {
-    if (!configGet("triggerbot")) return;
+    if (!sketchConfig.get("triggerbot")) return;
 
     const game = getGame();
 
-    const triggerbotKey = configGet("triggerbotKey");
+    const triggerbotKey = sketchConfig.get("triggerbotKey");
 
     if (
       (triggerbotKey === -1 || game.controls.keys[triggerbotKey] === 1) &&
@@ -51,7 +51,7 @@ export function triggerbotHook() {
         if (shoot) {
           if (!detectTime) {
             // Date.now() + detectDelay
-            detectTime = Date.now() + configGet("triggerbotMin") * 1000;
+            detectTime = Date.now() + sketchConfig.get("triggerbotMin") * 1000;
           }
 
           if (detectTime < Date.now()) {
@@ -62,7 +62,7 @@ export function triggerbotHook() {
         } else if (didShoot) {
           detectTime = 0;
           // Date.now() + continueFor
-          continueTime = Date.now() + configGet("triggerbotMax") * 1000;
+          continueTime = Date.now() + sketchConfig.get("triggerbotMax") * 1000;
           didShoot = false;
         }
       }
@@ -75,10 +75,10 @@ export function triggerbotHook() {
 }
 
 export function TriggerbotMenu() {
-  const [triggerbot, setTriggerbot] = useConfig("triggerbot");
-  const [triggerbotKey, setTriggerbotKey] = useConfig("triggerbotKey");
-  const [triggerbotMin, setTriggerbotMin] = useConfig("triggerbotMin");
-  const [triggerbotMax, setTriggerbotMax] = useConfig("triggerbotMax");
+  const [triggerbot, setTriggerbot] = useSketchConfig("triggerbot");
+  const [triggerbotKey, setTriggerbotKey] = useSketchConfig("triggerbotKey");
+  const [triggerbotMin, setTriggerbotMin] = useSketchConfig("triggerbotMin");
+  const [triggerbotMax, setTriggerbotMax] = useSketchConfig("triggerbotMax");
 
   return (
     <>

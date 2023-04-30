@@ -4,13 +4,8 @@ import { ESPMenu } from "../cheats/esp";
 import { ForceAutoMenu } from "../cheats/forceAuto";
 import { RecoilControlMenu } from "../cheats/recoilControl";
 import { TriggerbotMenu } from "../cheats/triggerbot";
-import useConfig, {
-  configExport,
-  configImport,
-  configReset,
-  configSet,
-} from "../config";
 import { discordURL, docsURL } from "../consts";
+import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import Settings from "./Settings";
 import BindHolder, { Bind } from "./components/Bind";
 import Control from "./components/Control";
@@ -79,9 +74,9 @@ function pickFile() {
 let defaultTabID: number | undefined;
 
 export default function Menu() {
-  const [menuKey, setMenuKey] = useConfig("menuKey");
-  const [menuButton] = useConfig("menuButton");
-  const [noAdsFovMlt, setNoAdsFovMlt] = useConfig("noAdsFovMlt");
+  const [menuKey, setMenuKey] = useSketchConfig("menuKey");
+  const [menuButton] = useSketchConfig("menuButton");
+  const [noAdsFovMlt, setNoAdsFovMlt] = useSketchConfig("noAdsFovMlt");
 
   return (
     <Settings
@@ -99,13 +94,16 @@ export default function Menu() {
               height: 48, // we have to set this because we don't have the search buttons
             }}
           >
-            <div className="settingsBtn" onClick={() => configReset()}>
+            <div className="settingsBtn" onClick={() => sketchConfig.reset()}>
               Reset
             </div>
             <div
               className="settingsBtn"
               onClick={() => {
-                downloadFile("sketch.json", JSON.stringify(configExport()));
+                downloadFile(
+                  "sketch.json",
+                  JSON.stringify(sketchConfig.export())
+                );
               }}
             >
               Export
@@ -113,7 +111,7 @@ export default function Menu() {
             <div
               className="settingsBtn"
               onClick={() =>
-                pickFile().then((data) => configImport(JSON.parse(data)))
+                pickFile().then((data) => sketchConfig.import(JSON.parse(data)))
               }
             >
               Import
@@ -148,8 +146,11 @@ export default function Menu() {
                           "You must set a menu keybind before disabling the button"
                         );
                       } else {
-                        // use configSet so it's instant
-                        configSet("menuButton", event.currentTarget.checked);
+                        // use sketchConfig.set so it's instant
+                        sketchConfig.set(
+                          "menuButton",
+                          event.currentTarget.checked
+                        );
                         location.reload();
                       }
                     }}

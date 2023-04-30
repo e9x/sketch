@@ -3,7 +3,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { configGet } from "./config";
 import { isDevelopment } from "./consts";
 import type Game from "./krunker/Game";
 import type MapObjectModule from "./krunker/Object";
@@ -11,6 +10,7 @@ import type { Player } from "./krunker/Player";
 import type RenderManager from "./krunker/RenderManager";
 import type configModule from "./krunker/config";
 import type * as Overlay from "./krunker/overlay";
+import sketchConfig from "./sketchConfig";
 
 export interface Module<T = any> {
   exports: T;
@@ -130,7 +130,7 @@ function doMapObjectHooks() {
   const transparentMap = new WeakMap<MapObjectModule, number | undefined>();
   Object.defineProperty(getMapObject().prototype, "transparent", {
     get(this: MapObjectModule) {
-      if (configGet("wallbangs")) return this.penetrable ? 1 : 0;
+      if (sketchConfig.get("wallbangs")) return this.penetrable ? 1 : 0;
       return transparentMap.get(this);
     },
     set(this: MapObjectModule, value) {

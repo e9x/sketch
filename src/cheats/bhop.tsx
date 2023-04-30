@@ -1,7 +1,7 @@
-import useConfig, { configGet } from "../config";
 import { iInputs } from "../consts";
 import { getLocalPlayer, inputHooks } from "../filters";
 import Switch from "../menu/components/Switch";
+import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import random from "lodash/random";
 
 function pickZeroSome() {
@@ -30,7 +30,7 @@ export function bhopHook() {
   inputHooks.push((inputs) => {
     const localPlayer = getLocalPlayer();
 
-    if (configGet("bhop") && inputs[iInputs.jump]) {
+    if (sketchConfig.get("bhop") && inputs[iInputs.jump]) {
       const now = Date.now();
 
       if (bhopTimer <= now) {
@@ -54,7 +54,7 @@ export function bhopHook() {
     }
 
     // if crouch is held, slidehop
-    if (configGet("slidehop") && inputs[iInputs.crouch]) {
+    if (sketchConfig.get("slidehop") && inputs[iInputs.crouch]) {
       if (!didCrouch) zeroSome = nextZeroSome;
 
       // pick a new "zeroSome" everytime we slidehop
@@ -75,8 +75,8 @@ export function bhopHook() {
 }
 
 export function BhopMenu() {
-  const [bhop, setBhop] = useConfig("bhop");
-  const [slidehop, setSlidehop] = useConfig("slidehop");
+  const [bhop, setBhop] = useSketchConfig("bhop");
+  const [slidehop, setSlidehop] = useSketchConfig("slidehop");
 
   return (
     <>

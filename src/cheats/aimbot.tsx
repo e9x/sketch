@@ -1,5 +1,3 @@
-import type { Config } from "../config";
-import useConfig, { configGet } from "../config";
 import { iInputs } from "../consts";
 import {
   getConfig,
@@ -29,6 +27,8 @@ import Select from "../menu/components/Select";
 import { Set } from "../menu/components/Set";
 import Slider from "../menu/components/Slider";
 import Switch from "../menu/components/Switch";
+import type { SketchConfig } from "../sketchConfig";
+import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import type { AI } from "krunker/AI";
 import random from "lodash/random";
 
@@ -58,7 +58,7 @@ function drawAimbotCircle(
  * Get the position that will be aimed at (eg the head)
  */
 function playerAimPoint(player: Player) {
-  const hitbox = configGet("hitbox");
+  const hitbox = sketchConfig.get("hitbox");
   const config = getConfig();
   const { THREE } = getGame();
   const hitboxOffset =
@@ -77,8 +77,8 @@ function playerAimPoint(player: Player) {
 }
 
 function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
-  const aimbot = configGet("aimbot");
-  const smoothFactor = configGet("smoothFactor");
+  const aimbot = sketchConfig.get("aimbot");
+  const smoothFactor = sketchConfig.get("smoothFactor");
 
   const game = getGame();
   const render = getRender();
@@ -136,14 +136,14 @@ function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
   const render = getRender();
   const localPlayer = getLocalPlayer();
 
-  const fovCheck = configGet("fovCheck");
+  const fovCheck = sketchConfig.get("fovCheck");
   // const wallbangs =
-  configGet("wallbangs") && localPlayer.weapon.pierce !== undefined;
+  sketchConfig.get("wallbangs") && localPlayer.weapon.pierce !== undefined;
 
   if (fovCheck) {
     if (!render.frustum.containPoint(point)) return false;
 
-    const fovRadius = configGet("fovRadius");
+    const fovRadius = sketchConfig.get("fovRadius");
 
     // TODO: reuse pos2D
     if (!isPointInsideCircle(pos2D(point), center, fovRadius)) {
@@ -176,12 +176,12 @@ export function aimbotHook() {
   let reloading = 0;
 
   renderHooks.push(() => {
-    const drawFOV = configGet("drawFOV");
+    const drawFOV = sketchConfig.get("drawFOV");
     if (!drawFOV) return;
     if (isInMenus()) return;
     const localPlayer = getLocalPlayer();
     if (!localPlayer.active && !window.spectating) return;
-    const fovRadius = configGet("fovRadius");
+    const fovRadius = sketchConfig.get("fovRadius");
 
     const overlay = getOverlay();
 
@@ -199,7 +199,7 @@ export function aimbotHook() {
   });
 
   inputHooks.push((inputs) => {
-    const bot = configGet("bot");
+    const bot = sketchConfig.get("bot");
 
     if (!bot) return;
 
@@ -222,8 +222,8 @@ export function aimbotHook() {
   let aimKeyHeld = false;
 
   inputHooks.push((inputs) => {
-    const aimbot = configGet("aimbot");
-    const aimKey = configGet("aimKey");
+    const aimbot = sketchConfig.get("aimbot");
+    const aimKey = sketchConfig.get("aimKey");
     const game = getGame();
     const { THREE } = game;
 
@@ -239,7 +239,7 @@ export function aimbotHook() {
     const localPlayer = getLocalPlayer();
 
     // if (inputs[iInputs.frame] % 10 === 0) console.log(currentReload);
-    const bot = configGet("bot");
+    const bot = sketchConfig.get("bot");
 
     if (bot) {
       if (localPlayer.weapon.noAim === false) {
@@ -295,7 +295,7 @@ export function aimbotHook() {
 
     // do this logic only after checking stuff such as aimbot silent and timer
     const canPickTarget =
-      !configGet("targetOnAimKey") || aimKey === -1 || !aimKeyHeld;
+      !sketchConfig.get("targetOnAimKey") || aimKey === -1 || !aimKeyHeld;
 
     aimKeyHeld = true;
 
@@ -350,16 +350,16 @@ export function aimbotHook() {
 }
 
 export function AimbotMenu() {
-  const [aimbot, setAimbot] = useConfig("aimbot");
-  const [bot, setBot] = useConfig("bot");
-  const [fovCheck, setfovCheck] = useConfig("fovCheck");
-  const [wallbangs, setWallbangs] = useConfig("wallbangs");
-  const [hitbox, setHitbox] = useConfig("hitbox");
-  const [aimKey, setAimKey] = useConfig("aimKey");
-  const [smoothFactor, setSmoothFactor] = useConfig("smoothFactor");
-  const [fovRadius, setFOVRadius] = useConfig("fovRadius");
-  const [drawFOV, setDrawFOV] = useConfig("drawFOV");
-  const [targetOnAimKey, setTargetAimOnKey] = useConfig("targetOnAimKey");
+  const [aimbot, setAimbot] = useSketchConfig("aimbot");
+  const [bot, setBot] = useSketchConfig("bot");
+  const [fovCheck, setfovCheck] = useSketchConfig("fovCheck");
+  const [wallbangs, setWallbangs] = useSketchConfig("wallbangs");
+  const [hitbox, setHitbox] = useSketchConfig("hitbox");
+  const [aimKey, setAimKey] = useSketchConfig("aimKey");
+  const [smoothFactor, setSmoothFactor] = useSketchConfig("smoothFactor");
+  const [fovRadius, setFOVRadius] = useSketchConfig("fovRadius");
+  const [drawFOV, setDrawFOV] = useSketchConfig("drawFOV");
+  const [targetOnAimKey, setTargetAimOnKey] = useSketchConfig("targetOnAimKey");
 
   return (
     <>
@@ -376,7 +376,7 @@ export function AimbotMenu() {
           title="Aimbot"
           defaultValue={aimbot}
           onChange={(event) =>
-            setAimbot(event.currentTarget.value as Config["aimbot"])
+            setAimbot(event.currentTarget.value as SketchConfig["aimbot"])
           }
         >
           <option value="off">Off</option>
@@ -410,7 +410,7 @@ export function AimbotMenu() {
           description="Automatically aim and fire at players"
           defaultValue={hitbox}
           onChange={(event) =>
-            setHitbox(event.currentTarget.value as Config["hitbox"])
+            setHitbox(event.currentTarget.value as SketchConfig["hitbox"])
           }
         >
           <option value="head">Head</option>

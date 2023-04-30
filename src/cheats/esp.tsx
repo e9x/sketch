@@ -1,4 +1,3 @@
-import useConfig, { configGet } from "../config";
 import {
   getConfig,
   getGame,
@@ -16,11 +15,12 @@ import {
   pos2D,
 } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
+import sketchConfig, { useSketchConfig } from "../sketchConfig";
 
 export const defaultESP = false;
 
 export function forceNametags() {
-  return configGet("esp");
+  return sketchConfig.get("esp");
 }
 
 export class PlayerRectBounds {
@@ -136,7 +136,7 @@ function playerBox(entity: Player | AI) {
 
 export function espHook() {
   renderHooks.push(() => {
-    if (!configGet("esp")) return;
+    if (!sketchConfig.get("esp")) return;
     if (isInMenus()) return;
 
     const overlay = getOverlay();
@@ -165,7 +165,7 @@ export function espHook() {
 }
 
 export function ESPMenu() {
-  const [esp, setESP] = useConfig("esp");
+  const [esp, setESP] = useSketchConfig("esp");
 
   return (
     <Switch

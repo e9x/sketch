@@ -1,8 +1,8 @@
-import useConfig, { configGet } from "../config";
 import { iInputs } from "../consts";
 import { getLocalPlayer, inputHooks } from "../filters";
 import { getAimTime, getCurrentReload, getReload } from "../krunkerUtil";
 import Switch from "../menu/components/Switch";
+import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import random from "lodash/random";
 
 function canShoot(aimTime: number) {
@@ -14,7 +14,7 @@ export function forceAutoHook() {
   let shootStart = 0;
 
   inputHooks.push((inputs) => {
-    if (!configGet("forceAuto")) return;
+    if (!sketchConfig.get("forceAuto")) return;
 
     const localPlayer = getLocalPlayer();
 
@@ -43,7 +43,7 @@ export function forceAutoHook() {
 }
 
 export function ForceAutoMenu() {
-  const [triggerbot, setTriggerbot] = useConfig("forceAuto");
+  const [triggerbot, setTriggerbot] = useSketchConfig("forceAuto");
 
   return (
     <Switch
