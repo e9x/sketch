@@ -4,6 +4,9 @@ import { InputFlags } from "./flags";
 
 export const data = new CircularInputBuffer(400);
 
+// optimize call (tampermonkey is slow)
+const { Math } = window;
+
 function normalizeAngle(angle: number) {
   while (angle < 0) {
     angle += Math.PI * 2;
