@@ -1,4 +1,4 @@
-import { getDevURL } from "./consts";
+import { getDevURL } from "../consts";
 
 /**
  * You must enable Tampermonkey's instant inject feature for this to load correctly!

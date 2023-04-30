@@ -53,7 +53,7 @@ const transformerFactory = (name) => (relativeSourcePath) =>
  */
 const options = defineConfig([
   {
-    input: "./src/tracker.tsx",
+    input: "./src/tracker/index.tsx",
     output: {
       file: fileURLToPath(new URL("dist/tracker.user.js", import.meta.url)),
       format: "cjs",
@@ -88,7 +88,7 @@ const options = defineConfig([
   ...(isDevelopment
     ? [
         {
-          input: "./src/trackerDev.ts",
+          input: "./src/tracker/dev.ts",
           output: {
             file: fileURLToPath(
               new URL("dist/tracker.DEV.user.js", import.meta.url)
