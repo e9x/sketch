@@ -5,7 +5,8 @@
   "match": ["https://krunker.io/*"],
   "exclude": [
     "https://krunker.io/social.html*",
-    "https://krunker.io/editor.html*"
+    "https://krunker.io/editor.html*",
+    "https://krunker.io/viewer.html*"
   ],
   "grant": ["GM_getValue", "GM_setValue", "GM_listValues", "GM_deleteValue"],
   "run-at": "document-start",
