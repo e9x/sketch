@@ -1,11 +1,11 @@
 /*
 Data:
 
-int distance;
+short distance;
 char flags;
 */
 
-const dataSize = 4 + 1;
+const dataSize = 2 + 1;
 
 // optimize call (tampermonkey is slow)
 const { DataView } = window;
@@ -23,8 +23,8 @@ export default class CircularInputBuffer {
   *[Symbol.iterator]() {
     for (let i = 0; i < this.length; i++) {
       const view = new DataView(this.data.buffer, i * dataSize, dataSize);
-      const distance = view.getUint32(0, true) / 1000;
-      const flags = view.getUint8(4);
+      const distance = view.getUint16(0, true) / 1000;
+      const flags = view.getUint8(2);
       yield { i, distance, flags };
     }
   }
@@ -50,8 +50,8 @@ export default class CircularInputBuffer {
 
     // add mouse and flags as the first element in data
     const view = new DataView(this.data.buffer, 0, dataSize);
-    view.setUint32(0, distance * 1000, true);
-    view.setUint8(4, flags);
+    view.setUint16(0, distance * 1000, true);
+    view.setUint8(2, flags);
   }
   /**
    *Add the new data to the end of the buffer.
@@ -65,7 +65,7 @@ export default class CircularInputBuffer {
       (this.length - 1) * dataSize,
       dataSize
     );
-    view.setUint32(0, distance * 1000, true);
-    view.setUint8(4, flags);
+    view.setUint16(0, distance * 1000, true);
+    view.setUint8(2, flags);
   }
 }
