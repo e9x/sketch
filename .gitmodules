@@ -1,3 +1,0 @@
-[submodule "rollup-plugin-userscript-metablock"]
-	path = rollup-plugin-userscript-metablock
-	url = https://github.com/e9x/rollup-plugin-userscript-metablock.git

@@ -33,7 +33,7 @@
     "rollup-plugin-esbuild": "^5.0.0",
     "rollup-plugin-obfuscator": "^1.0.3",
     "rollup-plugin-serve": "^2.0.2",
-    "rollup-plugin-userscript-metablock": "file:rollup-plugin-userscript-metablock",
+    "rollup-plugin-userscript-metablock": "^0.3.3",
     "typescript": "^5.0.4"
   },
   "dependencies": {
