@@ -13,11 +13,11 @@ import type Game from "../krunker/Game";
 import { hookContext, mirrorAttributes } from "../superHook";
 import { hookInputs } from "./inputs";
 
-type WebpackModule = {
+interface WebpackModule {
   i: number;
   l: boolean;
   exports: any;
-};
+}
 
 type WebpackModuleFactory = (
   this: WebpackModule,
@@ -28,6 +28,7 @@ type WebpackModuleFactory = (
 
 type WebpackRequire = ((i: number) => unknown) & {
   m: (WebpackModuleFactory | undefined)[];
+  c: WebpackModule[];
 };
 
 function isWebpackRequire(e: unknown): e is WebpackRequire {
