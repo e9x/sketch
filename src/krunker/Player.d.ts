@@ -16,6 +16,7 @@ interface Weapon {
   rate?: number;
   rateChrg?: boolean;
   chrgTime?: number;
+  ammo: number;
 }
 
 export declare class Player {
@@ -56,9 +57,19 @@ export declare class Player {
   burstCount: number;
   active: boolean;
   objInstances: THREE.Object3D | null;
-  headObj: THREE.Object3D | null;
+  waistMesh: THREE.Object3D | null;
+  backMesh: THREE.Mesh | null;
+  hatMesh: THREE.Mesh | null;
+  bodyMesh: (THREE.Object3D & { children: THREE.Mesh[] }) | null;
+  mergedArmMeshes: THREE.Mesh[];
+  weaponMeshes: (THREE.Object3D & { children: THREE.Mesh[] })[];
+  wristMeshes: THREE.Mesh[];
+  armMeshes: THREE.Mesh[];
+  legMeshes: THREE.Mesh[];
+  headObj: THREE.Mesh | null;
   lowerBody: THREE.Object3D | null;
   upperBody: THREE.Object3D | null;
+  meshHoldObj: THREE.Object3D | null;
   maxHealth: number;
   health: number;
   hpChase: number;
