@@ -1,20 +1,17 @@
 /* eslint-disable no-constant-condition */
 import "./workinkBypass";
 import "./menu/createUI";
-import KrunkBox, { APIError, WorkInkErrors } from "./KrunkBox";
+import KrunkBox, { APIError } from "./KrunkBox";
 import { aimbotHook } from "./cheats/aimbot";
 import { bhopHook } from "./cheats/bhop";
 import { espHook, forceNametags } from "./cheats/esp";
 import { forceAutoHook } from "./cheats/forceAuto";
 import { recoilControlHook } from "./cheats/recoilControl";
 import { triggerbotHook } from "./cheats/triggerbot";
-import {
-  discordURL,
-  isKrunker,
-  sketchVersion,
-  supportedGame,
-  workInkURL,
-} from "./consts";
+import KeyBeg from "./components/KeyBeg";
+import NotUpdated from "./components/NotUpdated";
+import Outdated from "./components/Outdated";
+import { isKrunker, sketchVersion, supportedGame } from "./consts";
 import { matchModule, getLocalPlayer, getRender } from "./filters";
 import type { Module } from "./filters";
 import { getInit, gameLoad } from "./inject";
@@ -107,26 +104,13 @@ async function main() {
 
   if (version.outdated)
     return newRoot().root.render(
-      <>
-        <h1>Update Sketch.</h1>
-        <p>
-          Your version of Sketch is outdated. Click{" "}
-          <a href={version.updateURL}>this link here</a> to download the latest
-          verison. ({version.latestVersion})
-        </p>
-        <p>
-          <button onClick={() => location.reload()}>Refresh</button>
-        </p>
-      </>
+      <Outdated
+        latestVersion={version.latestVersion}
+        updateURL={version.updateURL}
+      />
     );
 
-  if (!version.sketchUpdated)
-    return newRoot().root.render(
-      <>
-        <h1>Sketch isn't updated.</h1>
-        <a href={discordURL}>Discord server</a>
-      </>
-    );
+  if (!version.sketchUpdated) return newRoot().root.render(<NotUpdated />);
 
   let token = tokenConfig.get("token");
 
@@ -170,54 +154,4 @@ function begKey() {
       />
     );
   });
-}
-
-function KeyBeg({ done }: { done: (token: string) => void }) {
-  const key = React.useRef<HTMLInputElement | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [busy, setBusy] = React.useState(false);
-
-  return (
-    <>
-      <h1>Get your access key for Sketch.</h1>
-      <p>
-        In order to pay for servers and development, we've partnered with
-        WorkInk.
-      </p>
-      <p>
-        <a href={workInkURL}>Get Access Key</a>
-      </p>
-      <p>
-        <a href="https://sketch.sys32.dev/docs/quick-start/">Video Tutorial</a>
-      </p>
-      {error && <p style={{ fontSize: "10px", color: "red" }}>{error}</p>}
-      <form
-        style={{ display: "flex", flexDirection: "row", gap: 5 }}
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!key.current) return;
-
-          setBusy(true);
-
-          KrunkBox.processWorkInk(key.current.value.trim())
-            .then((res) => {
-              switch (res) {
-                case WorkInkErrors.BadToken:
-                  setError("Bad access key. Try again.");
-                  break;
-                case WorkInkErrors.DuplicateToken:
-                  setError("Access key already used. Try again.");
-                  break;
-                default:
-                  done(res);
-              }
-            })
-            .finally(() => setBusy(false));
-        }}
-      >
-        <input type="text" placeholder="Access Key" disabled={busy} ref={key} />
-        <input type="submit" value="Done" disabled={busy} />
-      </form>
-    </>
-  );
 }
