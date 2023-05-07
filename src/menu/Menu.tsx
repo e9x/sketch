@@ -158,7 +158,7 @@ export default function Menu() {
                   />
                 </Set>
                 <HeadlessSet>
-                  <Link title="Documentation" href={docsURL} />
+                  <Link title="Guide" href={docsURL} />
                   <Link title="Discord Server" href={discordURL} />
                   <Control title="The Gaming Gurus" />
                   <Control title={`Sketch v${sketchVersion}`} />
