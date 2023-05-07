@@ -91,36 +91,6 @@ export default class KrunkBox {
     if (value === undefined) GM_deleteValue("token");
     else GM_setValue("token", value);
   }
-  /**
-   * Validates the token. Should be called before making any requests to Krunker's matchmaker
-   */
-  async valid() {
-    while (true) {
-      const res = await GM_fetch(new URL("me", apiURL).toString(), {
-        method: "POST",
-        body: this.token,
-        headers: {
-          "content-type": "text/plain",
-        },
-      });
-
-      if (res.status === 402) {
-        this.token = undefined;
-        return false;
-      }
-
-      if (!res.ok) {
-        // server error, try again in some
-        console.log("Server error, trying again in 3s");
-        await sleep(3e3);
-        continue;
-      }
-
-      this.token = await res.text();
-
-      return true;
-    }
-  }
   async source() {
     while (true) {
       const res = await GM_fetch(new URL("source", apiURL).toString(), {
