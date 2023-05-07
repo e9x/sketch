@@ -80,6 +80,7 @@ const transformerFactory = (name) => (relativeSourcePath) =>
  * @type {import("rollup").RollupOptions}
  */
 const options = defineConfig([
+  // TRACKER
   {
     input: "./src/tracker/index.tsx",
     output: {
@@ -114,6 +115,7 @@ const options = defineConfig([
       }),
     ],
   },
+  // TRACKER DEV
   ...(isDevelopment
     ? [
         {
@@ -153,6 +155,7 @@ const options = defineConfig([
         },
       ]
     : []),
+  // SKETCH FULL
   {
     input: "./src/index.tsx",
     output: {
@@ -189,6 +192,7 @@ const options = defineConfig([
       }),
     ],
   },
+  // SKETCH FULL DEV
   ...(isDevelopment
     ? [
         {
