@@ -4,7 +4,7 @@ import { ESPMenu } from "../cheats/esp";
 import { ForceAutoMenu } from "../cheats/forceAuto";
 import { RecoilControlMenu } from "../cheats/recoilControl";
 import { TriggerbotMenu } from "../cheats/triggerbot";
-import { discordURL, docsURL } from "../consts";
+import { discordURL, docsURL, sketchVersion } from "../consts";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import Settings from "./Settings";
 import BindHolder, { Bind } from "./components/Bind";
@@ -86,6 +86,7 @@ export default function Menu() {
       }}
       header={
         <>
+          <h1 style={{ color: "white", textAlign: "center" }}>Sketch</h1>
           <div
             style={{
               display: "inline-block",
@@ -160,6 +161,7 @@ export default function Menu() {
                   <Link title="Documentation" href={docsURL} />
                   <Link title="Discord Server" href={discordURL} />
                   <Control title="The Gaming Gurus" />
+                  <Control title={`Sketch v${sketchVersion}`} />
                 </HeadlessSet>
               </>
             );
