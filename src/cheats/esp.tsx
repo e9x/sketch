@@ -134,13 +134,37 @@ function playerBox(entity: Player | AI) {
   }
 }
 
+export const enemyColor = "#eb5656";
+export const friendlyColor = "#9eeb56";
+
 export function espHook() {
+  let enemyMaterial: THREE.MeshBasicMaterial | undefined;
+  let friendlyMaterial: THREE.MeshBasicMaterial | undefined;
+  const hookedMeshes = new WeakSet<THREE.Mesh>();
+  const hookedObjects = new WeakSet<THREE.Object3D>();
+
   renderHooks.push(() => {
     if (!sketchConfig.get("esp")) return;
     if (isInMenus()) return;
 
     const overlay = getOverlay();
     const game = getGame();
+
+    if (!enemyMaterial)
+      enemyMaterial = new game.THREE.MeshBasicMaterial({
+        transparent: true,
+        fog: false,
+        depthTest: false,
+        color: enemyColor,
+      });
+
+    if (!friendlyMaterial)
+      friendlyMaterial = new game.THREE.MeshBasicMaterial({
+        transparent: true,
+        fog: false,
+        depthTest: false,
+        color: friendlyColor,
+      });
 
     overlay.ctx.save();
     overlay.ctx.save();
@@ -155,9 +179,44 @@ export function espHook() {
 
       const enemy = isEnemy(entity);
 
-      overlay.ctx.strokeStyle = enemy ? "#eb5656" : "#9eeb56";
+      overlay.ctx.strokeStyle = enemy ? enemyColor : friendlyColor;
       overlay.ctx.lineWidth = 1.5;
       overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
+
+      if (entity.isPlayer && entity.objInstances) {
+        if (!hookedObjects.has(entity.objInstances)) {
+          hookedObjects.add(entity.objInstances);
+
+          let { visible } = entity.objInstances;
+
+          Object.defineProperty(entity.objInstances, "visible", {
+            get: () => (sketchConfig.get("esp") ? true : visible),
+            set: (newVisible) => {
+              visible = newVisible;
+            },
+          });
+        }
+
+        entity.objInstances.traverse((e) => {
+          // e.type !== "Mesh"
+          if (!(e instanceof game.THREE.Mesh) || hookedMeshes.has(e)) return;
+          hookedMeshes.add(e);
+
+          let { material } = e;
+
+          Object.defineProperty(e, "material", {
+            get: () =>
+              sketchConfig.get("esp")
+                ? isEnemy(entity)
+                  ? enemyMaterial
+                  : friendlyMaterial
+                : material,
+            set: (newMaterial) => {
+              material = newMaterial;
+            },
+          });
+        });
+      }
     }
 
     overlay.ctx.restore();
