@@ -86,7 +86,17 @@ export default function Menu() {
       }}
       header={
         <>
-          <h1 style={{ color: "white", textAlign: "center" }}>Sketch</h1>
+          <h1
+            style={{
+              color: "white",
+              textAlign: "center",
+              fontFamily: "'Delicious Handrawn', cursive",
+              fontSize: "4em",
+              margin: "9px 0",
+            }}
+          >
+            Sketch
+          </h1>
           <div
             style={{
               display: "inline-block",
