@@ -194,16 +194,20 @@ export default function Menu() {
           name: "Visual",
           body: () => {
             return (
-              <Set title="ESP">
-                <ESPMenu />
-                <Switch
-                  title="Disable ADS FOV multiplier"
-                  defaultChecked={noAdsFovMlt}
-                  onChange={(event) =>
-                    setNoAdsFovMlt(event.currentTarget.checked)
-                  }
-                />
-              </Set>
+              <>
+                <HeadlessSet>
+                  <Switch
+                    title="Disable ADS FOV multiplier"
+                    defaultChecked={noAdsFovMlt}
+                    onChange={(event) =>
+                      setNoAdsFovMlt(event.currentTarget.checked)
+                    }
+                  />
+                </HeadlessSet>
+                <Set title="ESP">
+                  <ESPMenu />
+                </Set>
+              </>
             );
           },
         },

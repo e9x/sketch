@@ -4,7 +4,7 @@ import "./menu/createUI";
 import KrunkBox, { APIError } from "./KrunkBox";
 import { aimbotHook } from "./cheats/aimbot";
 import { bhopHook } from "./cheats/bhop";
-import { espHook, forceNametags } from "./cheats/esp";
+import { espHook } from "./cheats/esp";
 import { forceAutoHook } from "./cheats/forceAuto";
 import { recoilControlHook } from "./cheats/recoilControl";
 import { triggerbotHook } from "./cheats/triggerbot";
@@ -69,7 +69,7 @@ const hook = (dataArg: string, src: string) => {
         return module.exports;
       },
       get nametags() {
-        return forceNametags();
+        return sketchConfig.get("nametags");
       },
     },
     src,

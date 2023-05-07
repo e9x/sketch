@@ -14,7 +14,9 @@ export interface SketchConfig {
   targetOnAimKey: boolean;
   bhop: boolean;
   slidehop: boolean;
-  esp: boolean;
+  nametags: boolean;
+  boxes: boolean;
+  chams: boolean;
   forceAuto: boolean;
   recoilControl: boolean;
   recoilControlKey: number;
@@ -44,7 +46,9 @@ const defaultConfig: SketchConfig = {
   targetOnAimKey: false,
   bhop: false,
   slidehop: false,
-  esp: false,
+  nametags: false,
+  boxes: false,
+  chams: false,
   forceAuto: false,
   recoilControl: false,
   recoilControlKey: -1,

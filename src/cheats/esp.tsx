@@ -17,11 +17,8 @@ import {
 import Switch from "../menu/components/Switch";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 
-export const defaultESP = false;
-
-export function forceNametags() {
-  return sketchConfig.get("esp");
-}
+// nametags is handled in index.ts
+// see get nametags() { ... }
 
 export class PlayerRectBounds {
   private xMin: number;
@@ -144,93 +141,112 @@ export function espHook() {
   const hookedObjects = new WeakSet<THREE.Object3D>();
 
   renderHooks.push(() => {
-    if (!sketchConfig.get("esp")) return;
-    if (isInMenus()) return;
-
     const overlay = getOverlay();
     const game = getGame();
 
-    if (!enemyMaterial)
-      enemyMaterial = new game.THREE.MeshBasicMaterial({
-        transparent: true,
-        fog: false,
-        depthTest: false,
-        color: enemyColor,
-      });
+    if (sketchConfig.get("chams")) {
+      if (!enemyMaterial)
+        enemyMaterial = new game.THREE.MeshBasicMaterial({
+          transparent: true,
+          fog: false,
+          depthTest: false,
+          color: enemyColor,
+        });
 
-    if (!friendlyMaterial)
-      friendlyMaterial = new game.THREE.MeshBasicMaterial({
-        transparent: true,
-        fog: false,
-        depthTest: false,
-        color: friendlyColor,
-      });
+      if (!friendlyMaterial)
+        friendlyMaterial = new game.THREE.MeshBasicMaterial({
+          transparent: true,
+          fog: false,
+          depthTest: false,
+          color: friendlyColor,
+        });
 
-    overlay.ctx.save();
-    overlay.ctx.save();
-    overlay.ctx.scale(overlay.scale, overlay.scale);
+      for (const entity of game.players.list) {
+        if (entity.isPlayer && !entity.isYou && entity.objInstances) {
+          if (!hookedObjects.has(entity.objInstances)) {
+            hookedObjects.add(entity.objInstances);
 
-    for (const entity of [...game.players.list, ...game.AI.ais]) {
-      if (!entityAlive(entity)) continue;
+            let { visible } = entity.objInstances;
 
-      const box = playerBox(entity);
+            Object.defineProperty(entity.objInstances, "visible", {
+              get: () => (sketchConfig.get("chams") ? true : visible),
+              set: (newVisible) => {
+                visible = newVisible;
+              },
+            });
+          }
 
-      if (!box) continue;
+          entity.objInstances.traverse((e) => {
+            if (!(e instanceof game.THREE.Mesh) || hookedMeshes.has(e)) return;
+            hookedMeshes.add(e);
 
-      const enemy = isEnemy(entity);
+            let { material } = e;
 
-      overlay.ctx.strokeStyle = enemy ? enemyColor : friendlyColor;
-      overlay.ctx.lineWidth = 1.5;
-      overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
-
-      if (entity.isPlayer && entity.objInstances) {
-        if (!hookedObjects.has(entity.objInstances)) {
-          hookedObjects.add(entity.objInstances);
-
-          let { visible } = entity.objInstances;
-
-          Object.defineProperty(entity.objInstances, "visible", {
-            get: () => (sketchConfig.get("esp") ? true : visible),
-            set: (newVisible) => {
-              visible = newVisible;
-            },
+            Object.defineProperty(e, "material", {
+              get: () =>
+                sketchConfig.get("chams")
+                  ? isEnemy(entity)
+                    ? enemyMaterial
+                    : friendlyMaterial
+                  : material,
+              set: (newMaterial) => {
+                material = newMaterial;
+              },
+            });
           });
         }
-
-        entity.objInstances.traverse((e) => {
-          // e.type !== "Mesh"
-          if (!(e instanceof game.THREE.Mesh) || hookedMeshes.has(e)) return;
-          hookedMeshes.add(e);
-
-          let { material } = e;
-
-          Object.defineProperty(e, "material", {
-            get: () =>
-              sketchConfig.get("esp")
-                ? isEnemy(entity)
-                  ? enemyMaterial
-                  : friendlyMaterial
-                : material,
-            set: (newMaterial) => {
-              material = newMaterial;
-            },
-          });
-        });
       }
     }
 
-    overlay.ctx.restore();
+    if (sketchConfig.get("boxes") && !isInMenus()) {
+      overlay.ctx.save();
+      overlay.ctx.save();
+      overlay.ctx.scale(overlay.scale, overlay.scale);
+
+      for (const entity of [...game.players.list, ...game.AI.ais]) {
+        if (!entityAlive(entity)) continue;
+
+        const box = playerBox(entity);
+
+        if (!box) continue;
+
+        const enemy = isEnemy(entity);
+
+        overlay.ctx.strokeStyle = enemy ? enemyColor : friendlyColor;
+        overlay.ctx.lineWidth = 1.5;
+        overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
+      }
+
+      overlay.ctx.restore();
+    }
   });
 }
 
 export function ESPMenu() {
-  const [esp, setESP] = useSketchConfig("esp");
+  const [nametags, setNametags] = useSketchConfig("nametags");
+  const [boxes, setBoxes] = useSketchConfig("boxes");
+  const [chams, setChams] = useSketchConfig("chams");
 
   return (
-    <Switch
-      title="ESP"
-      defaultChecked={esp}
-      onChange={(event) => setESP(event.currentTarget.checked)}
-    />
+    <>
+      <Switch
+        title="Nametags"
+        description="Shows player nametags through walls"
+        defaultChecked={nametags}
+        onChange={(event) => setNametags(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Chams"
+        description="Makes players a bright color and visible through walls"
+        defaultChecked={chams}
+        onChange={(event) => setChams(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Boxes"
+        description="Displays a box around players"
+        defaultChecked={boxes}
+        onChange={(event) => setBoxes(event.currentTarget.checked)}
+      />
+    </>
   );
 }
