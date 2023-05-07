@@ -134,6 +134,10 @@ function playerBox(entity: Player | AI) {
 export const enemyColor = "#eb5656";
 export const friendlyColor = "#9eeb56";
 
+function isMesh(e: THREE.Object3D): e is THREE.Mesh {
+  return e.type === "Mesh";
+}
+
 export function espHook() {
   let enemyMaterial: THREE.MeshBasicMaterial | undefined;
   let friendlyMaterial: THREE.MeshBasicMaterial | undefined;
@@ -176,8 +180,8 @@ export function espHook() {
             });
           }
 
-          entity.objInstances.traverse((e) => {
-            if (!(e instanceof game.THREE.Mesh) || hookedMeshes.has(e)) return;
+          const doMesh = (e: THREE.Mesh) => {
+            if (hookedMeshes.has(e)) return;
             hookedMeshes.add(e);
 
             let { material } = e;
@@ -193,7 +197,20 @@ export function espHook() {
                 material = newMaterial;
               },
             });
-          });
+          };
+
+          // Just manually select the meshes to hook
+          // Much faster than calling traverse()
+          for (const mesh of entity.legMeshes) doMesh(mesh);
+          for (const mesh of entity.mergedArmMeshes) doMesh(mesh);
+          for (const e of entity.weaponMeshes)
+            for (const mesh of e.children) doMesh(mesh);
+          if (entity.headObj) doMesh(entity.headObj);
+          if (entity.lowerBody)
+            for (const e of entity.lowerBody.children)
+              if (e.name === "body" && isMesh(e)) doMesh(e);
+          if (entity.bodyMesh)
+            for (const mesh of entity.bodyMesh.children) doMesh(mesh);
         }
       }
     }
