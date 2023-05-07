@@ -1,3 +1,4 @@
+/* eslint-disable no-constant-condition */
 import "./workinkBypass";
 import "./menu/createUI";
 import KrunkBox, { APIError, WorkInkErrors } from "./KrunkBox";
@@ -102,8 +103,6 @@ function newRoot() {
 }
 
 async function main() {
-  const savedToken = tokenConfig.get("token");
-
   const version = await KrunkBox.sketchVersion(sketchVersion, supportedGame);
 
   if (version.outdated)
@@ -129,25 +128,51 @@ async function main() {
       </>
     );
 
-  if (savedToken) {
-    const krunkbox = new KrunkBox(savedToken);
-    if (await krunkbox.valid()) return init(krunkbox);
+  let token = tokenConfig.get("token");
+
+  while (true) {
+    if (!token) {
+      token = await begKey();
+      tokenConfig.set("token", token);
+    }
+
+    const krunkbox = new KrunkBox(token);
+
+    const game = await getInit(krunkbox, hook);
+
+    if (game === APIError.BadToken) {
+      tokenConfig.delete("token");
+      token = undefined;
+      continue;
+    }
+
+    if (game === APIError.DIY) return;
+
+    await gameLoad;
+
+    game();
+
+    break;
   }
-
-  const { root, overlay } = newRoot();
-
-  root.render(
-    <KeyBeg
-      done={() => {
-        root.unmount();
-        overlay.remove();
-        location.reload();
-      }}
-    />
-  );
 }
 
-function KeyBeg({ done }: { done: () => void }) {
+function begKey() {
+  return new Promise<string>((resolve) => {
+    const { root, overlay } = newRoot();
+
+    root.render(
+      <KeyBeg
+        done={(token) => {
+          root.unmount();
+          overlay.remove();
+          resolve(token);
+        }}
+      />
+    );
+  });
+}
+
+function KeyBeg({ done }: { done: (token: string) => void }) {
   const key = React.useRef<HTMLInputElement | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -184,8 +209,7 @@ function KeyBeg({ done }: { done: () => void }) {
                   setError("Access key already used. Try again.");
                   break;
                 default:
-                  tokenConfig.set("token", res);
-                  done();
+                  done(res);
               }
             })
             .finally(() => setBusy(false));
@@ -196,20 +220,4 @@ function KeyBeg({ done }: { done: () => void }) {
       </form>
     </>
   );
-}
-
-async function init(krunkbox: KrunkBox) {
-  const game = await getInit(krunkbox, hook);
-
-  if (game === APIError.BadToken) {
-    tokenConfig.delete("token");
-    location.reload();
-    return;
-  }
-
-  if (game === APIError.DIY) return;
-
-  await gameLoad;
-
-  game();
 }
