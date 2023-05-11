@@ -1,7 +1,7 @@
 import type KrunkBox from "./KrunkBox";
 import { APIError } from "./KrunkBox";
 import { isDevelopment } from "./consts";
-import { hookContext, mirrorAttributes } from "./superHook";
+import { hookContext, mirrorAttributes } from "./hook";
 import tokenConfig, { DIYStage } from "./tokenConfig";
 
 type Hook<Data> = (dataArg: string, src: string) => { data: Data; src: string };

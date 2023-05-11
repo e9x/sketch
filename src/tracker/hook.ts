@@ -9,8 +9,8 @@
 // JSON.parse("1", () => { console.log("Got you:", new Error().stack); })
 // Object.create(() => { }, new Proxy({}, { ownKeys: () => { console.log("Got you:", new Error().stack); } }))
 
+import { hookContext, mirrorAttributes } from "../hook";
 import type Game from "../krunker/Game";
-import { hookContext, mirrorAttributes } from "../superHook";
 import { hookInputs } from "./inputs";
 
 interface WebpackModule {
