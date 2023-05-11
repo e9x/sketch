@@ -14,10 +14,10 @@ export default function KeyBeg({ done }: { done: (token: string) => void }) {
         WorkInk.
       </p>
       <p>
-        <a href={workInkURL}>Get Access Key</a>
+        <a href={workInkURL} target="_blank">Get Access Key</a>
       </p>
       <p>
-        <a href="https://sketch.sys32.dev/docs/quick-start/">Video Tutorial</a>
+        <a href="https://sketch.sys32.dev/docs/quick-start/" target="_blank">Video Tutorial</a>
       </p>
       {error && <p style={{ fontSize: "10px", color: "red" }}>{error}</p>}
       <form
