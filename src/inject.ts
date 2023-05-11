@@ -32,8 +32,13 @@ export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
     }
 
   const source = await krunkbox.source();
-
   if (source === APIError.BadToken) return APIError.BadToken;
+
+  const skins = await krunkbox.skins();
+  if (skins === APIError.BadToken) return APIError.BadToken;
+
+  // just a really long version of `any`
+  (window as unknown as { skinfx: string }).skinfx = skins;
 
   const dataArg = "_" + Math.random().toString(36).slice(2);
 

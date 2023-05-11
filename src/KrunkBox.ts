@@ -120,4 +120,33 @@ export default class KrunkBox {
       return await res.text();
     }
   }
+  async skins() {
+    while (true) {
+      const res = await GM_fetch(new URL("skins", apiURL).toString(), {
+        headers: {
+          // only have to send the token
+          // doesn't get rotated here due to source() and hash() being called at the same time
+          "x-token": this.token,
+        },
+      });
+
+      if (res.status === 402) return APIError.BadToken;
+
+      // has not been minified/processed yet
+      if (res.status === 404) {
+        console.log("Too early, trying again in 3s");
+        await sleep(3e3);
+        continue;
+      }
+
+      if (!res.ok) {
+        // server error, try again in some
+        console.log("Server error, trying again in 3s");
+        await sleep(3e3);
+        continue;
+      }
+
+      return await res.text();
+    }
+  }
 }
