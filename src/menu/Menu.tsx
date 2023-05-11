@@ -140,7 +140,10 @@ export default function Menu() {
                   <BindHolder title="Menu Key">
                     <Bind
                       bind={menuKey}
-                      setBind={(bind) => setMenuKey(bind)}
+                      setBind={(bind) => {
+                        if (bind === 10001) alert("Invalid bind");
+                        else setMenuKey(bind)
+                      }}
                       reset={() => setMenuKey()}
                       unbind={() => setMenuKey(-1)}
                     />
