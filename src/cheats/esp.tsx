@@ -131,9 +131,6 @@ function playerBox(entity: Player | AI) {
   }
 }
 
-export const enemyColor = "#eb5656";
-export const friendlyColor = "#9eeb56";
-
 function isMesh(e: THREE.Object3D): e is THREE.Mesh {
   return e.type === "Mesh";
 }
@@ -154,7 +151,7 @@ export function espHook() {
           transparent: true,
           fog: false,
           depthTest: false,
-          color: enemyColor,
+          color: overlay.healthColE,
         });
 
       if (!friendlyMaterial)
@@ -162,7 +159,7 @@ export function espHook() {
           transparent: true,
           fog: false,
           depthTest: false,
-          color: friendlyColor,
+          color: overlay.healthColT,
         });
 
       for (const entity of game.players.list) {
@@ -229,7 +226,7 @@ export function espHook() {
 
         const enemy = isEnemy(entity);
 
-        overlay.ctx.strokeStyle = enemy ? enemyColor : friendlyColor;
+        overlay.ctx.strokeStyle = enemy ? overlay.healthColE : overlay.healthColT;
         overlay.ctx.lineWidth = 1.5;
         overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
       }
