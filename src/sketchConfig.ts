@@ -14,6 +14,7 @@ export interface SketchConfig {
   targetOnAimKey: boolean;
   bhop: boolean;
   slidehop: boolean;
+  wallJump: boolean;
   nametags: boolean;
   boxes: boolean;
   chams: boolean;
@@ -46,6 +47,7 @@ const defaultConfig: SketchConfig = {
   targetOnAimKey: false,
   bhop: false,
   slidehop: false,
+  wallJump: true,
   nametags: false,
   boxes: false,
   chams: false,

@@ -11,7 +11,7 @@ function pickZeroSome() {
 function isBhoppable() {
   const localPlayer = getLocalPlayer();
 
-  return (localPlayer.wallJump && localPlayer.onWall) || localPlayer.onGround;
+  return (sketchConfig.get("wallJump") && localPlayer.wallJump && localPlayer.onWall) || localPlayer.onGround;
 }
 
 export function bhopHook() {
@@ -77,6 +77,7 @@ export function bhopHook() {
 export function BhopMenu() {
   const [bhop, setBhop] = useSketchConfig("bhop");
   const [slidehop, setSlidehop] = useSketchConfig("slidehop");
+  const [wallJump, setWallJump] = useSketchConfig("wallJump");
 
   return (
     <>
@@ -91,6 +92,12 @@ export function BhopMenu() {
         description="Hold crouch to slidehop"
         defaultChecked={slidehop}
         onChange={(event) => setSlidehop(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Wall Jump"
+        description="If bhop should also automatically jump on walls. Bhop must be enabled."
+        defaultChecked={wallJump}
+        onChange={(event) => setWallJump(event.currentTarget.checked)}
       />
     </>
   );
