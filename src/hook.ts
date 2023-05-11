@@ -1,38 +1,48 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-types */
+
 export const functionStrings = new WeakMap<Function, string>();
 
-export function prototypelessFunction(
-  callback: (thisArg: any, args: IArguments) => void
-) {
-  return new Function("_81xd", "return{kpal(){return _81xd(this,arguments)}}")(
-    callback
-  )["kpal"];
+export interface Attributes {
+  length?: number;
+  name?: string;
+  string?: string;
 }
 
-export function mirrorAttributes<From extends Function, To extends Function>(
-  from: From,
+export function setAttributes<To extends Function>(to: To, from: Attributes) {
+  if (typeof from.length === "number")
+    Reflect.defineProperty(to, "length", {
+      configurable: true,
+      enumerable: false,
+      value: from.length,
+      writable: false,
+    });
+
+  if (typeof from.name === "string")
+    Reflect.defineProperty(to, "name", {
+      configurable: true,
+      enumerable: false,
+      value: from.name,
+      writable: false,
+    });
+
+  if (typeof from.string === "string") functionStrings.set(to, from.string);
+
+  return to;
+}
+
+export function mirrorAttributes<To extends Function, From extends Function>(
   to: To,
+  from: From,
   isConstructor = false
 ) {
-  functionStrings.set(to, from.toString());
-
-  Reflect.defineProperty(to, "length", {
-    configurable: true,
-    enumerable: false,
-    value: from.length,
-    writable: false,
-  });
-
-  Reflect.defineProperty(to, "name", {
-    configurable: true,
-    enumerable: false,
-    value: from.name,
-    writable: false,
+  setAttributes(to, {
+    string: from.toString(),
+    length: from.length,
+    name: from.name,
   });
 
   // sometimes the contexts are different
-  Object.setPrototypeOf(to, Object.getPrototypeOf(from));
+  Reflect.setPrototypeOf(to, Reflect.getPrototypeOf(from));
 
   if (isConstructor) {
     to.prototype = from.prototype;
@@ -50,30 +60,83 @@ export function mirrorAttributes<From extends Function, To extends Function>(
   return to as unknown as From;
 }
 
-const hookedContexts = new WeakSet<typeof globalThis>();
+/**
+ * Replaces `toString()` of the function with fake native code.
+ */
+export function setNativeFunction<T extends Function>(
+  f: T,
+  name: string,
+  attributes: Attributes = {}
+) {
+  setAttributes(f, {
+    string: `function ${name}() { [native code] }`,
+    ...attributes,
+  });
+
+  return f;
+}
+
+export type NativeMethodDescriptor = "value" | "get" | "set";
+
+export type NativeDescriptorMap = {
+  [K in NativeMethodDescriptor]?: Attributes;
+};
+
+/**
+ * Modifies `value`, `get`, and `set` if they're functions.
+ * Replaces `toString()` of the values with fake native code.
+ */
+export function nativeDescriptor(
+  propertyKey: string,
+  descriptor: PropertyDescriptor,
+  attributes: { [K in NativeMethodDescriptor]?: Attributes } = {}
+) {
+  for (const key of ["value", "get", "set"] as NativeMethodDescriptor[]) {
+    if (!(key in descriptor)) continue;
+
+    const value = descriptor[key];
+
+    if (typeof value !== "function") continue;
+
+    setAttributes(value, {
+      string: `function ${
+        key === "value" ? propertyKey : `${key} ${propertyKey}`
+      }() { [native code] }`,
+      ...(key in attributes ? attributes[key] : {}),
+    });
+  }
+
+  return descriptor;
+}
+
+export const hookedContexts = new WeakSet<typeof globalThis>();
+
+export type HookConstruct = (...args: string[]) => Function;
+
+export interface HookOptions {
+  newFunction?: (
+    args: string[],
+    construct: HookConstruct
+  ) => ReturnType<HookConstruct>;
+}
 
 export function hookContext(
   context: typeof globalThis,
-  extra?: (context: typeof globalThis) => void
+  extra?: (context: typeof globalThis) => void,
+  hookContentWindows = true
 ) {
   if (hookedContexts.has(context)) return;
 
   hookedContexts.add(context);
 
-  // hook new Function() and Function() to catch the game loading
-  const { Function } = context;
-
   // Hook toString
   // need to be very careful
-
-  const { toString } = Function.prototype;
+  const { toString } = context.Function.prototype;
   const toStringCall = toString.call.bind(toString) as (
     arg0: Function
   ) => string;
 
-  const getFuncString = functionStrings.get.bind(functionStrings) as (
-    arg0: Function
-  ) => ReturnType<(typeof functionStrings)["get"]>;
+  const getFuncString = functionStrings.get.bind(functionStrings);
 
   // use short-hand method so .prototype isn't created
   const hookedToString = {
@@ -98,11 +161,8 @@ export function hookContext(
 
       const string = toStringCall(this);
 
-      /*if (
-          !string.includes("[native code]") &&
-          !string.includes("methodCaller")
-        )
-          console.error(string);*/
+      /*if (!string.includes("[native code]") && !string.includes("methodCaller"))
+        console.error("NOT SANDBOXED:", string);*/
 
       return string;
     },
@@ -110,40 +170,38 @@ export function hookContext(
 
   mirrorAttributes(toString, hookedToString);
 
-  Function.prototype.toString =
+  context.Function.prototype.toString =
     hookedToString as typeof Function.prototype.toString;
 
-  // Hook contentWindow to hook iframes
-  const { HTMLIFrameElement } = context;
+  if (hookContentWindows) {
+    // Hook contentWindow to hook iframes
+    const getContentWindow = (
+      Object.getOwnPropertyDescriptor(
+        context.HTMLIFrameElement.prototype,
+        "contentWindow"
+      ) as {
+        configurable: true;
+        enumerable: true;
+        get: (this: HTMLIFrameElement) => HTMLIFrameElement["contentWindow"];
+        set: undefined;
+      }
+    ).get;
+    const callGetContentWindow =
+      context.Function.prototype.call.bind(getContentWindow);
 
-  const getContentWindow = (
-    Object.getOwnPropertyDescriptor(
-      HTMLIFrameElement.prototype,
-      "contentWindow"
-    ) as {
-      configurable: true;
-      enumerable: true;
-      get: (this: HTMLIFrameElement) => HTMLIFrameElement["contentWindow"];
-      set: undefined;
-    }
-  ).get;
-  const callGetContentWindow =
-    context.Function.prototype.call.bind(getContentWindow);
-
-  Object.defineProperty(HTMLIFrameElement.prototype, "contentWindow", {
-    configurable: true,
-    enumerable: true,
-    get: mirrorAttributes(
-      getContentWindow,
-      {
-        // use shorthand to prevent prototype:
-        "get contentWindow"(this: HTMLIFrameElement) {
+    Object.defineProperty(
+      context.HTMLIFrameElement.prototype,
+      "contentWindow",
+      nativeDescriptor("contentWindow", {
+        configurable: true,
+        enumerable: true,
+        get(this: HTMLIFrameElement) {
           try {
             const win = callGetContentWindow(this) as typeof globalThis | null;
 
             if (win)
               try {
-                hookContext(win, extra);
+                hookContext(win, extra, hookContentWindows);
               } catch {
                 // maybe the window is cross-origin
                 // like captcha
@@ -155,17 +213,14 @@ export function hookContext(
             const error = new TypeError("Illegal invocation");
 
             if (error.stack)
-              error.stack = error.stack.replace(
-                / {4}at get contentWindow.*?\n/m,
-                ""
-              );
+              error.stack = error.stack.replace(/ {4}at .*?\n/m, "");
 
             throw error;
           }
         },
-      }["get contentWindow"]
-    ),
-  });
+      })
+    );
+  }
 
   if (extra) extra(context);
 }

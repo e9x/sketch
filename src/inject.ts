@@ -67,55 +67,56 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
     const { fetch } = context;
 
     // use short-hand method so .prototype isn't created
-    context.fetch = (
-      {
-        fetch(input, init) {
-          const inputURL = new URL(
-            typeof input === "string" || input instanceof URL
-              ? input
-              : input.url,
-            location.toString()
-          );
+    context.fetch = mirrorAttributes(
+      (
+        {
+          fetch(input, init) {
+            const inputURL = new URL(
+              typeof input === "string" || input instanceof URL
+                ? input
+                : input.url,
+              location.toString()
+            );
 
-          if (tokenConfig.get("diy") === DIYStage.token) {
-            if (
-              inputURL.origin === "https://matchmaker.krunker.io" &&
-              inputURL.pathname === "/seek-game"
-            ) {
-              const validationToken =
-                inputURL.searchParams.get("validationToken");
-              if (!validationToken) throw new TypeError("");
-              const diyToken = String.fromCharCode(
-                ...validationToken.split("").map((e) => e.charCodeAt(0) + 10)
-              );
+            if (tokenConfig.get("diy") === DIYStage.token) {
+              if (
+                inputURL.origin === "https://matchmaker.krunker.io" &&
+                inputURL.pathname === "/seek-game"
+              ) {
+                const validationToken =
+                  inputURL.searchParams.get("validationToken");
+                if (!validationToken) throw new TypeError("");
+                const diyToken = String.fromCharCode(
+                  ...validationToken.split("").map((e) => e.charCodeAt(0) + 10)
+                );
 
-              tokenConfig.set("diyToken", diyToken);
-              tokenConfig.set("diy", DIYStage.ready);
-              location.reload();
-              // eslint-disable-next-line @typescript-eslint/no-empty-function
-              return new Promise(() => {});
+                tokenConfig.set("diyToken", diyToken);
+                tokenConfig.set("diy", DIYStage.ready);
+                location.reload();
+                // eslint-disable-next-line @typescript-eslint/no-empty-function
+                return new Promise(() => {});
+              }
+            } else {
+              if (
+                inputURL.origin === location.origin &&
+                inputURL.pathname === "/pkg/loader.wasm"
+              ) {
+                // game has loaded
+                resolveGameLoad();
+                // eslint-disable-next-line @typescript-eslint/no-empty-function
+                return new Promise((resolve, reject) => {
+                  doFetchWASM = () =>
+                    fetch(input, init).then(resolve).catch(reject);
+                  if (fetchWASMInstantly) doFetchWASM();
+                });
+              }
             }
-          } else {
-            if (
-              inputURL.origin === location.origin &&
-              inputURL.pathname === "/pkg/loader.wasm"
-            ) {
-              // game has loaded
-              resolveGameLoad();
-              // eslint-disable-next-line @typescript-eslint/no-empty-function
-              return new Promise((resolve, reject) => {
-                doFetchWASM = () =>
-                  fetch(input, init).then(resolve).catch(reject);
-                if (fetchWASMInstantly) doFetchWASM();
-              });
-            }
-          }
 
-          return fetch(input, init);
-        },
-      } as { fetch: typeof fetch }
-    ).fetch;
-
-    mirrorAttributes(fetch, context.fetch);
+            return fetch(input, init);
+          },
+        } as { fetch: typeof fetch }
+      ).fetch,
+      fetch
+    );
   })
 );
