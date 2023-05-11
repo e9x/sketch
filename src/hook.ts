@@ -146,10 +146,16 @@ export function hookContext(
           "Function.prototype.toString requires that 'this' be a Function"
         );
 
+        // ({t:Function.prototype.toString}.t())
+        //     Object.toString [as t] (<anonymous>)
+
+        // Function.prototype.toString.call()
+        //     toString (<anonymous>)
+
         if (error.stack)
           error.stack = error.stack.replace(
-            /^ {4}at toString.*?$/m,
-            "    at toString (<anonymous>)"
+            /^ {4}at (.*?) \(eval at .*?\)$/m,
+            "    at $1 (<anonymous>)"
           );
 
         throw error;
