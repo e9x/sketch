@@ -69,9 +69,9 @@ function playerAimPoint(player: Player) {
   return new THREE.Vector3(
     player.x,
     player.y +
-      player.height -
-      hitboxOffset -
-      player.crouchVal * config.crouchDst,
+    player.height -
+    hitboxOffset -
+    player.crouchVal * config.crouchDst,
     player.z
   );
 }
@@ -96,7 +96,7 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
       target.y,
       target.z
     ) || 0) -
-      localPlayer.recoilAnimY * config.recoilMlt
+    localPlayer.recoilAnimY * config.recoilMlt
   );
 
   rotation.setY(
@@ -378,7 +378,7 @@ export function AimbotMenu() {
           }
         >
           <option value="off">Off</option>
-          <option value="smooth">Smooth</option>
+          <option value="smooth">Assist</option>
           <option value="silent">Silent</option>
         </Select>
         <Switch
