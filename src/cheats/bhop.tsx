@@ -1,5 +1,5 @@
 import { iInputs } from "../consts";
-import { getLocalPlayer, inputHooks } from "../filters";
+import { getGame, getLocalPlayer, inputHooks } from "../filters";
 import Switch from "../menu/components/Switch";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import random from "lodash/random";
@@ -11,7 +11,7 @@ function pickZeroSome() {
 function isBhoppable() {
   const localPlayer = getLocalPlayer();
 
-  return (sketchConfig.get("wallJump") && localPlayer.wallJump && localPlayer.onWall) || localPlayer.onGround;
+  return (sketchConfig.get("wallJump") && getGame().classConfig[getLocalPlayer().classIndex]?.wallJ && localPlayer.wallJump && localPlayer.onWall) || localPlayer.onGround;
 }
 
 export function bhopHook() {

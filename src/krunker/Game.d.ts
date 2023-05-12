@@ -2,11 +2,13 @@ import type AIManager from "./AI";
 import type MapObject from "./Object";
 import type { Player, manager } from "./Player";
 import type Terrain from "./Terrain";
+import type classes from "./classes";
 import type THREE from "three";
 
 declare class Game {
   constructor(...args: unknown[]);
   AI: AIManager;
+  classConfig: typeof classes;
   mode: {
     noHPbars?: boolean;
     fakeNames?: boolean;

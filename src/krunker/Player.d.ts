@@ -36,6 +36,7 @@ export declare class Player {
     speed: 1 | 0;
     zap: 1 | 0;
   };
+  classIndex: number;
   isPlayer: true;
   isAI: undefined;
   isYou: boolean;
