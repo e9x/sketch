@@ -76,7 +76,10 @@ const hook = (dataArg: string, src: string) => {
   };
 };
 
-if (isKrunker) main();
+if (isKrunker) {
+  checkHash();
+  main();
+}
 
 function newRoot() {
   const overlay = document.createElement("div");
@@ -97,6 +100,22 @@ function newRoot() {
   document.documentElement.append(overlay);
 
   return { root, overlay };
+}
+
+/**
+ * Check the #hash in the URL
+ * Perform operations on the config
+ */
+function checkHash() {
+  const hash = location.hash;
+
+  if (hash === '#showUpdates') {
+    // set the config
+    sketchConfig.delete("silentFail");
+
+    // remove the hash
+    history.replaceState("", document.title, location.pathname + location.search);
+  }
 }
 
 async function main() {

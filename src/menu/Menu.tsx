@@ -170,13 +170,16 @@ export default function Menu() {
                       }
                     }}
                   />
-                  <Switch title="Silent Updates/Key" description="Recommended for streamers. Determines if the cheat should silently fail if there's an update, the access key expires, or the cheat isn't updated." checked={silentFail}
+                  <Switch
+                    title="Hide Updates/Key"
+                    description="Recommended for streamers. When enabled, the cheat will silently fail if there's an update, the access key expires, or the cheat isn't updated. To disable this setting, visit the Sketch guide and look for the 'Resetting Hide Updates/Key' section, which contains a link to disable the setting."
+                    checked={silentFail}
                     onChange={(event) => {
-                      if (confirm("This will require you to manually check for updates to the cheat, make sure it's updated, and that your key isn't expired. If any of those occur, the cheat won't load, and you won't be able to re-enable this option. You'll have to reinstall the cheat. Proceed?"))
-                        setSilentFail(
-                          event.currentTarget.checked
-                        );
-                    }} />
+                      if (confirm("Enabling this setting will require you to follow the Sketch guide to disable it if there's an update, the access key expires, or the cheat isn't updated. The cheat won't load if any of these occur, and you won't be able to re-enable this option without following the guide. Proceed?")) {
+                        setSilentFail(event.currentTarget.checked);
+                      }
+                    }}
+                  />
                 </Set>
                 <HeadlessSet>
                   <Link title="Guide" href={docsURL} />
