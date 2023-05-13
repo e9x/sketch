@@ -102,20 +102,26 @@ function newRoot() {
 async function main() {
   const version = await KrunkBox.sketchVersion(sketchVersion, supportedGame);
 
-  if (version.outdated)
+  if (version.outdated) {
+    if (sketchConfig.get("silentFail")) return;
     return newRoot().root.render(
       <Outdated
         latestVersion={version.latestVersion}
         updateURL={version.updateURL}
       />
     );
+  }
 
-  if (!version.sketchUpdated) return newRoot().root.render(<NotUpdated />);
+  if (!version.sketchUpdated) {
+    if (sketchConfig.get("silentFail")) return;
+    return newRoot().root.render(<NotUpdated />);
+  }
 
   let token = tokenConfig.get("token");
 
   while (true) {
     if (!token) {
+      if (sketchConfig.get("silentFail")) return;
       token = await begKey();
       tokenConfig.set("token", token);
     }

@@ -28,6 +28,7 @@ export interface SketchConfig {
   triggerbotMax: number;
   menuKey: number;
   menuButton: boolean;
+  silentFail: boolean;
   noAdsFovMlt: boolean;
 }
 
@@ -61,6 +62,7 @@ const defaultConfig: SketchConfig = {
   triggerbotMax: 0,
   menuKey: -1,
   menuButton: true,
+  silentFail: false,
   noAdsFovMlt: false,
 };
 

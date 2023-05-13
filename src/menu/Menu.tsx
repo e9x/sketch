@@ -77,6 +77,7 @@ export default function Menu() {
   const [menuKey, setMenuKey] = useSketchConfig("menuKey");
   const [menuButton] = useSketchConfig("menuButton");
   const [noAdsFovMlt, setNoAdsFovMlt] = useSketchConfig("noAdsFovMlt");
+  const [silentFail, setSilentFail] = useSketchConfig("silentFail");
 
   return (
     <Settings
@@ -169,6 +170,13 @@ export default function Menu() {
                       }
                     }}
                   />
+                  <Switch title="Silent Updates/Key" description="Recommended for streamers. Determines if the cheat should silently fail if there's an update, the access key expires, or the cheat isn't updated." checked={silentFail}
+                    onChange={(event) => {
+                      if (confirm("This will require you to manually check for updates to the cheat, make sure it's updated, and that your key isn't expired. If any of those occur, the cheat won't load, and you won't be able to re-enable this option. You'll have to reinstall the cheat. Proceed?"))
+                        setSilentFail(
+                          event.currentTarget.checked
+                        );
+                    }} />
                 </Set>
                 <HeadlessSet>
                   <Link title="Guide" href={docsURL} />
