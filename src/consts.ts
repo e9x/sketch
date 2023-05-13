@@ -12,6 +12,8 @@ if (!sketchVersion) throw new TypeError("Invalid SKETCH_VERSION");
 
 export const aboutURL = "https://sketch.sys32.dev/about";
 
+export const workInkBypassURL = "https://sketch.sys32.dev/workink";
+
 export const discordURL = "https://y9x.github.io/discord/";
 
 export const docsURL = "https://sketch.sys32.dev/";
