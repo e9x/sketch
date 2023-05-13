@@ -414,12 +414,6 @@ export function AimbotMenu() {
           <option value="head">Head</option>
           <option value="chest">Chest</option>
         </Select>
-        <Switch
-          title="Turret"
-          description="Automatically aim and fire at players"
-          defaultChecked={bot}
-          onChange={(event) => setBot(event.currentTarget.checked)}
-        />
       </Set>
       <Set title="FOV">
         <Switch
@@ -442,6 +436,14 @@ export function AimbotMenu() {
           description="Visualizes your FOV"
           defaultChecked={drawFOV}
           onChange={(event) => setDrawFOV(event.currentTarget.checked)}
+        />
+      </Set>
+      <Set title="Rage">
+        <Switch
+          title="Turret"
+          description="Automatically aim and fire at players"
+          defaultChecked={bot}
+          onChange={(event) => setBot(event.currentTarget.checked)}
         />
       </Set>
     </>
