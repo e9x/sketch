@@ -1,5 +1,5 @@
 import Config from "./Config";
-import { workInkBypassURL, isKrunker } from "./consts";
+import { workInkBypassURL, isKrunker, isWorkInk } from "./consts";
 
 interface BypassConfig {
   showedBypassNag: boolean;
@@ -15,7 +15,7 @@ if (isKrunker) {
   // detect if user removed the work.ink matcher from the script
   if (!GM.info.script.matches.includes("https://work.ink/4lH/krunker"))
     showBypassNag();
-} else {
+} else if (isWorkInk) {
   // detect if a bypasser is enabled
   unsafeWindow.decodeURIComponent = (encodedURIComponent) => {
     if (encodedURIComponent === location.pathname.slice(1)) showBypassNag();

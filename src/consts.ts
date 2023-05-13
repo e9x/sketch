@@ -22,6 +22,8 @@ export const isDevelopment = process.env.NODE_ENV !== "production";
 
 export const isKrunker = location.hostname === "krunker.io";
 
+export const isWorkInk = location.hostname === "work.ink";
+
 export function getDevURL() {
   const devHost = process.env.SKETCH_DEV_HOST || "";
   if (!devHost) throw new TypeError("Invalid devHost");
