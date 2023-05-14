@@ -79,3 +79,11 @@ export function waitFor<T>(
     if (!run()) set = setInterval(run, interval);
   });
 }
+
+export function random(min: number, max: number, decimal = false) {
+  return (
+    (decimal
+      ? Math.random() * (max - min)
+      : ~~(Math.random() * (max - min + 1))) + min
+  );
+}

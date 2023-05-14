@@ -1,3 +1,4 @@
+import { random } from "../util";
 import { iInputs } from "../consts";
 import {
   getConfig,
@@ -30,7 +31,6 @@ import Switch from "../menu/components/Switch";
 import type { SketchConfig } from "../sketchConfig";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import type { AI } from "krunker/AI";
-import random from "lodash/random";
 
 // Function to check if a 2D point is inside a circle
 function isPointInsideCircle(
