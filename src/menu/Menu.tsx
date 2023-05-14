@@ -143,7 +143,7 @@ export default function Menu() {
                       bind={menuKey}
                       setBind={(bind) => {
                         if (bind === 10001) alert("Invalid bind");
-                        else setMenuKey(bind)
+                        else setMenuKey(bind);
                       }}
                       reset={() => setMenuKey()}
                       unbind={() => setMenuKey(-1)}
@@ -175,7 +175,11 @@ export default function Menu() {
                     description="Recommended for streamers. When enabled, the cheat will silently fail if there's an update, the access key expires, or the cheat isn't updated. To disable this setting, visit the Sketch guide and look for the 'Resetting Hide Updates/Key' section, which contains a link to disable the setting."
                     checked={silentFail}
                     onChange={(event) => {
-                      if (confirm("Enabling this setting will require you to follow the Sketch guide to disable it if there's an update, the access key expires, or the cheat isn't updated. The cheat won't load if any of these occur, and you won't be able to re-enable this option without following the guide. Proceed?")) {
+                      if (
+                        confirm(
+                          "Enabling this setting will require you to follow the Sketch guide to disable it if there's an update, the access key expires, or the cheat isn't updated. The cheat won't load if any of these occur, and you won't be able to re-enable this option without following the guide. Proceed?"
+                        )
+                      ) {
                         setSilentFail(event.currentTarget.checked);
                       }
                     }}

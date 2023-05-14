@@ -1,4 +1,4 @@
-import './sys32'
+import "./sys32";
 import "./menu/createUI";
 import KrunkBox, { APIError } from "./KrunkBox";
 import { aimbotHook } from "./cheats/aimbot";
@@ -108,12 +108,16 @@ function newRoot() {
 function checkHash() {
   const hash = location.hash;
 
-  if (hash === '#showUpdates') {
+  if (hash === "#showUpdates") {
     // set the config
     sketchConfig.delete("silentFail");
 
     // remove the hash
-    history.replaceState("", document.title, location.pathname + location.search);
+    history.replaceState(
+      "",
+      document.title,
+      location.pathname + location.search
+    );
   }
 }
 
@@ -139,9 +143,7 @@ async function main() {
 
   if (!token) {
     if (sketchConfig.get("silentFail")) return fetchWASM();
-    return newRoot().root.render(
-      <KeyBeg />
-    );
+    return newRoot().root.render(<KeyBeg />);
   }
 
   while (true) {
@@ -152,9 +154,7 @@ async function main() {
     if (game === APIError.BadToken) {
       tokenConfig.delete("token");
       if (sketchConfig.get("silentFail")) return fetchWASM();
-      return newRoot().root.render(
-        <KeyBeg />
-      );
+      return newRoot().root.render(<KeyBeg />);
     }
 
     if (game === APIError.DIY) return;
