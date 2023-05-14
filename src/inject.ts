@@ -57,7 +57,7 @@ let doFetchWASM: (() => void) | undefined;
 
 let fetchWASMInstantly = false;
 
-function fetchWASM() {
+export function fetchWASM() {
   if (doFetchWASM) doFetchWASM();
   else fetchWASMInstantly = true;
 }

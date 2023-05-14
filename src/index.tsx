@@ -1,5 +1,4 @@
-/* eslint-disable no-constant-condition */
-import "./workinkBypass";
+import './sys32'
 import "./menu/createUI";
 import KrunkBox, { APIError } from "./KrunkBox";
 import { aimbotHook } from "./cheats/aimbot";
@@ -14,7 +13,7 @@ import Outdated from "./components/Outdated";
 import { isKrunker, sketchVersion, supportedGame } from "./consts";
 import { matchModule, getLocalPlayer, getRender } from "./filters";
 import type { Module } from "./filters";
-import { getInit, gameLoad } from "./inject";
+import { getInit, gameLoad, fetchWASM } from "./inject";
 import sketchConfig from "./sketchConfig";
 import tokenConfig from "./tokenConfig";
 
@@ -122,7 +121,7 @@ async function main() {
   const version = await KrunkBox.sketchVersion(sketchVersion, supportedGame);
 
   if (version.outdated) {
-    if (sketchConfig.get("silentFail")) return;
+    if (sketchConfig.get("silentFail")) return fetchWASM();
     return newRoot().root.render(
       <Outdated
         latestVersion={version.latestVersion}
@@ -136,23 +135,26 @@ async function main() {
     return newRoot().root.render(<NotUpdated />);
   }
 
-  let token = tokenConfig.get("token");
+  const token = tokenConfig.get("token");
+
+  if (!token) {
+    if (sketchConfig.get("silentFail")) return fetchWASM();
+    return newRoot().root.render(
+      <KeyBeg />
+    );
+  }
 
   while (true) {
-    if (!token) {
-      if (sketchConfig.get("silentFail")) return;
-      token = await begKey();
-      tokenConfig.set("token", token);
-    }
-
     const krunkbox = new KrunkBox(token);
 
     const game = await getInit(krunkbox, hook);
 
     if (game === APIError.BadToken) {
       tokenConfig.delete("token");
-      token = undefined;
-      continue;
+      if (sketchConfig.get("silentFail")) return fetchWASM();
+      return newRoot().root.render(
+        <KeyBeg />
+      );
     }
 
     if (game === APIError.DIY) return;
@@ -176,20 +178,4 @@ async function main() {
 
     break;
   }
-}
-
-function begKey() {
-  return new Promise<string>((resolve) => {
-    const { root, overlay } = newRoot();
-
-    root.render(
-      <KeyBeg
-        done={(token) => {
-          root.unmount();
-          overlay.remove();
-          resolve(token);
-        }}
-      />
-    );
-  });
 }

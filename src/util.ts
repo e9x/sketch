@@ -6,6 +6,7 @@ export interface FetchOptions {
   method?: Tampermonkey.Request["method"];
   body?: string;
   headers?: Record<string, string>;
+  signal?: AbortSignal;
 }
 
 export interface FetchResponse {
@@ -22,14 +23,31 @@ export interface FetchResponse {
  */
 export function GM_fetch(url: string, opts: FetchOptions = {}) {
   // return fetch(url, opts);
-  return new Promise<FetchResponse>((resolve, reject) =>
-    GM_xmlhttpRequest({
+  return new Promise<FetchResponse>((resolve, reject) => {
+    const abortListener = () => {
+      cleanup();
+      req.abort();
+    };
+
+    const cleanup = () => {
+      if (opts.signal) opts.signal.removeEventListener("abort", abortListener);
+    };
+
+    const req = GM_xmlhttpRequest({
       url,
       method: opts.method,
       data: opts.body,
       headers: opts.headers,
-      onerror: () => reject(new TypeError(`Failed to fetch`)),
-      onload: (res) =>
+      onerror: () => {
+        cleanup();
+        reject(new TypeError("Failed to fetch"));
+      },
+      onabort: () => {
+        cleanup();
+        reject(new DOMException("The user aborted a request."));
+      },
+      onload: (res) => {
+        cleanup();
         resolve({
           status: res.status,
           statusText: res.statusText,
@@ -44,9 +62,15 @@ export function GM_fetch(url: string, opts: FetchOptions = {}) {
               headers.set(name, value.join(": "));
               return headers;
             }, new Headers()),
-        }),
-    })
-  );
+        });
+      },
+    });
+
+    if (opts.signal) {
+      if (opts.signal.aborted) abortListener();
+      else opts.signal.addEventListener("abort", abortListener);
+    }
+  });
 }
 
 type TrueLike<T> = Exclude<NonNullable<T>, false>;

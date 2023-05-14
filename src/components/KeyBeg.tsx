@@ -1,52 +1,33 @@
-import KrunkBox, { WorkInkErrors } from "../KrunkBox";
-import { workInkURL } from "../consts";
+import tokenConfig from "../tokenConfig";
+import { linkvertiseURL } from "../consts";
+import KrunkBox from "../KrunkBox";
 
-export default function KeyBeg({ done }: { done: (token: string) => void }) {
-  const key = React.useRef<HTMLInputElement | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [busy, setBusy] = React.useState(false);
+export default function KeyBeg() {
+  const abort = React.useRef(new AbortController())
 
   return (
     <>
-      <h1>Get your access key for Sketch.</h1>
+      <h1>License Required</h1>
       <p>
         In order to pay for servers and development, we've partnered with
-        WorkInk.
+        Linkvertise.
       </p>
       <p>
-        <a href={workInkURL} target="_blank">Get Access Key</a>
+        <a href={location.toString()} onClick={(event) => {
+          event.preventDefault();
+          abort.current.abort();
+          abort.current = new AbortController();
+          KrunkBox.generateTmpToken(abort.current.signal).then(tmpToken => {
+            tokenConfig.set("tmpToken", tmpToken);
+            location.replace(linkvertiseURL)
+          }).catch(() => {
+            //
+          });
+        }}>Get a free license key</a>
       </p>
       <p>
         <a href="https://sketch.sys32.dev/docs/quick-start/" target="_blank">Video Tutorial</a>
       </p>
-      {error && <p style={{ fontSize: "10px", color: "red" }}>{error}</p>}
-      <form
-        style={{ display: "flex", flexDirection: "row", gap: 5 }}
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!key.current) return;
-
-          setBusy(true);
-
-          KrunkBox.processWorkInk(key.current.value.trim())
-            .then((res) => {
-              switch (res) {
-                case WorkInkErrors.BadToken:
-                  setError("Bad access key. Try again.");
-                  break;
-                case WorkInkErrors.DuplicateToken:
-                  setError("Access key already used. Try again.");
-                  break;
-                default:
-                  done(res);
-              }
-            })
-            .finally(() => setBusy(false));
-        }}
-      >
-        <input type="text" placeholder="Access Key" disabled={busy} ref={key} />
-        <input type="submit" value="Done" disabled={busy} />
-      </form>
     </>
   );
 }

@@ -1,8 +1,8 @@
 export const apiURL = process.env.SKETCH_API_URL || "";
 if (!apiURL) throw new TypeError("Invalid SKETCH_API_URL");
 
-export const workInkURL = process.env.SKETCH_WORKINK_URL || "";
-if (!workInkURL) throw new TypeError("Invalid SKETCH_API_URL");
+export const linkvertiseURL = process.env.SKETCH_LINKVERTISE_URL || "";
+if (!linkvertiseURL) throw new TypeError("Invalid SKETCH_LINKVERTISE_URL");
 
 export const supportedGame = process.env.SKETCH_SUPPORTED_GAME || "";
 if (!supportedGame) throw new TypeError("Invalid SKETCH_SUPPORTED_GAME");
@@ -12,8 +12,6 @@ if (!sketchVersion) throw new TypeError("Invalid SKETCH_VERSION");
 
 export const aboutURL = "https://sketch.sys32.dev/about";
 
-export const workInkBypassURL = "https://sketch.sys32.dev/workink";
-
 export const discordURL = "https://y9x.github.io/discord/";
 
 export const docsURL = "https://sketch.sys32.dev/";
@@ -22,7 +20,7 @@ export const isDevelopment = process.env.NODE_ENV !== "production";
 
 export const isKrunker = location.hostname === "krunker.io";
 
-export const isWorkInk = location.hostname === "work.ink";
+export const isSys32 = location.hostname === "sketch.sys32.dev";
 
 export function getDevURL() {
   const devHost = process.env.SKETCH_DEV_HOST || "";

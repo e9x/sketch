@@ -16,6 +16,7 @@ export enum DIYStage {
 export interface TokenConfig {
   diy?: DIYStage;
   diyToken?: string;
+  tmpToken?: string;
   token?: string;
 }
 

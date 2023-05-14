@@ -25,6 +25,7 @@
     "quotes": "off",
     "import/no-unresolved": "off",
     "eqeqeq": "error",
+    "no-constant-condition": "off",
     "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/consistent-type-imports": "error"
   }

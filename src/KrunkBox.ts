@@ -1,8 +1,7 @@
-/* eslint-disable no-constant-condition */
 import { apiURL } from "./consts";
 import { GM_fetch, sleep } from "./util";
 
-export enum WorkInkErrors {
+export enum ProcessTokenErors {
   BadToken,
   DuplicateToken,
 }
@@ -17,18 +16,34 @@ export enum APIError {
 
 export default class KrunkBox {
   #token: string | undefined;
-  static async processWorkInk(token: string) {
+  // todo: ratelimit based on IP + useragent? too easy
+  // delete tmp tokens after 10 minutes
+  static async generateTmpToken(signal?: AbortSignal) {
+    while (true) {
+      const res = await GM_fetch(new URL("hi", apiURL).toString(), { signal });
+
+      if (!res.ok) {
+        // server error, try again in some
+        console.log("Server error, trying again in 3s");
+        await sleep(3e3);
+        continue;
+      }
+
+      return await res.text();
+    }
+  }
+  static async processToken(lvToken: string, tmpToken: string) {
     while (true) {
       const res = await GM_fetch(new URL("hi", apiURL).toString(), {
         method: "POST",
-        body: token,
         headers: {
-          "content-type": "text/plain",
+          "content-type": "application/json",
         },
+        body: JSON.stringify([lvToken, tmpToken]),
       });
 
-      if (res.status === 402) return WorkInkErrors.BadToken;
-      if (res.status === 422) return WorkInkErrors.DuplicateToken;
+      if (res.status === 400) return ProcessTokenErors.BadToken;
+      if (res.status === 402) return ProcessTokenErors.BadToken;
 
       if (!res.ok) {
         // server error, try again in some
@@ -45,6 +60,7 @@ export default class KrunkBox {
       const res = await GM_fetch(new URL("sketchVersion", apiURL).toString(), {
         method: "POST",
         headers: {
+          accept: "application/json",
           "content-type": "application/json",
         },
         body: JSON.stringify({ currentVersion, supportedGame }),
