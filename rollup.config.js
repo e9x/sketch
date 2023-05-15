@@ -186,7 +186,7 @@ const options = defineConfig([
             selfDefending: false,
             splitStrings: true,
             transformObjectKeys: true,
-            renameProperties: true,
+            renameProperties: false,
             renameGlobals: false,
             numbersToExpressions: true,
             controlFlowFlattening: true,
