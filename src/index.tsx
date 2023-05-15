@@ -1,4 +1,5 @@
 import "./sys32";
+import "./linkvertise";
 import "./menu/createUI";
 import KrunkBox, { APIError } from "./KrunkBox";
 import { aimbotHook } from "./cheats/aimbot";
@@ -14,6 +15,7 @@ import { isKrunker, sketchVersion, supportedGame } from "./consts";
 import { matchModule, getLocalPlayer, getRender } from "./filters";
 import type { Module } from "./filters";
 import { getInit, gameLoad, fetchWASM } from "./inject";
+import { wentToLV } from "./linkvertise";
 import sketchConfig from "./sketchConfig";
 import tokenConfig from "./tokenConfig";
 
@@ -160,6 +162,7 @@ async function main() {
     if (game === APIError.DIY) return;
 
     await gameLoad;
+    await wentToLV();
 
     // load menu font
     const link = document.createElement("link");

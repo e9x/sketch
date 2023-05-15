@@ -4,6 +4,15 @@ if (!apiURL) throw new TypeError("Invalid SKETCH_API_URL");
 export const linkvertiseURL = process.env.SKETCH_LINKVERTISE_URL || "";
 if (!linkvertiseURL) throw new TypeError("Invalid SKETCH_LINKVERTISE_URL");
 
+/**
+ * The page that the linkvertise URL redirects to
+ * Eg https://linkvertise.com/#/
+ * No page title
+ * Just the starting part of the link
+ */
+export const linkvertisePage = process.env.SKETCH_LINKVERTISE_PAGE || "";
+if (!linkvertisePage) throw new TypeError("Invalid SKETCH_LINKVERTISE_PAGE");
+
 export const supportedGame = process.env.SKETCH_SUPPORTED_GAME || "";
 if (!supportedGame) throw new TypeError("Invalid SKETCH_SUPPORTED_GAME");
 

@@ -179,7 +179,7 @@ const options = defineConfig([
       json(),
       !isDevelopment &&
         obfuscator({
-          include: /KrunkBox.ts/,
+          include: /KrunkBox\.ts|sys32\.ts|linkvertise\.ts/,
           options: {
             target: "browser",
             deadCodeInjection: true,
