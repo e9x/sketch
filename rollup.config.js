@@ -52,26 +52,21 @@ const usBanner = `/*!
 
 const funnyIDs = uniq(times(8 ** 6, () => generateIdentifier()));
 
-const obfuscation = () =>
-  !isDevelopment &&
-  obfuscator({
-    global: true,
-    options: {
-      target: "browser",
-      deadCodeInjection: false,
-      selfDefending: false,
-      splitStrings: false,
-      transformObjectKeys: false,
-      renameProperties: false,
-      renameGlobals: false,
-      numbersToExpressions: false,
-      controlFlowFlattening: false,
-      stringArray: false,
-      simplify: false,
-      identifierNamesGenerator: "dictionary",
-      identifiersDictionary: funnyIDs,
-    },
-  });
+const standardObfuscation = {
+  target: "browser",
+  deadCodeInjection: false,
+  selfDefending: false,
+  splitStrings: false,
+  transformObjectKeys: false,
+  renameProperties: false,
+  renameGlobals: false,
+  numbersToExpressions: false,
+  controlFlowFlattening: false,
+  stringArray: false,
+  simplify: false,
+  identifierNamesGenerator: "dictionary",
+  identifiersDictionary: funnyIDs,
+};
 
 const transformerFactory = (name) => (relativeSourcePath) =>
   new URL(relativeSourcePath, `sketch-${name}://`).toString();
@@ -102,7 +97,11 @@ const options = defineConfig([
       }),
       nodeResolve({ browser: true }),
       commonjs(),
-      obfuscation(),
+      !isDevelopment &&
+        obfuscator({
+          global: true,
+          options: standardObfuscation,
+        }),
       banner(() => usBanner),
       metablock({
         file: fileURLToPath(new URL("tracker.json", import.meta.url)),
@@ -178,7 +177,28 @@ const options = defineConfig([
       nodeResolve({ browser: true }),
       commonjs(),
       json(),
-      obfuscation(),
+      !isDevelopment &&
+        obfuscator({
+          include: /KrunkBox.ts/,
+          options: {
+            target: "browser",
+            deadCodeInjection: true,
+            selfDefending: false,
+            splitStrings: true,
+            transformObjectKeys: true,
+            renameProperties: true,
+            renameGlobals: false,
+            numbersToExpressions: true,
+            controlFlowFlattening: true,
+            stringArray: true,
+            simplify: true,
+          },
+        }),
+      !isDevelopment &&
+        obfuscator({
+          global: true,
+          options: standardObfuscation,
+        }),
       banner(() => usBanner),
       metablock({
         file: fileURLToPath(new URL("meta.json", import.meta.url)),
