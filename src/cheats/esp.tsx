@@ -134,49 +134,87 @@ function isMesh(e: THREE.Object3D): e is THREE.Mesh {
   return e.type === "Mesh";
 }
 
+interface Materials<
+  T extends THREE.MeshBasicMaterial | THREE.LineBasicMaterial
+> {
+  enemy: T;
+  enemyWall: T;
+  team: T;
+  teamWall: T;
+}
+
+function getEntityMaterial<
+  T extends THREE.MeshBasicMaterial | THREE.LineBasicMaterial
+>(entity: Player | AI, materials: Materials<T>) {
+  return isEnemy(entity)
+    ? entity.canBSeen
+      ? materials.enemy
+      : materials.enemyWall
+    : entity.canBSeen
+    ? materials.team
+    : materials.teamWall;
+}
+
+// how much darker the color should be if behind a wall
+const wallDiff = 0x555555;
+
+function getEntityColor(enemy: boolean, behindWall: boolean) {
+  const overlay = getOverlay();
+  const render = getRender();
+
+  const color = new render.THREE.Color(
+    Number("0x" + (enemy ? overlay.healthColE : overlay.healthColT).slice(1))
+  );
+
+  return behindWall ? color.sub(new render.THREE.Color(wallDiff)) : color;
+}
+
+function updateMaterials<
+  T extends THREE.MeshBasicMaterial | THREE.LineBasicMaterial
+>(materials: Materials<T>) {
+  materials.enemy.color.set(getEntityColor(true, false));
+  materials.enemyWall.color.set(getEntityColor(true, true));
+  materials.team.color.set(getEntityColor(false, false));
+  materials.teamWall.color.set(getEntityColor(false, true));
+}
+
 function initMaterials() {
   const game = getGame();
-  // const render = getRender();
-  const overlay = getOverlay();
 
-  const enemyMaterial = new game.THREE.MeshBasicMaterial({
-    transparent: true,
-    fog: false,
-    depthTest: false,
-    color: overlay.healthColE,
-  });
+  const genericMesh = () =>
+    new game.THREE.MeshBasicMaterial({
+      transparent: true,
+      fog: false,
+      depthTest: false,
+    });
 
-  const friendlyMaterial = new game.THREE.MeshBasicMaterial({
-    transparent: true,
-    fog: false,
-    depthTest: false,
-    color: overlay.healthColT,
-  });
+  const mesh: Materials<THREE.MeshBasicMaterial> = {
+    enemy: genericMesh(),
+    enemyWall: genericMesh(),
+    team: genericMesh(),
+    teamWall: genericMesh(),
+  };
 
-  const enemyTracerMaterial = new game.THREE.LineBasicMaterial({
-    transparent: true,
-    fog: false,
-    color: overlay.healthColE,
-    depthTest: false,
-  });
+  const genericLine = () =>
+    new game.THREE.LineBasicMaterial({
+      transparent: true,
+      fog: false,
+      depthTest: false,
+    });
 
-  const friendlyTracerMaterial = new game.THREE.LineBasicMaterial({
-    transparent: true,
-    fog: false,
-    color: overlay.healthColT,
-    depthTest: false,
-  });
+  const line: Materials<THREE.LineBasicMaterial> = {
+    enemy: genericLine(),
+    enemyWall: genericLine(),
+    team: genericLine(),
+    teamWall: genericLine(),
+  };
 
   return {
-    enemyMaterial,
-    friendlyMaterial,
-    enemyTracerMaterial,
-    friendlyTracerMaterial,
+    mesh,
+    line,
     update: () => {
-      enemyMaterial.color.set(overlay.healthColE);
-      friendlyMaterial.color.set(overlay.healthColT);
-      enemyTracerMaterial.color.set(overlay.healthColE);
-      friendlyTracerMaterial.color.set(overlay.healthColT);
+      updateMaterials(mesh);
+      updateMaterials(line);
     },
   };
 }
@@ -211,10 +249,7 @@ export function espHook() {
     geometry.setDrawRange(0, points);
 
     // line
-    const line = new game.THREE.Line(
-      geometry,
-      materials.friendlyTracerMaterial
-    );
+    const line = new game.THREE.Line(geometry, materials.line.enemy);
 
     render.scene.add(line);
 
@@ -265,9 +300,7 @@ export function espHook() {
           // Move the starting point slightly forward from the camera's position
           const startPoint = position.clone().add(direction);
 
-          line.material = isEnemy(entity)
-            ? materials.enemyTracerMaterial
-            : materials.friendlyTracerMaterial;
+          line.material = getEntityMaterial(entity, materials.line);
 
           buffer.setXYZ(0, startPoint.x, startPoint.y, startPoint.z);
           buffer.setXYZ(1, eP.x, eP.y, eP.z);
@@ -308,9 +341,7 @@ export function espHook() {
             Object.defineProperty(e, "material", {
               get: () =>
                 sketchConfig.get("chams")
-                  ? isEnemy(entity)
-                    ? materials.enemyMaterial
-                    : materials.friendlyMaterial
+                  ? getEntityMaterial(entity, materials.mesh)
                   : material,
               set: (newMaterial) => {
                 material = newMaterial;
@@ -345,9 +376,9 @@ export function espHook() {
 
         if (!box) continue;
 
-        overlay.ctx.strokeStyle = isEnemy(entity)
-          ? overlay.healthColE
-          : overlay.healthColT;
+        overlay.ctx.strokeStyle =
+          "#" +
+          getEntityColor(isEnemy(entity), !entity.canBSeen).getHexString();
         overlay.ctx.lineWidth = 1.5;
         overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
       }

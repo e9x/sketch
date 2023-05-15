@@ -276,7 +276,3 @@ export function getOverlaySizeScaled() {
     height: innerHeight / overlay.scale,
   };
 }
-
-export function colorToSigned24Bit(s: string) {
-  return (parseInt(s.slice(1), 16) << 8) / 256;
-}
