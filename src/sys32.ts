@@ -2,10 +2,7 @@ import KrunkBox, { ProcessTokenErors } from "./KrunkBox";
 import { isDevelopment, linkvertiseURL } from "./consts";
 import tokenConfig from "./tokenConfig";
 
-if (
-  location.hostname === "sketch.sys32.dev" &&
-  location.pathname === "/theatre/"
-)
+if (location.hostname === "sketch.sys32.dev" && location.pathname === "/")
   sys32();
 
 async function sys32() {
