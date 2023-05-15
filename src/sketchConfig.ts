@@ -18,6 +18,7 @@ export interface SketchConfig {
   nametags: boolean;
   boxes: boolean;
   chams: boolean;
+  tracers: boolean;
   forceAuto: boolean;
   recoilControl: boolean;
   recoilControlKey: number;
@@ -52,6 +53,7 @@ const defaultConfig: SketchConfig = {
   nametags: false,
   boxes: false,
   chams: false,
+  tracers: false,
   forceAuto: false,
   recoilControl: false,
   recoilControlKey: -1,

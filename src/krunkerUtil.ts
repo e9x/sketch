@@ -115,6 +115,8 @@ export function entityAlive(entity: Player | AI) {
 
   if (entity.health <= 0) return false;
 
+  if (!entity.active) return false;
+
   return true;
 }
 
@@ -264,4 +266,17 @@ export function lerp(
   rotation.setX(from.x + getAngleDst(from.x, rotation.x) * realSmoothFactor);
   rotation.setY(from.y + getAngleDst(from.y, rotation.y) * realSmoothFactor);
   return rotation;
+}
+
+export function getOverlaySizeScaled() {
+  const overlay = getOverlay();
+
+  return {
+    width: innerWidth / overlay.scale,
+    height: innerHeight / overlay.scale,
+  };
+}
+
+export function colorToSigned24Bit(s: string) {
+  return (parseInt(s.slice(1), 16) << 8) / 256;
 }

@@ -1,4 +1,3 @@
-import { random } from "../util";
 import { iInputs } from "../consts";
 import {
   getConfig,
@@ -7,7 +6,7 @@ import {
   getOverlay,
   getRender,
   inputHooks,
-  renderHooks,
+  overlayRenderHooks,
 } from "../filters";
 import type { Player } from "../krunker/Player";
 import {
@@ -22,6 +21,7 @@ import {
   getCurrentReloadTimer,
   isInMenus,
   lerp,
+  getOverlaySizeScaled,
 } from "../krunkerUtil";
 import BindHolder, { Bind } from "../menu/components/Bind";
 import Select from "../menu/components/Select";
@@ -30,6 +30,7 @@ import Slider from "../menu/components/Slider";
 import Switch from "../menu/components/Switch";
 import type { SketchConfig } from "../sketchConfig";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
+import { random } from "../util";
 import type { AI } from "krunker/AI";
 
 // Function to check if a 2D point is inside a circle
@@ -69,9 +70,9 @@ function playerAimPoint(player: Player) {
   return new THREE.Vector3(
     player.x,
     player.y +
-    player.height -
-    hitboxOffset -
-    player.crouchVal * config.crouchDst,
+      player.height -
+      hitboxOffset -
+      player.crouchVal * config.crouchDst,
     player.z
   );
 }
@@ -96,7 +97,7 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
       target.y,
       target.z
     ) || 0) -
-    localPlayer.recoilAnimY * config.recoilMlt
+      localPlayer.recoilAnimY * config.recoilMlt
   );
 
   rotation.setY(
@@ -154,7 +155,7 @@ function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
 export function aimbotHook() {
   let reloading = 0;
 
-  renderHooks.push(() => {
+  overlayRenderHooks.push(() => {
     const drawFOV = sketchConfig.get("drawFOV");
     if (!drawFOV) return;
     if (isInMenus()) return;
@@ -168,9 +169,10 @@ export function aimbotHook() {
       overlay.ctx.save();
       overlay.ctx.scale(overlay.scale, overlay.scale);
       const { THREE } = getGame();
+      const overlaySize = getOverlaySizeScaled();
       const center = new THREE.Vector2(
-        innerWidth / overlay.scale / 2,
-        innerHeight / overlay.scale / 2
+        overlaySize.width / 2,
+        overlaySize.height / 2
       );
       drawAimbotCircle(overlay.ctx, center, fovRadius);
       overlay.ctx.restore();

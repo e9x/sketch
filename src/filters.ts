@@ -93,14 +93,21 @@ matchers.push((module: Module<typeof Game>) => {
   };
 });
 
-export const renderHooks: (() => void)[] = [];
+/**
+ * After the overlay is rendered
+ * 2x slower than renderHooks
+ * Used for game UI overlay
+ */
+export const overlayRenderHooks: (() => void)[] = [];
+export const preOverlayRenderHooks: (() => void)[] = [];
 
 function doOverlayHooks() {
   const { render } = getOverlay();
 
   getOverlay().render = function (...args) {
+    if (localPlayer) for (const hook of preOverlayRenderHooks) hook();
     const result = render.call(this, ...args);
-    if (localPlayer) for (const hook of renderHooks) hook();
+    if (localPlayer) for (const hook of overlayRenderHooks) hook();
     return result;
   };
 }
@@ -155,6 +162,25 @@ matchers.push((module: Module<typeof MapObjectModule>) => {
   doMapObjectHooks();
 });
 
+/**
+ * After the 3D game is rendered
+ * 2x faster than overlayRenderHooks
+ * Used for THREE.js
+ */
+export const renderHooks: (() => void)[] = [];
+export const preRenderHooks: (() => void)[] = [];
+
+function doRenderHooks() {
+  const { render } = getRender();
+
+  getRender().render = function (...args) {
+    if (localPlayer) for (const hook of preRenderHooks) hook();
+    const result = render.call(this, ...args);
+    if (localPlayer) for (const hook of renderHooks) hook();
+    return result;
+  };
+}
+
 matchers.push((module: Module<typeof RenderManager>) => {
   if (
     typeof module.exports !== "function" ||
@@ -178,6 +204,7 @@ matchers.push((module: Module<typeof RenderManager>) => {
     // we have to wait for the properties to be assigned
     setTimeout(() => {
       render = this;
+      doRenderHooks();
     });
 
     return result;
