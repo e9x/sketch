@@ -361,6 +361,8 @@ export function espHook() {
               if (e.name === "body" && isMesh(e)) doMesh(e);
           if (entity.bodyMesh)
             for (const mesh of entity.bodyMesh.children) doMesh(mesh);
+          if (entity.headMesh)
+            for (const mesh of entity.headMesh.children) doMesh(mesh);
         }
       }
     }

@@ -60,6 +60,7 @@ export declare class Player {
   objInstances: THREE.Object3D | null;
   waistMesh: THREE.Object3D | null;
   backMesh: THREE.Mesh | null;
+  headMesh: (THREE.Object3D & { children: THREE.Mesh[] }) | null;
   hatMesh: THREE.Mesh | null;
   bodyMesh: (THREE.Object3D & { children: THREE.Mesh[] }) | null;
   mergedArmMeshes: THREE.Mesh[];
