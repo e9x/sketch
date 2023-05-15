@@ -284,16 +284,19 @@ export function espHook() {
 
     materials.update();
 
+    const menus = isInMenus();
+    const tracers = sketchConfig.get("tracers");
+
     // tracers
     // overlay.ctx.save();
     for (const [entity, data] of lineMap) {
-      if (!sketchConfig.get("tracers") || isInMenus() || !canESP(entity)) {
+      if (!tracers || menus || !canESP(entity)) {
         render.scene.remove(data.line);
         lineMap.delete(entity);
       }
     }
 
-    if (sketchConfig.get("tracers") && !isInMenus())
+    if (tracers && !menus)
       for (const entity of game.players.list) {
         if (canESP(entity) && entity.objInstances) {
           if (!entityAlive(entity)) continue;
