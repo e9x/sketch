@@ -65,6 +65,23 @@ export class PlayerRectBounds {
   }
 }
 
+/**
+ * Check if the entity is a valid subject for ESP
+ * Does not check for entity.objInstances
+ * That's up to the caller so they can get the type safety in an if() statement
+ */
+function canESP(entity: Player | AI) {
+  const game = getGame();
+
+  return (
+    entityAlive(entity) &&
+    (entity.isPlayer
+      ? !entity.isYou && game.players.list.includes(entity)
+      : game.AI.ais.includes(entity)) &&
+    (!unsafeWindow.spectating || game.controls.spect.target !== entity)
+  );
+}
+
 function playerBox(entity: Player | AI) {
   const config = getConfig();
   const render = getRender();
@@ -270,12 +287,7 @@ export function espHook() {
     // tracers
     // overlay.ctx.save();
     for (const [entity, data] of lineMap) {
-      if (
-        !sketchConfig.get("tracers") ||
-        !entityAlive(entity) ||
-        !game.players.list.includes(entity) ||
-        !entity.objInstances
-      ) {
+      if (!sketchConfig.get("tracers") || !canESP(entity)) {
         render.scene.remove(data.line);
         lineMap.delete(entity);
       }
@@ -283,7 +295,7 @@ export function espHook() {
 
     if (sketchConfig.get("tracers"))
       for (const entity of game.players.list) {
-        if (entity.isPlayer && !entity.isYou && entity.objInstances) {
+        if (canESP(entity) && entity.objInstances) {
           if (!entityAlive(entity)) continue;
 
           if (!lineMap.has(entity)) lineMap.set(entity, generateLine());
@@ -316,16 +328,17 @@ export function espHook() {
 
     materials.update();
 
-    if (sketchConfig.get("chams")) {
+    if (sketchConfig.get("chams"))
       for (const entity of game.players.list) {
-        if (entity.isPlayer && !entity.isYou && entity.objInstances) {
+        if (entity.objInstances && canESP(entity)) {
           if (!hookedObjects.has(entity.objInstances)) {
             hookedObjects.add(entity.objInstances);
 
             let { visible } = entity.objInstances;
 
             Object.defineProperty(entity.objInstances, "visible", {
-              get: () => (sketchConfig.get("chams") ? true : visible),
+              get: () =>
+                sketchConfig.get("chams") && canESP(entity) ? true : visible,
               set: (newVisible) => {
                 visible = newVisible;
               },
@@ -340,7 +353,7 @@ export function espHook() {
 
             Object.defineProperty(e, "material", {
               get: () =>
-                sketchConfig.get("chams")
+                sketchConfig.get("chams") && canESP(entity)
                   ? getEntityMaterial(entity, materials.mesh)
                   : material,
               set: (newMaterial) => {
@@ -365,7 +378,6 @@ export function espHook() {
             for (const mesh of entity.headMesh.children) doMesh(mesh);
         }
       }
-    }
 
     if (sketchConfig.get("boxes") && !isInMenus()) {
       overlay.ctx.save();
