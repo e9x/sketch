@@ -381,6 +381,10 @@ export function espHook() {
             for (const mesh of entity.bodyMesh.children) doMesh(mesh);
           if (entity.headMesh)
             for (const mesh of entity.headMesh.children) doMesh(mesh);
+          if (entity.faceMesh)
+            for (const mesh of entity.faceMesh.children) doMesh(mesh);
+          if (entity.backMesh)
+            for (const mesh of entity.backMesh.children) doMesh(mesh);
         }
       }
 
