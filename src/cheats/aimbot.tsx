@@ -400,11 +400,6 @@ export function AimbotMenu() {
             setSmoothFactor(event.currentTarget.valueAsNumber)
           }
         />
-        <Switch
-          title="Wallbangs"
-          defaultChecked={wallbangs}
-          onChange={(event) => setWallbangs(event.currentTarget.checked)}
-        />
         <Select
           title="Hitbox"
           description="Automatically aim and fire at players"
@@ -446,6 +441,11 @@ export function AimbotMenu() {
           description="Automatically aim and fire at players"
           defaultChecked={bot}
           onChange={(event) => setBot(event.currentTarget.checked)}
+        />
+        <Switch
+          title="Wallbangs"
+          defaultChecked={wallbangs}
+          onChange={(event) => setWallbangs(event.currentTarget.checked)}
         />
       </Set>
     </>
