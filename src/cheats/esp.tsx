@@ -377,6 +377,8 @@ export function espHook() {
           if (entity.lowerBody)
             for (const e of entity.lowerBody.children)
               if (e.name === "body" && isMesh(e)) doMesh(e);
+          for (const e of entity.shoeMeshes)
+            for (const mesh of e.children) doMesh(mesh);
           if (entity.bodyMesh)
             for (const mesh of entity.bodyMesh.children) doMesh(mesh);
           if (entity.headMesh)
