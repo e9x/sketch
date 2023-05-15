@@ -1,8 +1,12 @@
 import KrunkBox, { ProcessTokenErors } from "./KrunkBox";
-import { isDevelopment, isSys32, linkvertiseURL } from "./consts";
+import { isDevelopment, linkvertiseURL } from "./consts";
 import tokenConfig from "./tokenConfig";
 
-if (isSys32 && location.pathname === "/theatre/") sys32();
+if (
+  location.hostname === "sketch.sys32.dev" &&
+  location.pathname === "/theatre/"
+)
+  sys32();
 
 async function sys32() {
   if (!isDevelopment && document.referrer !== "https://linkvertise.com/")
