@@ -287,13 +287,13 @@ export function espHook() {
     // tracers
     // overlay.ctx.save();
     for (const [entity, data] of lineMap) {
-      if (!sketchConfig.get("tracers") || !canESP(entity)) {
+      if (!sketchConfig.get("tracers") || isInMenus() || !canESP(entity)) {
         render.scene.remove(data.line);
         lineMap.delete(entity);
       }
     }
 
-    if (sketchConfig.get("tracers"))
+    if (sketchConfig.get("tracers") && !isInMenus())
       for (const entity of game.players.list) {
         if (canESP(entity) && entity.objInstances) {
           if (!entityAlive(entity)) continue;
@@ -338,7 +338,9 @@ export function espHook() {
 
             Object.defineProperty(entity.objInstances, "visible", {
               get: () =>
-                sketchConfig.get("chams") && canESP(entity) ? true : visible,
+                sketchConfig.get("chams") && !isInMenus() && canESP(entity)
+                  ? true
+                  : visible,
               set: (newVisible) => {
                 visible = newVisible;
               },
@@ -353,7 +355,7 @@ export function espHook() {
 
             Object.defineProperty(e, "material", {
               get: () =>
-                sketchConfig.get("chams") && canESP(entity)
+                sketchConfig.get("chams") && !isInMenus() && canESP(entity)
                   ? getEntityMaterial(entity, materials.mesh)
                   : material,
               set: (newMaterial) => {
