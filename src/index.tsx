@@ -1,6 +1,5 @@
 import "./sys32";
 import "./linkvertise";
-import "./menu/createUI";
 import KrunkBox, { APIError } from "./KrunkBox";
 import { aimbotHook } from "./cheats/aimbot";
 import { bhopHook } from "./cheats/bhop";
@@ -16,6 +15,7 @@ import { matchModule, getLocalPlayer, getRender } from "./filters";
 import type { Module } from "./filters";
 import { getInit, gameLoad, fetchWASM } from "./inject";
 import { wentToLV } from "./linkvertise";
+import { sketchButton } from "./menu/createUI";
 import sketchConfig from "./sketchConfig";
 import tokenConfig from "./tokenConfig";
 
@@ -163,6 +163,7 @@ async function main() {
 
     await gameLoad;
     await wentToLV();
+    sketchButton();
 
     // load menu font
     const link = document.createElement("link");
