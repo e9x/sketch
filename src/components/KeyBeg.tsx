@@ -60,7 +60,9 @@ export default function KeyBeg({ done }: { done: (token: string) => void }) {
             .then((res) => {
               switch (res) {
                 case ProcessTokenErrors.BadToken:
-                  setError("Bad access key. Try again.");
+                  setError(
+                    "Bad access key. If you just received an access key, try getting another one in 8 minutes."
+                  );
                   break;
                 default:
                   done(res);
