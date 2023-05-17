@@ -58,6 +58,8 @@ export default function KeyBeg({ done }: { done: (token: string) => void }) {
 
           KrunkBox.processToken(key.current.value.trim(), tmpToken)
             .then((res) => {
+              tokenConfig.delete("tmpToken");
+
               switch (res) {
                 case ProcessTokenErrors.BadToken:
                   setError(
