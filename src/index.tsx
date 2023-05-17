@@ -1,4 +1,3 @@
-import "./sys32";
 import KrunkBox, { APIError } from "./KrunkBox";
 import { aimbotHook } from "./cheats/aimbot";
 import { bhopHook } from "./cheats/bhop";
@@ -139,14 +138,15 @@ async function main() {
     return newRoot().root.render(<NotUpdated />);
   }
 
-  const token = tokenConfig.get("token");
-
-  if (!token) {
-    if (sketchConfig.get("silentFail")) return fetchWASM();
-    return newRoot().root.render(<KeyBeg />);
-  }
+  let token = tokenConfig.get("token");
 
   while (true) {
+    if (!token) {
+      if (sketchConfig.get("silentFail")) return fetchWASM();
+      token = await begKey();
+      tokenConfig.set("token", token);
+    }
+
     const krunkbox = new KrunkBox(token);
 
     const game = await getInit(krunkbox, hook);
@@ -154,7 +154,8 @@ async function main() {
     if (game === APIError.BadToken) {
       tokenConfig.delete("token");
       if (sketchConfig.get("silentFail")) return fetchWASM();
-      return newRoot().root.render(<KeyBeg />);
+      token = undefined;
+      continue;
     }
 
     if (game === APIError.DIY) return;
@@ -179,4 +180,20 @@ async function main() {
 
     break;
   }
+}
+
+function begKey() {
+  return new Promise<string>((resolve) => {
+    const { root, overlay } = newRoot();
+
+    root.render(
+      <KeyBeg
+        done={(token) => {
+          root.unmount();
+          overlay.remove();
+          resolve(token);
+        }}
+      />
+    );
+  });
 }

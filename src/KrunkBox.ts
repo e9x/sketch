@@ -1,7 +1,7 @@
 import { apiURL } from "./consts";
 import { GM_fetch, sleep } from "./util";
 
-export enum ProcessTokenErors {
+export enum ProcessTokenErrors {
   BadToken,
   DuplicateToken,
 }
@@ -32,18 +32,18 @@ export default class KrunkBox {
       return await res.text();
     }
   }
-  static async processToken(lvToken: string, tmpToken: string) {
+  static async processToken(accessKey: string, tmpToken: string) {
     while (true) {
       const res = await GM_fetch(new URL("hi", apiURL).toString(), {
         method: "POST",
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify([lvToken, tmpToken]),
+        body: JSON.stringify([accessKey, tmpToken]),
       });
 
-      if (res.status === 400) return ProcessTokenErors.BadToken;
-      if (res.status === 402) return ProcessTokenErors.BadToken;
+      if (res.status === 400) return ProcessTokenErrors.BadToken;
+      if (res.status === 402) return ProcessTokenErrors.BadToken;
 
       if (!res.ok) {
         // server error, try again in some
