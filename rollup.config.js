@@ -1,8 +1,5 @@
 import { generateIdentifier } from "./schizophrenia.js";
-import commonjs from "@rollup/plugin-commonjs";
 import eslint from "@rollup/plugin-eslint";
-import json from "@rollup/plugin-json";
-import { nodeResolve } from "@rollup/plugin-node-resolve";
 import replace from "@rollup/plugin-replace";
 import { expand } from "dotenv-expand";
 import { config } from "dotenv-flow";
@@ -95,8 +92,6 @@ const options = defineConfig([
         "process.env.": "({}).",
         preventAssignment: true,
       }),
-      nodeResolve({ browser: true }),
-      commonjs(),
       !isDevelopment &&
         obfuscator({
           global: true,
@@ -133,7 +128,6 @@ const options = defineConfig([
               "process.env.": "({}).",
               preventAssignment: true,
             }),
-            nodeResolve(),
             banner(() => usBanner),
             metablock({
               file: fileURLToPath(new URL("tracker.json", import.meta.url)),
@@ -173,9 +167,6 @@ const options = defineConfig([
         "process.env.": "({}).",
         preventAssignment: true,
       }),
-      nodeResolve({ browser: true }),
-      commonjs(),
-      json(),
       !isDevelopment &&
         obfuscator({
           include: /KrunkBox\.ts|KeyBeg\.tsx/,
@@ -230,7 +221,6 @@ const options = defineConfig([
               "process.env.": "({}).",
               preventAssignment: true,
             }),
-            nodeResolve(),
             banner(() => usBanner),
             metablock({
               file: fileURLToPath(new URL("meta.json", import.meta.url)),
