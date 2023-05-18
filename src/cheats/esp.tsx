@@ -282,8 +282,6 @@ export function espHook() {
     const render = getRender();
     const materials = getMaterials();
 
-    materials.update();
-
     const menus = isInMenus();
     const tracers = sketchConfig.get("tracers");
 
