@@ -33,6 +33,9 @@ import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { random } from "../util";
 import type { AI } from "krunker/AI";
 
+// optimize call (tampermonkey is slow)
+const { Math } = window;
+
 // Function to check if a 2D point is inside a circle
 function isPointInsideCircle(
   point: THREE.Vector2,

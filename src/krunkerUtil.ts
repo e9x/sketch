@@ -12,6 +12,9 @@ import type { AI } from "./krunker/AI";
 import type { Player } from "./krunker/Player";
 import type THREE from "three";
 
+// optimize call (tampermonkey is slow)
+const { Math, document } = window;
+
 export function getDistance(x1: number, y1: number, x2: number, y2: number) {
   return Math.sqrt((x2 -= x1) * x2 + (y2 -= y1) * y2);
 }

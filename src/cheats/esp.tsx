@@ -180,7 +180,7 @@ function getEntityColor(enemy: boolean, behindWall: boolean) {
   const render = getRender();
 
   const color = new render.THREE.Color(
-    enemy ? overlay.healthColE : overlay.healthColT
+    parseInt((enemy ? overlay.healthColE : overlay.healthColT).slice(1), 16)
   );
 
   return behindWall ? color.sub(new render.THREE.Color(wallDiff)) : color;
