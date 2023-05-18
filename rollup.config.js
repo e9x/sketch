@@ -49,6 +49,9 @@ const usBanner = `/*!
 
 const funnyIDs = uniq(times(8 ** 6, () => generateIdentifier()));
 
+/**
+ * @type {import("javascript-obfuscator").ObfuscatorOptions}
+ */
 const standardObfuscation = {
   target: "browser",
   deadCodeInjection: false,
