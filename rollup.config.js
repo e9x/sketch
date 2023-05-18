@@ -124,12 +124,11 @@ const options = defineConfig([
               new URL("dist/tracker.DEV.user.js", import.meta.url)
             ),
             format: "cjs",
-            sourcemap: "inline",
             sourcemapPathTransform: transformerFactory("tracker-loader"),
           },
           plugins: [
             eslint(),
-            esbuild({ minify: true, define: envReplacements }),
+            esbuild({ define: envReplacements }),
             replace({
               "process.env.": "({}).",
               preventAssignment: true,
@@ -222,12 +221,11 @@ const options = defineConfig([
               new URL("dist/sketch.DEV.user.js", import.meta.url)
             ),
             format: "cjs",
-            sourcemap: "inline",
             sourcemapPathTransform: transformerFactory("main-loader"),
           },
           plugins: [
             eslint(),
-            esbuild({ minify: true, define: envReplacements }),
+            esbuild({ define: envReplacements }),
             replace({
               "process.env.": "({}).",
               preventAssignment: true,
