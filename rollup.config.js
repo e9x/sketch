@@ -179,7 +179,7 @@ const options = defineConfig([
       json(),
       !isDevelopment &&
         obfuscator({
-          include: /KrunkBox\.ts|sys32\.ts/,
+          include: /KrunkBox\.ts|KeyBeg\.tsx/,
           options: {
             target: "browser",
             deadCodeInjection: true,
