@@ -7,7 +7,6 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "rollup";
 import banner from "rollup-plugin-banner2";
 import esbuild from "rollup-plugin-esbuild";
-import obfuscator from "rollup-plugin-obfuscator";
 import serve from "rollup-plugin-serve";
 import metablock from "rollup-plugin-userscript-metablock";
 
@@ -141,23 +140,6 @@ const options = defineConfig([
         "process.env.": "({}).",
         preventAssignment: true,
       }),
-      !isDevelopment &&
-        obfuscator({
-          include: /KrunkBox\.ts|KeyBeg\.tsx/,
-          options: {
-            target: "browser",
-            deadCodeInjection: true,
-            selfDefending: false,
-            splitStrings: true,
-            transformObjectKeys: true,
-            renameProperties: false,
-            renameGlobals: false,
-            numbersToExpressions: false,
-            controlFlowFlattening: true,
-            stringArray: true,
-            simplify: true,
-          },
-        }),
       banner(() => usBanner),
       metablock({
         file: fileURLToPath(new URL("meta.json", import.meta.url)),

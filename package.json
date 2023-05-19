@@ -28,7 +28,6 @@
     "rollup": "^3.21.5",
     "rollup-plugin-banner2": "^1.2.2",
     "rollup-plugin-esbuild": "^5.0.0",
-    "rollup-plugin-obfuscator": "^1.0.3",
     "rollup-plugin-serve": "^2.0.2",
     "rollup-plugin-userscript-metablock": "^0.3.3",
     "typescript": "^5.0.4"
