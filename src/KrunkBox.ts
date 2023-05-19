@@ -1,5 +1,5 @@
 import { apiURL } from "./consts";
-import { GM_fetch, sleep } from "./util";
+import { sleep } from "./util";
 
 export enum ProcessTokenErrors {
   BadToken,
@@ -20,7 +20,7 @@ export default class KrunkBox {
   // delete tmp tokens after 10 minutes
   static async generateTmpToken(signal?: AbortSignal) {
     while (true) {
-      const res = await GM_fetch(new URL("hi", apiURL).toString(), { signal });
+      const res = await fetch(new URL("hi", apiURL).toString(), { signal });
 
       if (!res.ok) {
         // server error, try again in some
@@ -34,7 +34,7 @@ export default class KrunkBox {
   }
   static async processToken(accessKey: string, tmpToken: string) {
     while (true) {
-      const res = await GM_fetch(new URL("hi", apiURL).toString(), {
+      const res = await fetch(new URL("hi", apiURL).toString(), {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -57,7 +57,7 @@ export default class KrunkBox {
   }
   static async sketchVersion(currentVersion: string, supportedGame: string) {
     while (true) {
-      const res = await GM_fetch(new URL("sketchVersion", apiURL).toString(), {
+      const res = await fetch(new URL("sketchVersion", apiURL), {
         method: "POST",
         headers: {
           accept: "application/json",
@@ -91,7 +91,7 @@ export default class KrunkBox {
       return {
         ...data,
         // we have to resolve it
-        updateURL: new URL(data.updateURL, apiURL).toString(),
+        updateURL: new URL(data.updateURL, apiURL),
       };
     }
   }
@@ -109,7 +109,7 @@ export default class KrunkBox {
   }
   async source() {
     while (true) {
-      const res = await GM_fetch(new URL("source", apiURL).toString(), {
+      const res = await fetch(new URL("source", apiURL).toString(), {
         headers: {
           // only have to send the token
           // doesn't get rotated here due to source() and hash() being called at the same time
@@ -138,7 +138,7 @@ export default class KrunkBox {
   }
   async skins() {
     while (true) {
-      const res = await GM_fetch(new URL("skins", apiURL).toString(), {
+      const res = await fetch(new URL("skins", apiURL), {
         headers: {
           // only have to send the token
           // doesn't get rotated here due to source() and hash() being called at the same time

@@ -1,6 +1,5 @@
 import { keyListeners } from "../keys";
 import sketchConfig from "../sketchConfig";
-import { waitFor } from "../util";
 import Menu from "./Menu";
 import createRenderContainer from "./renderContainer";
 
@@ -26,32 +25,24 @@ function sketchWindow() {
 }
 
 export function sketchButton() {
-  waitFor(
-    () =>
-      typeof windows === "object" &&
-      Array.isArray(windows) &&
-      windows.length === 52
-  ).then(() => {
-    if (sketchConfig.get("menuButton"))
-      waitFor(() =>
-        document.querySelector<HTMLDivElement>("#menuItemContainer")
-      ).then((menuItems) => {
-        menuItems.innerHTML += `<div class="menuItem" onmouseenter="playTick()" onclick="playSelect()" id="sketchMenu"><span class="material-icons-outlined menBtnIcn" style="color: #fbff00">edit</span><div class="menuItemTitle">Sketch</div></div>`;
-        const sketchMenu = document.getElementById(
-          "sketchMenu"
-        ) as HTMLDivElement;
-        sketchMenu.removeAttribute("id");
-        sketchMenu.addEventListener("click", sketchWindow);
-      });
+  if (sketchConfig.get("menuButton")) {
+    const menuItemContainer =
+      document.querySelector<HTMLDivElement>("#menuItemContainer");
+    if (menuItemContainer)
+      menuItemContainer.innerHTML += `<div class="menuItem" onmouseenter="playTick()" onclick="playSelect()" id="sketchMenu"><span class="material-icons-outlined menBtnIcn" style="color: #fbff00">edit</span><div class="menuItemTitle">Sketch</div></div>`;
 
-    keyListeners.push((event, code, down) => {
-      const menuKey = sketchConfig.get("menuKey");
+    const sketchMenu = document.getElementById("sketchMenu") as HTMLDivElement;
+    sketchMenu.removeAttribute("id");
+    sketchMenu.addEventListener("click", sketchWindow);
+  }
 
-      if (menuKey !== -1 && code === menuKey && down) {
-        event.preventDefault();
-        document.exitPointerLock();
-        sketchWindow();
-      }
-    });
+  keyListeners.push((event, code, down) => {
+    const menuKey = sketchConfig.get("menuKey");
+
+    if (menuKey !== -1 && code === menuKey && down) {
+      event.preventDefault();
+      document.exitPointerLock();
+      sketchWindow();
+    }
   });
 }
