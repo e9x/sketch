@@ -264,7 +264,7 @@ export function espHook() {
     const render = getRender();
     const materials = getMaterials();
 
-    const points = 2;
+    const points = 3;
 
     // geometry
     const geometry = new game.THREE.BufferGeometry();
@@ -329,6 +329,15 @@ export function espHook() {
 
           buffer.setXYZ(0, startPoint.x, startPoint.y, startPoint.z);
           buffer.setXYZ(1, eP.x, eP.y, eP.z);
+          buffer.setXYZ(
+            2,
+            eP.x,
+            eP.y +
+              entity.height -
+              getConfig().headScale / 2 -
+              entity.crouchVal * getConfig().crouchDst,
+            eP.z
+          );
           buffer.needsUpdate = true;
         }
       }
