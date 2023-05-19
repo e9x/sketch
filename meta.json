@@ -14,8 +14,7 @@
     "GM_setValue",
     "GM_listValues",
     "GM_deleteValue",
-    "GM_openInTab",
-    "GM_xmlhttpRequest"
+    "GM_openInTab"
   ],
   "run-at": "document-start",
   "require": [

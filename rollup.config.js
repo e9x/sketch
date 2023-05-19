@@ -147,7 +147,6 @@ const options = defineConfig([
           author: pkg.author,
           description: pkg.description,
           version: pkg.version,
-          connect: new URL(process.env.SKETCH_API_URL).hostname,
         },
         manager: "tampermonkey",
       }),
@@ -180,7 +179,6 @@ const options = defineConfig([
                 author: pkg.author,
                 description: pkg.description,
                 version: pkg.version,
-                connect: new URL(process.env.SKETCH_API_URL).hostname,
                 require: [
                   "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.min.js",
                   "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.min.js",
