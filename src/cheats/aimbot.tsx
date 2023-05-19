@@ -222,7 +222,6 @@ export function aimbotHook() {
 
     const localPlayer = getLocalPlayer();
 
-    // if (inputs[iInputs.frame] % 10 === 0) console.log(currentReload);
     const bot = sketchConfig.get("bot");
 
     if (bot) {
@@ -322,7 +321,6 @@ export function aimbotHook() {
     if (target) {
       if (bot) inputs[iInputs.shoot] = 1;
 
-      // console.log("target:", target);
       const rotation = new THREE.Vector2(
         inputs[iInputs.xDir] / 1000,
         inputs[iInputs.yDir] / 1000
@@ -331,11 +329,6 @@ export function aimbotHook() {
       calcRot(rotation, target);
 
       const render = getRender();
-
-      // game.controls.pchObjc.rotation.x = rot.x;
-      // game.controls.object.rotation.y = rot.y;
-      // game.controls.xDr = game.controls.object.rotation.y % Math.PI2;
-      // game.controls.yDr = game.controls.pchObjc.rotation.x % Math.PI2;
 
       // prevent moving in weird direction
       if (aimbot === "silent") {
