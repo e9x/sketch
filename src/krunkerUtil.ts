@@ -239,6 +239,14 @@ export function getReload() {
   );
 }
 
+export function canShoot(aimTime: number) {
+  return (
+    getCurrentReload(aimTime) <= 0 &&
+    getCurrentSwapTime(aimTime) <= 0 &&
+    getCurrentReloadTimer(aimTime) <= 0
+  );
+}
+
 export function isInMenus() {
   return (
     document.getElementById("endUI")?.style.display !== "none" ||
