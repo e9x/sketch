@@ -1,10 +1,7 @@
-import { generateIdentifier } from "./schizophrenia.js";
 import eslint from "@rollup/plugin-eslint";
 import replace from "@rollup/plugin-replace";
 import { expand } from "dotenv-expand";
 import { config } from "dotenv-flow";
-import times from "lodash/times.js";
-import uniq from "lodash/uniq.js";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "rollup";
@@ -47,27 +44,6 @@ const usBanner = `/*!
  * Written by David Reed <reedswork@proton.me>
  */\n/*eslint-disable*/`;
 
-const funnyIDs = uniq(times(8 ** 6, () => generateIdentifier()));
-
-/**
- * @type {import("javascript-obfuscator").ObfuscatorOptions}
- */
-const standardObfuscation = {
-  target: "browser",
-  deadCodeInjection: false,
-  selfDefending: false,
-  splitStrings: false,
-  transformObjectKeys: false,
-  renameProperties: false,
-  renameGlobals: false,
-  numbersToExpressions: false,
-  controlFlowFlattening: false,
-  stringArray: false,
-  simplify: false,
-  identifierNamesGenerator: "dictionary",
-  identifiersDictionary: funnyIDs,
-};
-
 const transformerFactory = (name) => (relativeSourcePath) =>
   new URL(relativeSourcePath, `sketch-${name}://`).toString();
 
@@ -95,11 +71,6 @@ const options = defineConfig([
         "process.env.": "({}).",
         preventAssignment: true,
       }),
-      !isDevelopment &&
-        obfuscator({
-          global: true,
-          options: standardObfuscation,
-        }),
       banner(() => usBanner),
       metablock({
         file: fileURLToPath(new URL("tracker.json", import.meta.url)),
@@ -181,16 +152,11 @@ const options = defineConfig([
             transformObjectKeys: true,
             renameProperties: false,
             renameGlobals: false,
-            numbersToExpressions: true,
+            numbersToExpressions: false,
             controlFlowFlattening: true,
             stringArray: true,
             simplify: true,
           },
-        }),
-      !isDevelopment &&
-        obfuscator({
-          global: true,
-          options: standardObfuscation,
         }),
       banner(() => usBanner),
       metablock({
