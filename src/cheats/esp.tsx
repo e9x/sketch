@@ -151,18 +151,22 @@ function isMesh(e: THREE.Object3D): e is THREE.Mesh {
   return e.type === "Mesh";
 }
 
-interface Materials<
-  T extends THREE.MeshBasicMaterial | THREE.LineBasicMaterial
-> {
+type MaterialType =
+  | THREE.MeshBasicMaterial
+  | THREE.LineBasicMaterial
+  | THREE.Color;
+
+interface Materials<T extends MaterialType> {
   enemy: T;
   enemyWall: T;
   team: T;
   teamWall: T;
 }
 
-function getEntityMaterial<
-  T extends THREE.MeshBasicMaterial | THREE.LineBasicMaterial
->(entity: Player | AI, materials: Materials<T>) {
+function getEntityMaterial<T extends MaterialType>(
+  entity: Player | AI,
+  materials: Materials<T>
+) {
   return isEnemy(entity)
     ? entity.canBSeen
       ? materials.enemy
@@ -170,29 +174,6 @@ function getEntityMaterial<
     : entity.canBSeen
     ? materials.team
     : materials.teamWall;
-}
-
-// how much darker the color should be if behind a wall
-const wallDiff = 0x555555;
-
-function getEntityColor(enemy: boolean, behindWall: boolean) {
-  const overlay = getOverlay();
-  const render = getRender();
-
-  const color = new render.THREE.Color(
-    parseInt((enemy ? overlay.healthColE : overlay.healthColT).slice(1), 16)
-  );
-
-  return behindWall ? color.sub(new render.THREE.Color(wallDiff)) : color;
-}
-
-function updateMaterials<
-  T extends THREE.MeshBasicMaterial | THREE.LineBasicMaterial
->(materials: Materials<T>) {
-  materials.enemy.color.set(getEntityColor(true, false));
-  materials.enemyWall.color.set(getEntityColor(true, true));
-  materials.team.color.set(getEntityColor(false, false));
-  materials.teamWall.color.set(getEntityColor(false, true));
 }
 
 function initMaterials() {
@@ -226,12 +207,43 @@ function initMaterials() {
     teamWall: genericLine(),
   };
 
+  const genericColor = () => new game.THREE.Color();
+
+  const colors: Materials<THREE.Color> = {
+    enemy: genericColor(),
+    enemyWall: genericColor(),
+    team: genericColor(),
+    teamWall: genericColor(),
+  };
+
   return {
     mesh,
     line,
+    colors,
     update: () => {
-      updateMaterials(mesh);
-      updateMaterials(line);
+      const overlay = getOverlay();
+
+      const enemyHex = parseInt(overlay.healthColE.slice(1), 16);
+      const teamHex = parseInt(overlay.healthColT.slice(1), 16);
+
+      colors.enemy.set(enemyHex);
+      colors.team.set(teamHex);
+
+      colors.enemyWall.set(colors.enemy);
+      colors.teamWall.set(colors.team);
+
+      colors.enemyWall.addScalar(-0.3);
+      colors.teamWall.addScalar(-0.3);
+
+      line.enemy.color.set(colors.enemy);
+      line.enemyWall.color.set(colors.enemyWall);
+      line.team.color.set(colors.team);
+      line.teamWall.color.set(colors.teamWall);
+
+      mesh.enemy.color.set(colors.enemy);
+      mesh.enemyWall.color.set(colors.enemyWall);
+      mesh.team.color.set(colors.team);
+      mesh.teamWall.color.set(colors.teamWall);
     },
   };
 }
@@ -400,8 +412,7 @@ export function espHook() {
         if (!box) continue;
 
         overlay.ctx.strokeStyle =
-          "#" +
-          getEntityColor(isEnemy(entity), !entity.canBSeen).getHexString();
+          "#" + getEntityMaterial(entity, materials.colors).getHexString();
         overlay.ctx.lineWidth = 1.5;
         overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
       }
