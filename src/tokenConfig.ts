@@ -16,7 +16,7 @@ export enum DIYStage {
 export interface TokenConfig {
   diy?: DIYStage;
   diyToken?: string;
-  tmpToken?: string;
+  tmpToken: string;
   token?: string;
   /*
    * if they went to linkvertise yet
@@ -31,6 +31,7 @@ export interface TokenConfig {
 const defaultConfig: TokenConfig = {
   diy: DIYStage.false,
   lv: false,
+  tmpToken: "",
 };
 
 const tokenConfig = new Config<TokenConfig>(defaultConfig);

@@ -52,8 +52,6 @@ export default function KeyBeg({ done }: { done: (token: string) => void }) {
 
           const tmpToken = tokenConfig.get("tmpToken");
 
-          if (!tmpToken) return setError(badToken);
-
           setBusy(true);
 
           KrunkBox.processToken(key.current.value.trim(), tmpToken)
