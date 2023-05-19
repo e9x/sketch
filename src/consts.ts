@@ -54,22 +54,22 @@ restK,
 inter
 */
 
-export enum iInputs {
-  frame = 0,
+export const iInputs = {
+  frame: 0,
   /**
    * capped at 0.1-33
    * source: var mAimTime = Math.max(varForeignSurface, Math.min(argChurchSteam[1], argCompletelyNearby.dltMx)) / this.deltaDiv;
    */
-  delta = 1,
-  xDir = 2,
-  yDir = 3,
-  moveDir = 4,
-  shoot = 5,
-  scope = 6,
-  jump = 7,
-  reload = 8,
-  crouch = 9,
-  weaponScroll = 10,
-  weaponSwap = 11,
-  moveLock = 12,
-}
+  delta: 1,
+  xDir: 2,
+  yDir: 3,
+  moveDir: 4,
+  shoot: 5,
+  scope: 6,
+  jump: 7,
+  reload: 8,
+  crouch: 9,
+  weaponScroll: 10,
+  weaponSwap: 11,
+  moveLock: 12,
+};
