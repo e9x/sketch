@@ -2,6 +2,9 @@ import KrunkBox, { ProcessTokenErrors } from "../KrunkBox";
 import { linkvertiseURL } from "../consts";
 import tokenConfig from "../tokenConfig";
 
+const badToken =
+  "Bad access key. If you just received an access key, try getting another one in 8 minutes.";
+
 export default function KeyBeg({ done }: { done: (token: string) => void }) {
   const abort = React.useRef(new AbortController());
   const key = React.useRef<HTMLInputElement | null>(null);
@@ -47,14 +50,11 @@ export default function KeyBeg({ done }: { done: (token: string) => void }) {
           event.preventDefault();
           if (!key.current) return;
 
-          setBusy(true);
-
           const tmpToken = tokenConfig.get("tmpToken");
 
-          if (!tmpToken) {
-            setError("You need to get another access key.");
-            return;
-          }
+          if (!tmpToken) return setError(badToken);
+
+          setBusy(true);
 
           KrunkBox.processToken(key.current.value.trim(), tmpToken)
             .then((res) => {
@@ -62,9 +62,7 @@ export default function KeyBeg({ done }: { done: (token: string) => void }) {
 
               switch (res) {
                 case ProcessTokenErrors.BadToken:
-                  setError(
-                    "Bad access key. If you just received an access key, try getting another one in 8 minutes."
-                  );
+                  setError(badToken);
                   break;
                 default:
                   done(res);
