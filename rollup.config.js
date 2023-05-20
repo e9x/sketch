@@ -135,6 +135,11 @@ const options = defineConfig([
         minify: !isDevelopment,
         jsx: "transform",
         define: envReplacements,
+        supported: {
+          "nullish-coalescing": false,
+          "optional-catch-binding": false,
+          "optional-chain": false,
+        },
       }),
       replace({
         "process.env.": "({}).",
