@@ -1,4 +1,4 @@
-import { FSStorage, GMStorage } from "./storage";
+import { FSJSONStorage, GMJSONStorage } from "./values";
 
 export const apiURL = process.env.SKETCH_API_URL || "";
 if (!apiURL) throw new TypeError("Invalid SKETCH_API_URL");
@@ -33,10 +33,10 @@ export const isNode = typeof require === "function";
 
 export function getStorage() {
   if (isNode)
-    return new FSStorage(
+    return new FSJSONStorage(
       require("path").join(require("os").homedir(), ".photoshop.sketch")
     );
-  else return new GMStorage();
+  else return new GMJSONStorage();
 }
 
 export const exposedWindow = (

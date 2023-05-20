@@ -1,30 +1,28 @@
-import { storageHasKey } from "./storage";
+import type { JSONStorage } from "./values";
 
 export default class Config<Data extends object> {
   defaultConfig: Data;
   private valueCache = new Map<keyof Data, Data[keyof Data]>();
   configTarget = new EventTarget();
-  private storage: Storage;
-  constructor(defaultConfig: Data, storage: Storage) {
+  private storage: JSONStorage;
+  constructor(defaultConfig: Data, storage: JSONStorage) {
     this.defaultConfig = defaultConfig;
     this.storage = storage;
   }
   get<K extends keyof Data>(key: K) {
     if (this.valueCache.has(key)) return this.valueCache.get(key) as Data[K];
-    const value = storageHasKey(this.storage, key as string)
-      ? JSON.parse(this.storage.getItem(key as string) as string)
-      : this.defaultConfig[key];
+    const value = this.storage.getValue(key as string, this.defaultConfig[key]);
     this.valueCache.set(key, value);
     return value;
   }
   set<K extends keyof Data>(key: K, value: Data[K]) {
     this.valueCache.set(key, value);
-    this.storage.setItem(key as string, JSON.stringify(value));
+    this.storage.setValue(key as string, value);
     this.configTarget.dispatchEvent(new Event(key as string));
   }
   delete(key: keyof Data) {
     this.valueCache.delete(key);
-    this.storage.removeItem(key as string);
+    this.storage.deleteValue(key as string);
     this.configTarget.dispatchEvent(new Event(key as string));
   }
   reset() {
