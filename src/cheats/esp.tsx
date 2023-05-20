@@ -217,11 +217,14 @@ function initMaterials() {
     teamWall: genericColor(),
   };
 
-  return {
+  const materials = {
     mesh,
     line,
     colors,
+    updated: false,
     update: () => {
+      materials.updated = true;
+
       const overlay = getOverlay();
 
       const enemyHex = parseInt(overlay.healthColE.slice(1), 16);
@@ -247,6 +250,8 @@ function initMaterials() {
       mesh.teamWall.color.set(colors.teamWall);
     },
   };
+
+  return materials;
 }
 
 export function espHook() {
@@ -294,6 +299,9 @@ export function espHook() {
     const game = getGame();
     const render = getRender();
     const materials = getMaterials();
+
+    // only call .update() in the render hooks when it's the very first time we need materials
+    if (!materials.updated) materials.update();
 
     const menus = isInMenus();
     const tracers = sketchConfig.get("tracers");
