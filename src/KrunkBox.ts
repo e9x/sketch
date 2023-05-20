@@ -91,7 +91,7 @@ export default class KrunkBox {
       return {
         ...data,
         // we have to resolve it
-        updateURL: new URL(data.updateURL, apiURL),
+        updateURL: new URL(data.updateURL, apiURL).toString(),
       };
     }
   }
