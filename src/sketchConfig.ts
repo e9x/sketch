@@ -1,5 +1,6 @@
 import type { DataHook } from "./Config";
 import Config, { useConfig } from "./Config";
+import { getStorage } from "./consts";
 
 export interface SketchConfig {
   aimbot: "off" | "smooth" | "silent";
@@ -68,7 +69,7 @@ const defaultConfig: SketchConfig = {
   noAdsFovMlt: false,
 };
 
-const sketchConfig = new Config<SketchConfig>(defaultConfig);
+const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
 
 export const useSketchConfig = <K extends keyof SketchConfig>(
   key: K

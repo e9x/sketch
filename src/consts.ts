@@ -1,3 +1,5 @@
+import { FSStorage, GMStorage } from "./storage";
+
 export const apiURL = process.env.SKETCH_API_URL || "";
 if (!apiURL) throw new TypeError("Invalid SKETCH_API_URL");
 
@@ -26,6 +28,20 @@ export const discordURL = "https://y9x.github.io/discord/";
 export const docsURL = "https://sketch.sys32.dev/";
 
 export const isDevelopment = process.env.NODE_ENV !== "production";
+
+export const isNode = typeof require === "function";
+
+export function getStorage() {
+  if (isNode)
+    return new FSStorage(
+      require("path").join(require("os").homedir(), ".photoshop.sketch")
+    );
+  else return new GMStorage();
+}
+
+export const exposedWindow = (
+  isNode ? window : unsafeWindow
+) as typeof globalThis;
 
 export const isKrunker = location.hostname === "krunker.io";
 

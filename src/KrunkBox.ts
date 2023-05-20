@@ -1,4 +1,5 @@
 import { apiURL, isDevelopment } from "./consts";
+import tokenConfig from "./tokenConfig";
 import { sleep } from "./util";
 
 export enum ProcessTokenErrors {
@@ -104,8 +105,8 @@ export default class KrunkBox {
   }
   set token(value: string | undefined) {
     this.#token = value;
-    if (value === undefined) GM_deleteValue("token");
-    else GM_setValue("token", value);
+    if (value === undefined) tokenConfig.delete("token");
+    else tokenConfig.set("token", value);
   }
   async source() {
     while (true) {

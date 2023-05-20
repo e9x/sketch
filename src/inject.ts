@@ -1,6 +1,6 @@
 import type KrunkBox from "./KrunkBox";
 import { APIError } from "./KrunkBox";
-import { isDevelopment } from "./consts";
+import { exposedWindow, isDevelopment } from "./consts";
 import { hookContext, mirrorAttributes } from "./hook";
 import tokenConfig, { DIYStage } from "./tokenConfig";
 
@@ -63,7 +63,7 @@ export function fetchWASM() {
 }
 
 export const gameLoad = new Promise<void>((resolveGameLoad) =>
-  hookContext(unsafeWindow as unknown as typeof globalThis, (context) => {
+  hookContext(exposedWindow, (context) => {
     const { fetch } = context;
 
     // use short-hand method so .prototype isn't created

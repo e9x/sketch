@@ -1,5 +1,5 @@
 import KrunkBox, { ProcessTokenErrors } from "../KrunkBox";
-import { linkvertiseURL } from "../consts";
+import { isNode, linkvertiseURL } from "../consts";
 import tokenConfig from "../tokenConfig";
 
 const badToken =
@@ -28,7 +28,9 @@ export default function KeyBeg({ done }: { done: (token: string) => void }) {
             KrunkBox.generateTmpToken(abort.current.signal)
               .then((tmpToken) => {
                 tokenConfig.set("tmpToken", tmpToken);
-                GM_openInTab(linkvertiseURL, { active: true });
+                if (isNode)
+                  require("electron").shell.openExternal(linkvertiseURL);
+                else GM_openInTab(linkvertiseURL, { active: true });
               })
               .catch(() => {
                 //

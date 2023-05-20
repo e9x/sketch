@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { isDevelopment } from "./consts";
+import { exposedWindow, isDevelopment } from "./consts";
 import type Game from "./krunker/Game";
 import type MapObjectModule from "./krunker/Object";
 import type { Player } from "./krunker/Player";
@@ -236,7 +236,7 @@ export function matchModule(module: Module) {
 if (isDevelopment) {
   console.trace("DEV");
 
-  Object.assign(unsafeWindow, {
+  Object.assign(exposedWindow, {
     getGame,
     getRender,
     getLocalPlayer,

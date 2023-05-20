@@ -2,7 +2,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "target": "ESNext",
-    "types": ["tampermonkey"],
+    "types": ["tampermonkey", "node"],
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "baseUrl": "src",
     "strict": true,

@@ -1,5 +1,6 @@
 import type { DataHook } from "./Config";
 import Config, { useConfig } from "./Config";
+import { getStorage } from "./consts";
 
 export enum DIYStage {
   false,
@@ -34,7 +35,7 @@ const defaultConfig: TokenConfig = {
   tmpToken: "",
 };
 
-const tokenConfig = new Config<TokenConfig>(defaultConfig);
+const tokenConfig = new Config<TokenConfig>(defaultConfig, getStorage());
 
 export const useTokenConfig = <K extends keyof TokenConfig>(
   key: K

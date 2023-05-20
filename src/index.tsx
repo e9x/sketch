@@ -8,13 +8,20 @@ import { triggerbotHook } from "./cheats/triggerbot";
 import KeyBeg from "./components/KeyBeg";
 import NotUpdated from "./components/NotUpdated";
 import Outdated from "./components/Outdated";
-import { isKrunker, sketchVersion, supportedGame } from "./consts";
+import {
+  isDevelopment,
+  isKrunker,
+  isNode,
+  sketchVersion,
+  supportedGame,
+} from "./consts";
 import { matchModule, getLocalPlayer, getRender } from "./filters";
 import type { Module } from "./filters";
 import { getInit, gameLoad, fetchWASM } from "./inject";
 import { sketchButton } from "./menu/createUI";
 import sketchConfig from "./sketchConfig";
 import tokenConfig from "./tokenConfig";
+import { waitFor } from "./util";
 
 aimbotHook();
 bhopHook();
@@ -76,6 +83,21 @@ const hook = (dataArg: string, src: string) => {
 
 if (isKrunker) {
   checkHash();
+  if (isNode) {
+    for (const url of [
+      `https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.${
+        isDevelopment ? "development" : "production"
+      }.min.js`,
+      `https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.${
+        isDevelopment ? "development" : "production"
+      }.min.js`,
+    ]) {
+      const http = new XMLHttpRequest();
+      http.open("GET", url, false);
+      http.send();
+      new Function(http.responseText)();
+    }
+  }
   main();
 }
 
@@ -95,7 +117,9 @@ function newRoot() {
 
   const root = ReactDOM.createRoot(overlay);
 
-  document.documentElement.append(overlay);
+  waitFor(() => document.documentElement, 10).then((dom) =>
+    dom.append(overlay)
+  );
 
   return { root, overlay };
 }
