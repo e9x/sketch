@@ -13,7 +13,7 @@ export interface JSONStorage {
 
 export class FSJSONStorage implements JSONStorage {
   private path: string;
-  db: Map<string, string>;
+  db: Map<string, unknown>;
   private save() {
     require("fs").writeFileSync(
       this.path,
@@ -33,12 +33,12 @@ export class FSJSONStorage implements JSONStorage {
     }
   }
   setValue(name: string, value: any): void {
-    this.db.set(name, JSON.stringify(value));
+    this.db.set(name, value);
     this.save();
   }
   getValue<TValue>(name: string, defaultValue?: TValue): TValue {
     if (!this.db.has(name)) return defaultValue!;
-    return JSON.parse(this.db.get(name) as string) as TValue;
+    return this.db.get(name) as TValue;
   }
   deleteValue(name: string): void {
     this.db.delete(name);
