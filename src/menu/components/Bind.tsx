@@ -1,12 +1,44 @@
 import { getKeyCode, getKeyName } from "../../keys";
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
+import type { ChangeEventHandler } from "react";
 
 export interface BindProps {
   bind: number;
   reset: () => void;
   unbind: () => void;
   setBind: (bind: number) => void;
+}
+
+export interface BindModeProps {
+  value?: string;
+  defaultValue?: string;
+  onChange?: ChangeEventHandler<HTMLSelectElement>;
+}
+
+export enum BindMode {
+  toggle = "toggle",
+  hold = "hold",
+}
+
+export function BindModePicker({
+  value,
+  defaultValue,
+  onChange,
+}: BindModeProps) {
+  return (
+    <div style={{ float: "right" }}>
+      <select
+        className="inputGrey2"
+        value={value}
+        defaultValue={defaultValue}
+        onChange={onChange}
+      >
+        <option value={BindMode.toggle}>Press (Toggle)</option>,
+        <option value={BindMode.hold}>Continuous (Hold)</option>
+      </select>
+    </div>
+  );
 }
 
 export function Bind({ bind, reset, unbind, setBind }: BindProps) {
@@ -61,6 +93,7 @@ export function Bind({ bind, reset, unbind, setBind }: BindProps) {
 
 export interface BindHolderProps extends BaseControlProps {
   children: React.ReactNode;
+  modePicker?: React.ReactNode;
 }
 
 export default function BindHolder({
@@ -68,6 +101,7 @@ export default function BindHolder({
   attention,
   description,
   children,
+  modePicker,
 }: BindHolderProps) {
   const betweens: React.ReactNode[] = [];
 
@@ -81,6 +115,7 @@ export default function BindHolder({
 
   return (
     <Control title={title} attention={attention} description={description}>
+      {modePicker}
       {betweens}
     </Control>
   );
