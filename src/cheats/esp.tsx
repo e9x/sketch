@@ -265,12 +265,18 @@ export function espHook() {
     return materials;
   };
 
-  const generateTracer = () => {
+  interface Line {
+    line: THREE.Line<
+      THREE.BufferGeometry<THREE.NormalBufferAttributes>,
+      THREE.Material | THREE.Material[]
+    >;
+    buffer: THREE.BufferAttribute;
+  }
+
+  const generateLine = (points: number) => {
     const game = getGame();
     const render = getRender();
     const materials = getMaterials();
-
-    const points = 3;
 
     // geometry
     const geometry = new game.THREE.BufferGeometry();
@@ -290,10 +296,10 @@ export function espHook() {
 
     line.frustumCulled = false;
 
-    return { line, buffer };
+    return { line, buffer } as Line;
   };
 
-  const tracerMap = new Map<Player, ReturnType<typeof generateTracer>>();
+  const tracerMap = new Map<Player, Line>();
 
   preRenderHooks.push(() => {
     const game = getGame();
@@ -306,8 +312,6 @@ export function espHook() {
     const menus = isInMenus();
     const tracers = sketchConfig.get("tracers");
 
-    // tracers
-    // overlay.ctx.save();
     for (const [entity, data] of tracerMap) {
       if (!tracers || menus || !canESP(entity)) {
         render.scene.remove(data.line);
@@ -328,9 +332,9 @@ export function espHook() {
         if (canESP(entity) && entity.objInstances) {
           if (!entityAlive(entity)) continue;
 
-          if (!tracerMap.has(entity)) tracerMap.set(entity, generateTracer());
+          if (!tracerMap.has(entity)) tracerMap.set(entity, generateLine(3));
 
-          const { line, buffer } = tracerMap.get(entity)!;
+          const { line, buffer } = tracerMap.get(entity) as Line;
 
           const eP = entity.objInstances.position;
 
