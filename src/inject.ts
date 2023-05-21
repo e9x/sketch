@@ -24,7 +24,15 @@ export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
         {
           const diyToken = tokenConfig.get("diyToken");
           if (!diyToken) throw new TypeError("No token");
-          token = diyToken;
+          const interval = Date.now() - diyToken[1];
+          if (interval < 60e3 * 2) {
+            tokenConfig.delete("diyToken");
+            tokenConfig.delete("diy");
+            location.reload();
+            return;
+          }
+
+          token = diyToken[0];
           tokenConfig.delete("diyToken");
           tokenConfig.delete("diy");
         }

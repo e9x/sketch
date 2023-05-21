@@ -16,7 +16,7 @@ export enum DIYStage {
 
 export interface TokenConfig {
   diy?: DIYStage;
-  diyToken?: string;
+  diyToken?: [token: string, date: number];
   tmpToken: string;
   token?: string;
   /*
@@ -35,7 +35,21 @@ const defaultConfig: TokenConfig = {
   tmpToken: "",
 };
 
-const tokenConfig = new Config<TokenConfig>(defaultConfig, getStorage());
+const storage = getStorage();
+
+{
+  interface OldTokenConfig {
+    diy?: DIYStage;
+    diyToken?: [token: string, date: number] | string;
+  }
+
+  const oldTokenConfig = new Config<OldTokenConfig>(defaultConfig, storage);
+
+  if (!Array.isArray(oldTokenConfig.get("diyToken")))
+    oldTokenConfig.delete("diyToken");
+}
+
+const tokenConfig = new Config<TokenConfig>(defaultConfig, storage);
 
 export const useTokenConfig = <K extends keyof TokenConfig>(
   key: K
