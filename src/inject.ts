@@ -23,9 +23,17 @@ export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
       case DIYStage.ready:
         {
           const diyToken = tokenConfig.get("diyToken");
-          if (!diyToken) throw new TypeError("No token");
+
+          if (!diyToken) {
+            tokenConfig.delete("diyToken");
+            tokenConfig.delete("diy");
+            location.reload();
+            return;
+          }
+
           const interval = Date.now() - diyToken[1];
-          if (interval < 60e3 * 2) {
+
+          if (interval > 60e3 * 2) {
             tokenConfig.delete("diyToken");
             tokenConfig.delete("diy");
             location.reload();
@@ -98,7 +106,7 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
                   ...validationToken.split("").map((e) => e.charCodeAt(0) + 10)
                 );
 
-                tokenConfig.set("diyToken", diyToken);
+                tokenConfig.set("diyToken", [diyToken, Date.now()]);
                 tokenConfig.set("diy", DIYStage.ready);
                 location.reload();
                 // eslint-disable-next-line @typescript-eslint/no-empty-function

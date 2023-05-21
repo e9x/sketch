@@ -45,8 +45,10 @@ const storage = getStorage();
 
   const oldTokenConfig = new Config<OldTokenConfig>(defaultConfig, storage);
 
-  if (!Array.isArray(oldTokenConfig.get("diyToken")))
-    oldTokenConfig.delete("diyToken");
+  const diyToken = oldTokenConfig.get("diyToken");
+
+  // migrate
+  if (typeof diyToken === "string") oldTokenConfig.delete("diyToken");
 }
 
 const tokenConfig = new Config<TokenConfig>(defaultConfig, storage);
