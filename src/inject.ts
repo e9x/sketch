@@ -28,7 +28,7 @@ export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
             tokenConfig.delete("diyToken");
             tokenConfig.delete("diy");
             location.reload();
-            return;
+            return APIError.DIY;
           }
 
           const interval = Date.now() - diyToken[1];
@@ -37,7 +37,7 @@ export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
             tokenConfig.delete("diyToken");
             tokenConfig.delete("diy");
             location.reload();
-            return;
+            return APIError.DIY;
           }
 
           token = diyToken[0];
