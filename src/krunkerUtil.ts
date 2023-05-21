@@ -265,7 +265,11 @@ export function smoothnessMultiplier(smoothFactor: number) {
   if (smoothFactor < 0 || smoothFactor > 1) {
     throw new Error("Smooth factor must be between 0.0 and 1.0");
   }
-  return 1 - 0.99 * smoothFactor;
+  // Map the smoothFactor from [0, 1] to a logarithmic scale between [-Infinity, 0].
+  const logSmoothFactor = Math.log10(smoothFactor * 9 + 1) - 1;
+
+  // Map the logarithmic scale back to [0, 1], but now the curve will be smoother.
+  return 1 - Math.max((1 + logSmoothFactor) * 0.99, 0);
 }
 
 export function lerp(
