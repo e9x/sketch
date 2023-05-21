@@ -5,6 +5,22 @@ import type Terrain from "./Terrain";
 import type classes from "./classes";
 import type THREE from "three";
 
+interface SpawnPoint {
+  comp: boolean;
+  dir: number;
+  spread: number;
+  team: number;
+  teamOnly: boolean;
+  x: number;
+  y: number;
+  z: number;
+  /**
+   * Set by calling getSpawnPoint()
+   * SERVER
+   */
+  dst?: number;
+}
+
 declare class Game {
   constructor(...args: unknown[]);
   AI: AIManager;
@@ -22,6 +38,7 @@ declare class Game {
     manager: {
       objects: MapObject[];
     };
+    spawns: SpawnPoint[];
   };
   latestData: boolean;
   isComp: boolean;
@@ -59,6 +76,12 @@ declare class Game {
     getShort?: boolean | undefined,
     doRamps?: boolean | undefined
   ): false | number | null;
+  getSpawnPoint(
+    team?: number,
+    player?: Player,
+    pickFirstSpawn?: boolean,
+    noWaitTimers?: boolean
+  ): SpawnPoint;
   get isServer(): boolean;
   get tmpPlayer(): Player | null;
 }
