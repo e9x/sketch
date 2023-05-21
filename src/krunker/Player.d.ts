@@ -1,3 +1,4 @@
+import type Game from "./Game";
 import type THREE from "three";
 
 interface Weapon {
@@ -111,6 +112,12 @@ export declare class Player {
   landBobY: number;
   recoilAnimY: number;
   weapon: Weapon;
+  procInputs(
+    inputs: number[],
+    game: Game,
+    recon: boolean,
+    moveLock?: boolean
+  ): void;
 }
 
 export declare class manager {

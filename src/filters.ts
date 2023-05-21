@@ -9,6 +9,7 @@ import type MapObjectModule from "./krunker/Object";
 import type { Player } from "./krunker/Player";
 import type RenderManager from "./krunker/RenderManager";
 import type configModule from "./krunker/config";
+import type * as ioModule from "./krunker/io";
 import type * as Overlay from "./krunker/overlay";
 import sketchConfig from "./sketchConfig";
 
@@ -42,7 +43,12 @@ export function getLocalPlayer() {
   return localPlayer;
 }
 
-export const inputHooks: ((inputs: number[]) => void)[] = [];
+/**
+ * When the result of the hook is false, inputs will be blocked
+ */
+export const inputHooks: ((inputs: number[]) => boolean | void)[] = [];
+
+let blockedInputs = false;
 
 function doGameHooks() {
   const { add } = getGame().players;
@@ -52,15 +58,43 @@ function doGameHooks() {
 
     if (player.isYou) localPlayer = player;
 
+    const { procInputs } = player;
+
+    player.procInputs = function (...args) {
+      if (blockedInputs) return;
+      return procInputs.call(this, ...args);
+    };
+
     return player;
   };
 
   const { push } = getGame().controls.tmpInpts;
 
+  /*
+  Order of calls:
+
+  tmpInpts.push()
+  player.procInputs()
+  io.send('q')
+  */
+
   getGame().controls.tmpInpts.push = function (inputs) {
-    if (localPlayer) for (const hook of inputHooks) hook(inputs);
+    if (localPlayer)
+      for (const hook of inputHooks)
+        if (hook(inputs) === false) {
+          blockedInputs = true;
+          return 0;
+        }
+
     return push.call(this, inputs);
   };
+
+  ioHooks.push((packet) => {
+    if (packet === "q" && blockedInputs) {
+      blockedInputs = false;
+      return false;
+    }
+  });
 }
 
 matchers.push((module: Module<typeof Game>) => {
@@ -227,6 +261,39 @@ matchers.push((module: Module<typeof configModule>) => {
     return;
 
   config = module.exports;
+});
+
+/**
+ * When the result of the hook is false, inputs will be blocked
+ */
+export const ioHooks: ((packet: string, data: any[]) => boolean | void)[] = [];
+
+let io: typeof ioModule | undefined;
+
+export function getIO() {
+  if (!io) throw new Error("Too early");
+  return io;
+}
+
+function doIOHooks() {
+  const { send } = getIO();
+
+  getIO().send = function (packet, ...data) {
+    for (const hook of ioHooks) if (hook(packet, data) === false) return;
+    return send.call(this, packet, ...data);
+  };
+}
+
+matchers.push((module: Module<typeof ioModule>) => {
+  if (
+    typeof module.exports !== "object" ||
+    module.exports === null ||
+    !("ahNum" in module.exports)
+  )
+    return;
+
+  io = module.exports;
+  doIOHooks();
 });
 
 export function matchModule(module: Module) {

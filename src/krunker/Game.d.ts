@@ -47,6 +47,7 @@ declare class Game {
   players: manager;
   config: {
     fiRat?: number;
+    movDrP?: number;
   };
   raycaster: THREE.Raycaster;
   controls: {

@@ -87,3 +87,5 @@ export declare const camChaseTrn: number;
 export declare const camChaseSpd: number;
 
 export declare const dltMx: number;
+
+export declare const movDirs: number[];
