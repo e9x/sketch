@@ -21,9 +21,13 @@ export default class KrunkBox {
   // delete tmp tokens after 10 minutes
   static async generateTmpToken(signal?: AbortSignal) {
     while (true) {
-      const res = await fetch(new URL("hi", apiURL).toString(), { signal });
+      const res = await fetch(new URL("hi", apiURL).toString(), {
+        signal,
+      }).catch((err) => {
+        if (isDevelopment) console.error(err);
+      });
 
-      if (!res.ok) {
+      if (!res?.ok) {
         // server error, try again in some
         if (isDevelopment) console.warn("Server error, trying again in 3s");
         await sleep(3e3);
@@ -41,12 +45,14 @@ export default class KrunkBox {
           "content-type": "application/json",
         },
         body: JSON.stringify([accessKey, tmpToken]),
+      }).catch((err) => {
+        if (isDevelopment) console.error(err);
       });
 
-      if (res.status === 400) return ProcessTokenErrors.BadToken;
-      if (res.status === 402) return ProcessTokenErrors.BadToken;
+      if (res?.status === 400) return ProcessTokenErrors.BadToken;
+      if (res?.status === 402) return ProcessTokenErrors.BadToken;
 
-      if (!res.ok) {
+      if (!res?.ok) {
         // server error, try again in some
         if (isDevelopment) console.warn("Server error, trying again in 3s");
         await sleep(3e3);
@@ -65,15 +71,17 @@ export default class KrunkBox {
           "content-type": "application/json",
         },
         body: JSON.stringify({ currentVersion, supportedGame }),
+      }).catch((err) => {
+        if (isDevelopment) console.error(err);
       });
 
-      if (res.status === 425) {
+      if (res?.status === 425) {
         if (isDevelopment) console.warn("Too early, trying again in 3s");
         await sleep(3e3);
         continue;
       }
 
-      if (!res.ok) {
+      if (!res?.ok) {
         // server error, try again in some
         if (isDevelopment) console.warn("Server error, trying again in 3s");
         await sleep(3e3);
@@ -116,18 +124,20 @@ export default class KrunkBox {
           // doesn't get rotated here due to source() and hash() being called at the same time
           "x-token": this.token,
         },
+      }).catch((err) => {
+        if (isDevelopment) console.error(err);
       });
 
-      if (res.status === 402) return APIError.BadToken;
+      if (res?.status === 402) return APIError.BadToken;
 
       // has not been minified/processed yet
-      if (res.status === 404) {
+      if (res?.status === 404) {
         if (isDevelopment) console.warn("Too early, trying again in 3s");
         await sleep(3e3);
         continue;
       }
 
-      if (!res.ok) {
+      if (!res?.ok) {
         // server error, try again in some
         if (isDevelopment) console.warn("Server error, trying again in 3s");
         await sleep(3e3);
@@ -145,18 +155,20 @@ export default class KrunkBox {
           // doesn't get rotated here due to source() and hash() being called at the same time
           "x-token": this.token,
         },
+      }).catch((err) => {
+        if (isDevelopment) console.error(err);
       });
 
-      if (res.status === 402) return APIError.BadToken;
+      if (res?.status === 402) return APIError.BadToken;
 
       // has not been minified/processed yet
-      if (res.status === 404) {
+      if (res?.status === 404) {
         if (isDevelopment) console.warn("Too early, trying again in 3s");
         await sleep(3e3);
         continue;
       }
 
-      if (!res.ok) {
+      if (!res?.ok) {
         // server error, try again in some
         if (isDevelopment) console.warn("Server error, trying again in 3s");
         await sleep(3e3);
@@ -177,14 +189,16 @@ export default class KrunkBox {
         headers: {
           "content-type": "text/plain",
         },
+      }).catch((err) => {
+        if (isDevelopment) console.error(err);
       });
 
-      if (res.status === 402) {
+      if (res?.status === 402) {
         this.token = undefined;
         return false;
       }
 
-      if (!res.ok) {
+      if (!res?.ok) {
         // server error, try again in some
         if (isDevelopment) console.warn("Server error, trying again in 3s");
         await sleep(3e3);
