@@ -265,7 +265,7 @@ export function espHook() {
     return materials;
   };
 
-  const generateLine = () => {
+  const generateTracer = () => {
     const game = getGame();
     const render = getRender();
     const materials = getMaterials();
@@ -293,7 +293,7 @@ export function espHook() {
     return { line, buffer };
   };
 
-  const lineMap = new Map<Player, ReturnType<typeof generateLine>>();
+  const tracerMap = new Map<Player, ReturnType<typeof generateTracer>>();
 
   preRenderHooks.push(() => {
     const game = getGame();
@@ -308,10 +308,10 @@ export function espHook() {
 
     // tracers
     // overlay.ctx.save();
-    for (const [entity, data] of lineMap) {
+    for (const [entity, data] of tracerMap) {
       if (!tracers || menus || !canESP(entity)) {
         render.scene.remove(data.line);
-        lineMap.delete(entity);
+        tracerMap.delete(entity);
       }
     }
 
@@ -328,9 +328,9 @@ export function espHook() {
         if (canESP(entity) && entity.objInstances) {
           if (!entityAlive(entity)) continue;
 
-          if (!lineMap.has(entity)) lineMap.set(entity, generateLine());
+          if (!tracerMap.has(entity)) tracerMap.set(entity, generateTracer());
 
-          const { line, buffer } = lineMap.get(entity)!;
+          const { line, buffer } = tracerMap.get(entity)!;
 
           const eP = entity.objInstances.position;
 
