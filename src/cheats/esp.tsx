@@ -315,7 +315,15 @@ export function espHook() {
       }
     }
 
-    if (tracers && !menus)
+    if (tracers && !menus) {
+      const direction = new render.THREE.Vector3();
+      const position = game.controls.object.position;
+
+      render.camera.getWorldDirection(direction);
+
+      // Move the starting point slightly forward from the camera's position
+      const startPoint = position.clone().add(direction);
+
       for (const entity of game.players.list) {
         if (canESP(entity) && entity.objInstances) {
           if (!entityAlive(entity)) continue;
@@ -324,15 +332,7 @@ export function espHook() {
 
           const { line, buffer } = lineMap.get(entity)!;
 
-          const direction = new render.THREE.Vector3();
-          const position = game.controls.object.position;
-
-          render.camera.getWorldDirection(direction);
-
           const eP = entity.objInstances.position;
-
-          // Move the starting point slightly forward from the camera's position
-          const startPoint = position.clone().add(direction);
 
           line.material = getEntityMaterial(entity, materials.line);
 
@@ -350,6 +350,7 @@ export function espHook() {
           buffer.needsUpdate = true;
         }
       }
+    }
   });
 
   overlayRenderHooks.push(() => {
