@@ -25,10 +25,12 @@
     "eslint": "^8.40.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-import": "^2.27.5",
+    "javascript-obfuscator": "^4.0.2",
     "prettier": "^2.8.8",
     "rollup": "^3.21.5",
     "rollup-plugin-banner2": "^1.2.2",
     "rollup-plugin-esbuild": "^5.0.0",
+    "rollup-plugin-obfuscator": "^1.0.3",
     "rollup-plugin-serve": "^2.0.2",
     "rollup-plugin-userscript-metablock": "^0.3.3",
     "typescript": "^5.0.4"

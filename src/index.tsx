@@ -53,6 +53,7 @@ const hook = (dataArg: string, src: string) => {
 
   const genericAdsArray = [...Array(64)].fill(0);
 
+  /* javascript-obfuscator:disable */
   return {
     data: {
       get noAdsFovMlt() {
@@ -79,6 +80,7 @@ const hook = (dataArg: string, src: string) => {
     },
     src,
   };
+  /* javascript-obfuscator:enable */
 };
 
 if (isKrunker) {
@@ -173,7 +175,9 @@ async function main() {
 
     const krunkbox = new KrunkBox(token);
 
-    const game = await getInit(krunkbox, hook);
+    const game = (await krunkbox.valid())
+      ? await getInit(krunkbox, hook)
+      : APIError.BadToken;
 
     if (game === APIError.BadToken) {
       tokenConfig.delete("token");
