@@ -50,7 +50,10 @@ declare class Game {
     movDrP?: number;
   };
   raycaster: THREE.Raycaster;
+  isSandbox: boolean;
   controls: {
+    isn: number;
+    getISN(): number;
     keys: Record<string, 0 | 1>;
     binds: unknown;
     spect: { target?: Player };

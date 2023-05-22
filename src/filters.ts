@@ -61,7 +61,10 @@ function doGameHooks() {
     const { procInputs } = player;
 
     player.procInputs = function (...args) {
-      if (blockedInputs) return;
+      if (blockedInputs) {
+        if (getGame().isSandbox) blockedInputs = false;
+        return;
+      }
       return procInputs.call(this, ...args);
     };
 
@@ -309,5 +312,6 @@ if (isDevelopment) {
     getLocalPlayer,
     getOverlay,
     getConfig,
+    getIO,
   });
 }
