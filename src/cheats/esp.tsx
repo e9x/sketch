@@ -1,4 +1,4 @@
-import { exposedWindow } from "../consts";
+import { getExposedWindow } from "../consts";
 import {
   getConfig,
   getGame,
@@ -80,7 +80,7 @@ function canESP(entity: Player | AI) {
     (entity.isPlayer
       ? !entity.isYou && game.players.list.includes(entity)
       : game.AI.ais.includes(entity)) &&
-    (!exposedWindow.spectating || game.controls.spect.target !== entity)
+    (!getExposedWindow().spectating || game.controls.spect.target !== entity)
   );
 }
 

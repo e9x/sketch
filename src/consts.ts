@@ -29,7 +29,7 @@ export const docsURL = "https://sketch.sys32.dev/";
 
 export const isDevelopment = process.env.NODE_ENV !== "production";
 
-export const isNode = /* @__PURE__ */ typeof require === "function";
+export const isNode = typeof require === "function";
 
 export function getStorage() {
   if (isNode)
@@ -39,9 +39,9 @@ export function getStorage() {
   else return new GMJSONStorage();
 }
 
-export const exposedWindow = (
-  isNode ? window : unsafeWindow
-) as typeof globalThis;
+export function getExposedWindow() {
+  return (isNode ? window : unsafeWindow) as typeof globalThis;
+}
 
 export const isKrunker = location.hostname === "krunker.io";
 

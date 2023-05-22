@@ -9,7 +9,7 @@
 // JSON.parse("1", () => { console.log("Got you:", new Error().stack); })
 // Object.create(() => { }, new Proxy({}, { ownKeys: () => { console.log("Got you:", new Error().stack); } }))
 
-import { exposedWindow } from "../consts";
+import { getExposedWindow } from "../consts";
 import { hookContext, mirrorAttributes } from "../hook";
 import type Game from "../krunker/Game";
 import { hookInputs } from "./inputs";
@@ -120,7 +120,7 @@ mBuffer.prototype = Object.create(p_Buffer.prototype);
 
 // const freak = Reflect.construct(Image, [], HTMLDocument)??
 
-hookContext(exposedWindow, (context) => {
+hookContext(getExposedWindow(), (context) => {
   const { Image } = context;
 
   const HookedImage = new Function(
