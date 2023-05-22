@@ -56,7 +56,7 @@ const options = defineConfig([
     input: "./src/tracker/index.tsx",
     output: {
       file: fileURLToPath(new URL("dist/tracker.user.js", import.meta.url)),
-      format: "cjs",
+      format: "iife",
       sourcemap: "hidden",
       sourcemapPathTransform: transformerFactory("tracker"),
     },
@@ -92,7 +92,7 @@ const options = defineConfig([
             file: fileURLToPath(
               new URL("dist/tracker.DEV.user.js", import.meta.url)
             ),
-            format: "cjs",
+            format: "iife",
             sourcemapPathTransform: transformerFactory("tracker-loader"),
           },
           plugins: [
@@ -126,7 +126,7 @@ const options = defineConfig([
     input: "./src/index.tsx",
     output: {
       file: fileURLToPath(new URL("dist/sketch.user.js", import.meta.url)),
-      format: "cjs",
+      format: "iife",
       sourcemap: "hidden",
       sourcemapPathTransform: transformerFactory("main"),
     },
@@ -185,7 +185,7 @@ const options = defineConfig([
             file: fileURLToPath(
               new URL("dist/sketch.DEV.user.js", import.meta.url)
             ),
-            format: "cjs",
+            format: "iife",
             sourcemapPathTransform: transformerFactory("main-loader"),
           },
           plugins: [
