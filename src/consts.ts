@@ -29,7 +29,7 @@ export const docsURL = "https://sketch.sys32.dev/";
 
 export const isDevelopment = process.env.NODE_ENV !== "production";
 
-export const isNode = typeof require === "function";
+export const isNode = /* @__PURE__ */ typeof require === "function";
 
 export function getStorage() {
   if (isNode)
