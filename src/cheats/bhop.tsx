@@ -31,7 +31,7 @@ export function bhopHook() {
   let bhopStart = 0;
 
   // average recorded natural interval
-  const bhopDelay = 170;
+  const bhopDelay = 135;
 
   inputHooks.push((inputs) => {
     const localPlayer = getLocalPlayer();
