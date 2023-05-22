@@ -291,3 +291,32 @@ export function getOverlaySizeScaled() {
     height: innerHeight / overlay.scale,
   };
 }
+
+export function isMesh(e: THREE.Object3D): e is THREE.Mesh {
+  return e.type === "Mesh";
+}
+
+export function getPlayerMeshes(player: Player) {
+  const meshes: THREE.Mesh[] = [];
+
+  for (const mesh of player.legMeshes) meshes.push(mesh);
+  for (const mesh of player.mergedArmMeshes) meshes.push(mesh);
+  for (const e of player.weaponMeshes)
+    for (const mesh of e.children) meshes.push(mesh);
+  if (player.headObj) meshes.push(player.headObj);
+  if (player.lowerBody)
+    for (const e of player.lowerBody.children)
+      if (e.name === "body" && isMesh(e)) meshes.push(e);
+  for (const e of player.shoeMeshes)
+    for (const mesh of e.children) meshes.push(mesh);
+  if (player.bodyMesh)
+    for (const mesh of player.bodyMesh.children) meshes.push(mesh);
+  if (player.headMesh)
+    for (const mesh of player.headMesh.children) meshes.push(mesh);
+  if (player.faceMesh)
+    for (const mesh of player.faceMesh.children) meshes.push(mesh);
+  if (player.backMesh)
+    for (const mesh of player.backMesh.children) meshes.push(mesh);
+
+  return meshes;
+}

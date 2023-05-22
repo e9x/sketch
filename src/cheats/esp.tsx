@@ -12,6 +12,7 @@ import type { Player } from "../krunker/Player";
 import {
   entityAlive,
   getOverlaySizeScaled,
+  getPlayerMeshes,
   isEnemy,
   isInMenus,
   playerPos,
@@ -146,10 +147,6 @@ function playerBox(entity: Player | AI) {
       minHeight.y
     );
   }
-}
-
-function isMesh(e: THREE.Object3D): e is THREE.Mesh {
-  return e.type === "Mesh";
 }
 
 type MaterialType =
@@ -383,13 +380,15 @@ export function espHook() {
             });
           }
 
-          const doMesh = (e: THREE.Mesh) => {
-            if (hookedMeshes.has(e)) return;
-            hookedMeshes.add(e);
+          // Just manually select the meshes to hook
+          // Much faster than calling traverse()
+          for (const mesh of getPlayerMeshes(entity)) {
+            if (hookedMeshes.has(mesh)) continue;
+            hookedMeshes.add(mesh);
 
-            let { material } = e;
+            let { material } = mesh;
 
-            Object.defineProperty(e, "material", {
+            Object.defineProperty(mesh, "material", {
               get: () =>
                 sketchConfig.get("chams") && !isInMenus() && canESP(entity)
                   ? getEntityMaterial(entity, materials.mesh)
@@ -398,28 +397,7 @@ export function espHook() {
                 material = newMaterial;
               },
             });
-          };
-
-          // Just manually select the meshes to hook
-          // Much faster than calling traverse()
-          for (const mesh of entity.legMeshes) doMesh(mesh);
-          for (const mesh of entity.mergedArmMeshes) doMesh(mesh);
-          for (const e of entity.weaponMeshes)
-            for (const mesh of e.children) doMesh(mesh);
-          if (entity.headObj) doMesh(entity.headObj);
-          if (entity.lowerBody)
-            for (const e of entity.lowerBody.children)
-              if (e.name === "body" && isMesh(e)) doMesh(e);
-          for (const e of entity.shoeMeshes)
-            for (const mesh of e.children) doMesh(mesh);
-          if (entity.bodyMesh)
-            for (const mesh of entity.bodyMesh.children) doMesh(mesh);
-          if (entity.headMesh)
-            for (const mesh of entity.headMesh.children) doMesh(mesh);
-          if (entity.faceMesh)
-            for (const mesh of entity.faceMesh.children) doMesh(mesh);
-          if (entity.backMesh)
-            for (const mesh of entity.backMesh.children) doMesh(mesh);
+          }
         }
       }
 
