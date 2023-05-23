@@ -5,6 +5,9 @@ import tokenConfig from "../tokenConfig";
 const badToken =
   "Bad access key. If you just received an access key, try getting another one in 8 minutes.";
 
+const didntClickLink =
+  'Bad access key. Make sure you\'re opening the "Get a free access key" link from this website/client.';
+
 export default function KeyBeg({ done }: { done: (token: string) => void }) {
   const abort = React.useRef(new AbortController());
   const key = React.useRef<HTMLInputElement | null>(null);
@@ -62,7 +65,7 @@ export default function KeyBeg({ done }: { done: (token: string) => void }) {
 
               switch (res) {
                 case ProcessTokenErrors.BadToken:
-                  setError(badToken);
+                  setError(tmpToken === "" ? didntClickLink : badToken);
                   break;
                 default:
                   done(res);
