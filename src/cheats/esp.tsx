@@ -406,7 +406,7 @@ export function espHook() {
       overlay.ctx.scale(overlay.scale, overlay.scale);
 
       for (const entity of [...game.players.list, ...game.AI.ais]) {
-        if (!entityAlive(entity)) continue;
+        if (!canESP(entity)) continue;
 
         const box = playerBox(entity);
 

@@ -128,6 +128,8 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
 function validTarget(target: Player | AI) {
   if (!entityAlive(target)) return false;
 
+  if (target.isPlayer && target.isYou) return false;
+
   if (!isEnemy(target)) return false;
 
   if (!target.canBSeen) return false;

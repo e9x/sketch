@@ -112,10 +112,6 @@ export function pos2D(input: THREE.Vector3, offsetY = 0) {
 }
 
 export function entityAlive(entity: Player | AI) {
-  if (entity.isPlayer) {
-    if (entity.isYou) return false;
-  }
-
   if (entity.health <= 0) return false;
 
   if (!entity.active) return false;
