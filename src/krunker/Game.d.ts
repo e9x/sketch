@@ -86,6 +86,11 @@ declare class Game {
     pickFirstSpawn?: boolean,
     noWaitTimers?: boolean
   ): SpawnPoint;
+  update(
+    /** mIdleTimer */ fixedDelta: number,
+    now: number,
+    localPlayer: Player
+  ): void;
   get isServer(): boolean;
   get tmpPlayer(): Player | null;
 }
