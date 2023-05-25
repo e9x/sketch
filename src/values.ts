@@ -1,3 +1,5 @@
+import type NodeFS from "fs";
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export interface JSONStorage {
@@ -14,8 +16,9 @@ export interface JSONStorage {
 export class FSJSONStorage implements JSONStorage {
   private path: string;
   db: Map<string, unknown>;
+  fs = require("fs") as typeof NodeFS;
   private save() {
-    require("fs").writeFileSync(
+    this.fs.writeFileSync(
       this.path,
       JSON.stringify(Object.fromEntries(this.db))
     );
@@ -24,9 +27,7 @@ export class FSJSONStorage implements JSONStorage {
     this.path = path;
     try {
       this.db = new Map(
-        Object.entries(
-          JSON.parse(require("fs").readFileSync(this.path, "utf-8"))
-        )
+        Object.entries(JSON.parse(this.fs.readFileSync(this.path, "utf-8")))
       );
     } catch {
       this.db = new Map();
