@@ -30,7 +30,7 @@ export function bhopHook() {
   let bhopTimer = 0;
   let bhopStart = 0;
 
-  const bhopDelay = 110;
+  const bhopDelay = 130;
 
   inputHooks.push((inputs) => {
     const localPlayer = getLocalPlayer();
