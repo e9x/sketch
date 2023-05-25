@@ -15,10 +15,6 @@ import type THREE from "three";
 // optimize call (tampermonkey is slow)
 const { Math, document } = window;
 
-export function getDistance(x1: number, y1: number, x2: number, y2: number) {
-  return Math.sqrt((x2 -= x1) * x2 + (y2 -= y1) * y2);
-}
-
 export function getD3D(
   x1: number,
   y1: number,
@@ -50,40 +46,6 @@ export function getXDire(
 
 export function getDir(x1: number, y1: number, x2: number, y2: number) {
   return Math.atan2(y1 - y2, x1 - x2);
-}
-
-export function lineInRect(
-  lx1: number,
-  lz1: number,
-  ly1: number,
-  dx: number,
-  dz: number,
-  dy: number,
-  x1: number,
-  z1: number,
-  y1: number,
-  x2: number,
-  z2: number,
-  y2: number
-) {
-  const t1 = (x1 - lx1) * dx;
-  const t2 = (x2 - lx1) * dx;
-  const t3 = (y1 - ly1) * dy;
-  const t4 = (y2 - ly1) * dy;
-  const t5 = (z1 - lz1) * dz;
-  const t6 = (z2 - lz1) * dz;
-
-  const tmin = Math.max(
-    Math.max(Math.min(t1, t2), Math.min(t3, t4)),
-    Math.min(t5, t6)
-  );
-
-  const tmax = Math.min(
-    Math.min(Math.max(t1, t2), Math.max(t3, t4)),
-    Math.max(t5, t6)
-  );
-
-  return tmax < 0 || tmin > tmax ? false : tmin;
 }
 
 export function getAngleDst(a1: number, a2: number) {
@@ -131,25 +93,6 @@ export function isEnemy(entity: Player | AI) {
   if (entity.team !== localPlayer.team) return true;
 
   return false;
-}
-
-export function progressOnLine(
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-  x3: number,
-  y3: number
-) {
-  let ux = x2 - x1;
-  let uy = y2 - y1;
-  const u2 = Math.sqrt(ux * ux + uy * uy);
-  ux /= u2;
-  uy /= u2;
-  return (
-    (ux * (x3 - x1) + uy * (y3 - y1)) /
-    Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
-  );
 }
 
 export function getAimTime(inputs: number[]) {
