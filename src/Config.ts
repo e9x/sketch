@@ -2,7 +2,7 @@ import type { JSONStorage } from "./values";
 
 export default class Config<Data extends object> {
   defaultConfig: Data;
-  private valueCache = new Map<keyof Data, Data[keyof Data]>();
+  private cache = new Map<keyof Data, Data[keyof Data]>();
   configTarget = new EventTarget();
   private storage: JSONStorage;
   constructor(defaultConfig: Data, storage: JSONStorage) {
@@ -10,18 +10,18 @@ export default class Config<Data extends object> {
     this.storage = storage;
   }
   get<K extends keyof Data>(key: K) {
-    if (this.valueCache.has(key)) return this.valueCache.get(key) as Data[K];
+    if (this.cache.has(key)) return this.cache.get(key) as Data[K];
     const value = this.storage.getValue(key as string, this.defaultConfig[key]);
-    this.valueCache.set(key, value);
+    this.cache.set(key, value);
     return value;
   }
   set<K extends keyof Data>(key: K, value: Data[K]) {
-    this.valueCache.set(key, value);
+    this.cache.set(key, value);
     this.storage.setValue(key as string, value);
     this.configTarget.dispatchEvent(new Event(key as string));
   }
   delete(key: keyof Data) {
-    this.valueCache.delete(key);
+    this.cache.delete(key);
     this.storage.deleteValue(key as string);
     this.configTarget.dispatchEvent(new Event(key as string));
   }
