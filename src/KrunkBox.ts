@@ -15,10 +15,22 @@ export enum APIError {
   DIY,
 }
 
+/**
+ * Sleep after a server error occurred
+ */
+async function sleepError() {
+  // Disable the obfuscator to optimize away isDevelopment
+  /* javascript-obfuscator:disable */
+  if (isDevelopment) console.warn("Server error, trying again in 3s");
+  /* javascript-obfuscator:enable */
+  await sleep(3e3);
+}
+
+// todo: ratelimit based on IP + useragent? too easy
+// delete tmp tokens after 10 minutes
 export default class KrunkBox {
   #token: string | undefined;
-  // todo: ratelimit based on IP + useragent? too easy
-  // delete tmp tokens after 10 minutes
+
   static async generateTmpToken(signal?: AbortSignal) {
     while (true) {
       const res = await fetch(new URL("hi", apiURL).toString(), {
@@ -28,9 +40,7 @@ export default class KrunkBox {
       });
 
       if (!res?.ok) {
-        // server error, try again in some
-        if (isDevelopment) console.warn("Server error, trying again in 3s");
-        await sleep(3e3);
+        await sleepError();
         continue;
       }
 
@@ -53,9 +63,7 @@ export default class KrunkBox {
       if (res?.status === 402) return ProcessTokenErrors.BadToken;
 
       if (!res?.ok) {
-        // server error, try again in some
-        if (isDevelopment) console.warn("Server error, trying again in 3s");
-        await sleep(3e3);
+        await sleepError();
         continue;
       }
 
@@ -76,15 +84,12 @@ export default class KrunkBox {
       });
 
       if (res?.status === 425) {
-        if (isDevelopment) console.warn("Too early, trying again in 3s");
-        await sleep(3e3);
+        await sleepError();
         continue;
       }
 
       if (!res?.ok) {
-        // server error, try again in some
-        if (isDevelopment) console.warn("Server error, trying again in 3s");
-        await sleep(3e3);
+        await sleepError();
         continue;
       }
 
@@ -132,15 +137,12 @@ export default class KrunkBox {
 
       // has not been minified/processed yet
       if (res?.status === 404) {
-        if (isDevelopment) console.warn("Too early, trying again in 3s");
-        await sleep(3e3);
+        await sleepError();
         continue;
       }
 
       if (!res?.ok) {
-        // server error, try again in some
-        if (isDevelopment) console.warn("Server error, trying again in 3s");
-        await sleep(3e3);
+        await sleepError();
         continue;
       }
 
@@ -163,15 +165,12 @@ export default class KrunkBox {
 
       // has not been minified/processed yet
       if (res?.status === 404) {
-        if (isDevelopment) console.warn("Too early, trying again in 3s");
-        await sleep(3e3);
+        await sleepError();
         continue;
       }
 
       if (!res?.ok) {
-        // server error, try again in some
-        if (isDevelopment) console.warn("Server error, trying again in 3s");
-        await sleep(3e3);
+        await sleepError();
         continue;
       }
 
@@ -199,9 +198,7 @@ export default class KrunkBox {
       }
 
       if (!res?.ok) {
-        // server error, try again in some
-        if (isDevelopment) console.warn("Server error, trying again in 3s");
-        await sleep(3e3);
+        await sleepError();
         continue;
       }
 
