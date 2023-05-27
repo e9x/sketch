@@ -1,4 +1,5 @@
 import type AIManager from "./AI";
+import type { AI } from "./AI";
 import type MapObject from "./Object";
 import type { Player, manager } from "./Player";
 import type Terrain from "./Terrain";
@@ -70,7 +71,7 @@ declare class Game {
   sessionId: string;
   store: unknown;
   canSee(
-    player: Player,
+    target: Player | AI,
     x2: number,
     y2: number,
     z2: number,
