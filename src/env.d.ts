@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 /* eslint-disable no-var */
 
+/// <reference types="krunker-ui/window" />
+
 /* eslint-disable no-var */
 interface Process {
   env: Record<string, string>;

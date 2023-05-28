@@ -1,7 +1,7 @@
 import { keyListeners } from "../keys";
 import sketchConfig from "../sketchConfig";
 import Menu from "./Menu";
-import createRenderContainer from "./renderContainer";
+import { createRenderContainer } from "krunker-ui/container";
 
 function sketchWindow() {
   const html = createRenderContainer(() => <Menu />);

@@ -1,9 +1,9 @@
 import { iInputs } from "../consts";
 import { getLocalPlayer, inputHooks } from "../filters";
 import { getAimTime, canShoot, getReload } from "../krunkerUtil";
-import Switch from "../menu/components/Switch";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { random } from "../util";
+import Switch from "krunker-ui/components/Switch";
 
 export function forceAutoHook() {
   let shootTimer = 0;

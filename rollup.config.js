@@ -1,4 +1,5 @@
 import eslint from "@rollup/plugin-eslint";
+import nodeResolve from "@rollup/plugin-node-resolve";
 import replace from "@rollup/plugin-replace";
 import { expand } from "dotenv-expand";
 import { config } from "dotenv-flow";
@@ -154,6 +155,7 @@ const options = defineConfig([
           "optional-chain": false,
         },
       }),
+      nodeResolve(),
       replace({
         "process.env.": "({}).",
         preventAssignment: true,

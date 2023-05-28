@@ -6,12 +6,12 @@ import { RecoilControlMenu } from "../cheats/recoilControl";
 import { TriggerbotMenu } from "../cheats/triggerbot";
 import { discordURL, docsURL, sketchVersion } from "../consts";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
-import Settings from "./Settings";
-import BindHolder, { Bind } from "./components/Bind";
-import Control from "./components/Control";
-import Link from "./components/Link";
-import { HeadlessSet, Set } from "./components/Set";
-import Switch from "./components/Switch";
+import BindHolder, { Bind } from "krunker-ui/components/Bind";
+import Control from "krunker-ui/components/Control";
+import Link from "krunker-ui/components/Link";
+import { HeadlessSet, Set } from "krunker-ui/components/Set";
+import Switch from "krunker-ui/components/Switch";
+import Settings from "krunker-ui/settings";
 
 function downloadFile(fileName: string, fileData: string) {
   const downloadLink = document.createElement("a");
