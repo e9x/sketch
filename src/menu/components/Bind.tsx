@@ -1,7 +1,6 @@
 import { getKeyCode, getKeyName } from "../../keys";
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
-import type { ChangeEventHandler } from "react";
 
 export interface BindProps {
   bind: number;
@@ -13,7 +12,7 @@ export interface BindProps {
 export interface BindModeProps {
   value?: string;
   defaultValue?: string;
-  onChange?: ChangeEventHandler<HTMLSelectElement>;
+  onChange?: React.ChangeEventHandler<HTMLSelectElement>;
 }
 
 export enum BindMode {
