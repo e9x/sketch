@@ -1,5 +1,6 @@
 import type AIManager from "./AI";
 import type { AI } from "./AI";
+import type Controls from "./Controls";
 import type MapObject from "./Object";
 import type { Player, manager } from "./Player";
 import type Terrain from "./Terrain";
@@ -52,18 +53,7 @@ declare class Game {
   };
   raycaster: THREE.Raycaster;
   isSandbox: boolean;
-  controls: {
-    isn: number;
-    getISN(): number;
-    keys: Record<string, 0 | 1>;
-    binds: unknown;
-    spect: { target?: Player };
-    tmpInpts: number[][];
-    object: THREE.Object3D;
-    pchObjc: THREE.Object3D;
-    xDr: number;
-    yDr: number;
-  };
+  controls: Controls;
   ui: {
     loading: boolean;
   };
