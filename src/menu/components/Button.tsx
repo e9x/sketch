@@ -1,9 +1,10 @@
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
+import type { MouseEventHandler } from "react";
 
 export interface ButtonProps extends BaseControlProps {
   text: string;
-  onClick?: React.MouseEventHandler<HTMLDivElement>;
+  onClick?: MouseEventHandler<HTMLDivElement>;
 }
 
 export default function Button({

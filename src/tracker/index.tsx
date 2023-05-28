@@ -4,6 +4,9 @@ import TinyRange from "./components/TinyRange";
 import { inputFlags } from "./flags";
 import { data } from "./inputs";
 import { useTrackerConfig } from "./trackerConfig";
+import type { CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
 
 if (isDevelopment) console.trace("DEV");
 
@@ -18,7 +21,7 @@ Object.assign(container.style, {
   zIndex: `${1e9}`,
 } as CSSStyleDeclaration);
 
-const root = ReactDOM.createRoot(container);
+const root = createRoot(container);
 
 document.documentElement.append(container);
 
@@ -28,14 +31,14 @@ root.render(<TrackerMenu />);
 const { requestAnimationFrame, Math } = window;
 
 function Tracker({ scale }: { scale: number }) {
-  const canvas = React.useRef<HTMLCanvasElement | null>(null);
-  const scaleRef = React.useRef<number>(scale);
+  const canvas = useRef<HTMLCanvasElement | null>(null);
+  const scaleRef = useRef<number>(scale);
 
-  React.useEffect(() => {
+  useEffect(() => {
     scaleRef.current = scale;
   }, [scale]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!canvas.current) return;
 
     const height = canvas.current.clientHeight;
@@ -88,13 +91,7 @@ function Tracker({ scale }: { scale: number }) {
   );
 }
 
-function LegendKey({
-  name,
-  style,
-}: {
-  name: string;
-  style?: React.CSSProperties;
-}) {
+function LegendKey({ name, style }: { name: string; style?: CSSProperties }) {
   return (
     <div
       style={{
@@ -112,7 +109,7 @@ function LegendKey({
 
 function TrackerMenu() {
   const [scale, setScale] = useTrackerConfig("scale");
-  const [visible, setVisible] = React.useState(true);
+  const [visible, setVisible] = useState(true);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", margin: 10 }}>

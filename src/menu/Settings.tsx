@@ -1,6 +1,9 @@
+import type { ComponentType, ReactNode } from "react";
+import { useState } from "react";
+
 export interface Tab {
   name: string;
-  body: React.ComponentType;
+  body: ComponentType;
 }
 
 export default function Settings({
@@ -11,10 +14,10 @@ export default function Settings({
 }: {
   defaultTabID?: number;
   onTabChange?: (tabID: number) => void;
-  header?: React.ReactNode;
+  header?: ReactNode;
   tabs: Tab[];
 }) {
-  const [tabID, setTabID] = React.useState<number>(defaultTabID);
+  const [tabID, setTabID] = useState<number>(defaultTabID);
   const tab = tabs[tabID];
   if (!tab) throw new TypeError("Bad tab");
   const { body: Body } = tab;

@@ -1,6 +1,8 @@
 import { getKeyCode, getKeyName } from "../../keys";
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
+import type { ChangeEventHandler, ReactNode } from "react";
+import { useEffect, useState, Fragment } from "react";
 
 export interface BindProps {
   bind: number;
@@ -12,7 +14,7 @@ export interface BindProps {
 export interface BindModeProps {
   value?: string;
   defaultValue?: string;
-  onChange?: React.ChangeEventHandler<HTMLSelectElement>;
+  onChange?: ChangeEventHandler<HTMLSelectElement>;
 }
 
 export enum BindMode {
@@ -41,9 +43,9 @@ export function BindModePicker({
 }
 
 export function Bind({ bind, reset, unbind, setBind }: BindProps) {
-  const [changing, setChanging] = React.useState(false);
+  const [changing, setChanging] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!changing) return;
 
     const listener = (event: KeyboardEvent | MouseEvent) => {
@@ -91,8 +93,8 @@ export function Bind({ bind, reset, unbind, setBind }: BindProps) {
 }
 
 export interface BindHolderProps extends BaseControlProps {
-  children: React.ReactNode;
-  modePicker?: React.ReactNode;
+  children: ReactNode;
+  modePicker?: ReactNode;
 }
 
 export default function BindHolder({
@@ -102,11 +104,11 @@ export default function BindHolder({
   children,
   modePicker,
 }: BindHolderProps) {
-  const betweens: React.ReactNode[] = [];
+  const betweens: ReactNode[] = [];
 
   if (Array.isArray(children))
     for (let i = 0; i < children.length; i++) {
-      betweens.push(<React.Fragment key={i}>{children[i]}</React.Fragment>);
+      betweens.push(<Fragment key={i}>{children[i]}</Fragment>);
       if (i + 1 !== children.length)
         betweens.push(<div className="bindSep" key={i + "_sep"}></div>);
     }

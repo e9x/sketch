@@ -1,3 +1,6 @@
+import type { ReactNode } from "react";
+import { useState } from "react";
+
 interface SetProps {
   /**
    * This set's header.
@@ -6,14 +9,14 @@ interface SetProps {
   /**
    * This set's body.
    */
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 /**
  *
  */
 export function Set({ title, children }: SetProps) {
-  const [collapsed, setCollapsed] = React.useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <>
@@ -37,7 +40,7 @@ interface HeadlessSetProps {
   /**
    * This set's body.
    */
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function HeadlessSet({ children }: HeadlessSetProps) {

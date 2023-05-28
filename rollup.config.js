@@ -59,7 +59,13 @@ const options = defineConfig([
       format: "iife",
       sourcemap: "hidden",
       sourcemapPathTransform: transformerFactory("tracker"),
+      globals: {
+        react: "React",
+        "react-dom": "ReactDOM",
+        "react-dom/client": "ReactDOM",
+      },
     },
+    external: ["react", "react-dom", "react-dom/client"],
     plugins: [
       eslint(),
       esbuild({
@@ -129,7 +135,13 @@ const options = defineConfig([
       format: "iife",
       sourcemap: "hidden",
       sourcemapPathTransform: transformerFactory("main"),
+      globals: {
+        react: "React",
+        "react-dom": "ReactDOM",
+        "react-dom/client": "ReactDOM",
+      },
     },
+    external: ["react", "react-dom", "react-dom/client"],
     plugins: [
       eslint(),
       esbuild({

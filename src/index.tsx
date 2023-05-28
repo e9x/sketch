@@ -22,6 +22,7 @@ import { sketchButton } from "./menu/createUI";
 import sketchConfig from "./sketchConfig";
 import tokenConfig from "./tokenConfig";
 import { waitFor } from "./util";
+import { createRoot } from "react-dom/client";
 
 aimbotHook();
 bhopHook();
@@ -117,7 +118,7 @@ function newRoot() {
     padding: "8px",
   } as CSSStyleDeclaration);
 
-  const root = ReactDOM.createRoot(overlay);
+  const root = createRoot(overlay);
 
   waitFor(() => document.documentElement, 10).then((dom) =>
     dom.append(overlay)

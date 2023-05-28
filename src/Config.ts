@@ -1,4 +1,5 @@
 import type { JSONStorage } from "./values";
+import { useEffect, useState } from "react";
 
 export default class Config<Data extends object> {
   defaultConfig: Data;
@@ -55,9 +56,9 @@ export function useConfig<Data extends object, K extends keyof Data>(
   key: K
 ): DataHook<Data, K> {
   // trigger re-render with useState
-  const [state, setState] = React.useState(config.get(key));
+  const [state, setState] = useState(config.get(key));
 
-  React.useEffect(() => {
+  useEffect(() => {
     function listener() {
       setState(config.get(key));
     }

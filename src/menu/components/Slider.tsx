@@ -1,12 +1,14 @@
 import Control from "./Control";
 import type { BaseControlProps } from "./Control";
+import type { ChangeEventHandler } from "react";
+import { useRef } from "react";
 
 export interface SliderProps extends BaseControlProps {
   defaultValue?: number;
   min?: number;
   max?: number;
   step?: number;
-  onChange?: React.ChangeEventHandler<HTMLInputElement>;
+  onChange?: ChangeEventHandler<HTMLInputElement>;
 }
 
 export default function Slider({
@@ -19,8 +21,8 @@ export default function Slider({
   step,
   onChange,
 }: SliderProps) {
-  const numberInput = React.useRef<HTMLInputElement | null>(null);
-  const rangeInput = React.useRef<HTMLInputElement | null>(null);
+  const numberInput = useRef<HTMLInputElement | null>(null);
+  const rangeInput = useRef<HTMLInputElement | null>(null);
 
   return (
     <Control title={title} attention={attention} description={description}>

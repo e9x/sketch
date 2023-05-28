@@ -1,3 +1,6 @@
+import type { ChangeEvent } from "react";
+import { useRef } from "react";
+
 export default function TinyRange({
   title,
   onChange,
@@ -7,14 +10,14 @@ export default function TinyRange({
   step,
 }: {
   title: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   defaultValue?: number;
   min?: number;
   max?: number;
   step?: number;
 }) {
-  const numberInput = React.useRef<HTMLInputElement | null>(null);
-  const rangeInput = React.useRef<HTMLInputElement | null>(null);
+  const numberInput = useRef<HTMLInputElement | null>(null);
+  const rangeInput = useRef<HTMLInputElement | null>(null);
 
   return (
     <div

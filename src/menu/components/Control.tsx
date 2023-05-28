@@ -1,10 +1,12 @@
+import type { ReactNode } from "react";
+
 export type onChange<T> = (value: T, init: boolean) => void;
 
 export interface BaseControlProps {
   /**
    * This control's title.
    */
-  title: React.ReactNode;
+  title: ReactNode;
   /**
    * Description of the control.
    */
@@ -23,7 +25,7 @@ export function ControlTitle({
   children,
 }: {
   attention?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <>
@@ -40,7 +42,7 @@ export function ControlContainer({
   children,
 }: {
   description?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="settName" title={description}>
@@ -58,7 +60,7 @@ export default function Control({
   attention,
   children,
 }: BaseControlProps & {
-  children?: React.ReactNode;
+  children?: ReactNode;
 }) {
   return (
     <div className="settName" title={description}>

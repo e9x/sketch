@@ -1,6 +1,7 @@
 import KrunkBox, { ProcessTokenErrors } from "../KrunkBox";
 import { isNode, linkvertiseURL } from "../consts";
 import tokenConfig from "../tokenConfig";
+import { useRef, useState } from "react";
 
 const badToken =
   "Bad access key. If you just received an access key, try getting another one in 8 minutes.";
@@ -9,10 +10,10 @@ const didntClickLink =
   'Bad access key. Make sure you\'re opening the "Get a free access key" link from this website/client.';
 
 export default function KeyBeg({ done }: { done: (token: string) => void }) {
-  const abort = React.useRef(new AbortController());
-  const key = React.useRef<HTMLInputElement | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [busy, setBusy] = React.useState(false);
+  const abort = useRef(new AbortController());
+  const key = useRef<HTMLInputElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   return (
     <>
