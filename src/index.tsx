@@ -45,11 +45,10 @@ const hook = (dataArg: string, src: string) => {
       `!${player}.isYou&&${player}.objInstances){if(${player}.canBSeen||${dataArg}.nametags){`
   );
 
-  // *r.adsFovMlt[r.getPlayerWeaponId(t)]
+  // *r.adsFov[r.getPlayerWeaponId(t)]
   src = src.replace(
-    /\*(\w+)\.adsFovMlt/g,
-    (match, render) =>
-      `*(${dataArg}.noAdsFovMlt?${dataArg}:${render}).adsFovMlt`
+    /\*(\w+)\.adsFov/g,
+    (match, render) => `*(${dataArg}.noAdsFov?${dataArg}:${render}).adsFov`
   );
 
   const genericAdsArray = [...Array(64)].fill(0);
@@ -57,10 +56,10 @@ const hook = (dataArg: string, src: string) => {
   /* javascript-obfuscator:disable */
   return {
     data: {
-      get noAdsFovMlt() {
+      get noAdsFov() {
         return sketchConfig.get("noAdsFovMlt");
       },
-      get adsFovMlt() {
+      get adsFov() {
         try {
           const ads: number[] = [];
 
