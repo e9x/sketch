@@ -16,6 +16,12 @@ expand(config());
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 
+const sketchMetaFile = fileURLToPath(new URL("meta.json", import.meta.url));
+/**
+ * @type {import("./meta.json")}
+ */
+const sketchMeta = JSON.parse(await readFile(sketchMetaFile, "utf-8"));
+
 /**
  * @type {import("./package.json")}
  */
@@ -43,6 +49,10 @@ const usBanner = `/*!
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
  */\n/*eslint-disable*/`;
+
+const sketchNodeLoader = `typeof require==="function"&&${JSON.stringify(
+  sketchMeta.require
+)}.map(u=>{const h=new XMLHttpRequest;h.open("GET",u,!1);h.send();new Function("e","eval(e)")(h.responseText+\`\n//# sourceURL=\${u}\`)});`;
 
 const transformerFactory = (name) => (relativeSourcePath) =>
   new URL(relativeSourcePath, `sketch-${name}://`).toString();
@@ -177,7 +187,7 @@ const options = defineConfig([
             simplify: true,
           },
         }),
-      banner(() => usBanner),
+      banner(() => usBanner + sketchNodeLoader),
       metablock({
         file: fileURLToPath(new URL("meta.json", import.meta.url)),
         override: {
@@ -210,7 +220,7 @@ const options = defineConfig([
             }),
             banner(() => usBanner),
             metablock({
-              file: fileURLToPath(new URL("meta.json", import.meta.url)),
+              file: sketchMetaFile,
               override: {
                 name: "Sketch DEV",
                 author: pkg.author,
