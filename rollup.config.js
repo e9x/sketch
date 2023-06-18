@@ -42,7 +42,6 @@ const usBanner = `/*!
  * Copyright (C) The Gaming Gurus
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
- * Written by David Reed <reedswork@proton.me>
  */\n/*eslint-disable*/`;
 
 const transformerFactory = (name) => (relativeSourcePath) =>
