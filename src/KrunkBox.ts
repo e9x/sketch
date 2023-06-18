@@ -36,6 +36,7 @@ export default class KrunkBox {
       const res = await fetch(new URL("hi", apiURL).toString(), {
         signal,
       }).catch((err) => {
+        if (err instanceof DOMException) throw err;
         if (isDevelopment) console.error(err);
       });
 
