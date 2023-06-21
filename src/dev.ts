@@ -1,4 +1,4 @@
-import { getDevURL } from "./consts";
+import { getDevApiURL } from "./consts";
 
 /**
  * You must enable Tampermonkey's instant inject feature for this to load correctly!
@@ -11,10 +11,10 @@ import { getDevURL } from "./consts";
  */
 
 const http = new XMLHttpRequest();
-http.open("GET", new URL("sketch.user.js", getDevURL()), false);
+http.open("GET", new URL("sketch.user.js", getDevApiURL()), false);
 http.setRequestHeader("cache-control", "no-cache");
 http.send();
 eval(
   http.response +
-    `\n//# sourceMappingURL=${new URL("sketch.user.js.map", getDevURL())}`
+    `\n//# sourceMappingURL=${new URL("sketch.user.js.map", getDevApiURL())}`
 );

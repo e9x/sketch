@@ -53,6 +53,16 @@ export function getDevURL() {
   return `http://${devHost}:${devPort}/`;
 }
 
+export function getDevApiURL() {
+  const devHost = process.env.SKETCH_DEV_API_HOST || "";
+  if (!devHost) throw new TypeError("Invalid api devHost");
+
+  const devPort = process.env.SKETCH_DEV_API_PORT || "";
+  if (!devPort) throw new TypeError("Invalid api devPort");
+
+  return `http://${devHost}:${devPort}/`;
+}
+
 /*
 mouseY,
 mouseX,
