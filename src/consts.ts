@@ -21,8 +21,6 @@ if (!supportedGame) throw new TypeError("Invalid SKETCH_SUPPORTED_GAME");
 export const sketchVersion = process.env.SKETCH_VERSION || "";
 if (!sketchVersion) throw new TypeError("Invalid SKETCH_VERSION");
 
-export const aboutURL = "https://sketch.sys32.dev/about";
-
 export const discordURL = "https://y9x.github.io/discord/";
 
 export const docsURL = "https://sketch.sys32.dev/";
