@@ -73,9 +73,9 @@ function playerAimPoint(player: Player) {
   return new THREE.Vector3(
     player.x,
     player.y +
-      player.height -
-      hitboxOffset -
-      player.crouchVal * config.crouchDst,
+    player.height -
+    hitboxOffset -
+    player.crouchVal * config.crouchDst,
     player.z
   );
 }
@@ -100,7 +100,7 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
       target.y,
       target.z
     ) || 0) -
-      localPlayer.recoilAnimY * config.recoilMlt
+    localPlayer.recoilAnimY * config.recoilMlt
   );
 
   rotation.setY(
@@ -259,7 +259,7 @@ export function aimbotHook() {
         return;
     }
 
-    if (targetPlayer && !validTarget(targetPlayer)) targetPlayer = undefined;
+    if (targetPlayer && (!validTarget(targetPlayer) || !game.players.list.includes(targetPlayer))) targetPlayer = undefined;
 
     let target: THREE.Vector3 | undefined;
 
