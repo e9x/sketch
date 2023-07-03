@@ -66,29 +66,48 @@ function playerAimPoint(player: Player) {
   const config = getConfig();
   const localPlayer = getLocalPlayer();
   const game = getGame();
-  const mpScale = sketchConfig.get("multiPointScale");
+  const mp = sketchConfig.get("multiPoint");
 
-  const dimensions = {
-    x: player.x,
-    y: player.y,
-    z: player.z,
-    w: (player.height * 0.6),
-    h: player.height - player.crouchVal * config.crouchDst - 0.3,
-  };
+  if (mp) {
+    const mpScale = sketchConfig.get("multiPointScale");
 
-  // start at 2/3 (chest) or 3/3 (top) when
-  for (let y = (hitbox === "chest" ? 2 : 3); y > 0; y--) {
-    for (let x = 0; x < 3; x++) {
-      for (let z = 0; z < 3; z++) {
-        const lineEnd = new game.THREE.Vector3(
-          player.x + dimensions.w * (x ? (x % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale,
-          player.y + dimensions.h * (y / 3),
-          player.z + dimensions.w * (z ? (z % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale
-        );
-        const intersects = game.canSee(localPlayer, lineEnd.x, lineEnd.y, lineEnd.z) === null;
-        if (intersects) return lineEnd;
+    const dimensions = {
+      x: player.x,
+      y: player.y,
+      z: player.z,
+      w: (player.height * 0.6),
+      h: player.height - player.crouchVal * config.crouchDst - 0.3,
+    };
+
+    // start at 2/3 (chest) or 3/3 (top) when
+    for (let y = (hitbox === "chest" ? 2 : 3); y > 0; y--) {
+      for (let x = 0; x < 3; x++) {
+        for (let z = 0; z < 3; z++) {
+          const lineEnd = new game.THREE.Vector3(
+            player.x + dimensions.w * (x ? (x % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale,
+            player.y + dimensions.h * (y / 3),
+            player.z + dimensions.w * (z ? (z % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale
+          );
+          const intersects = game.canSee(localPlayer, lineEnd.x, lineEnd.y, lineEnd.z) === null;
+          if (intersects) return lineEnd;
+        }
       }
     }
+  } else {
+    const { THREE } = getGame();
+    const hitboxOffset =
+      hitbox === "head"
+        ? config.headScale / 2
+        : config.playerHeight - config.headScale - config.legHeight;
+
+    return new THREE.Vector3(
+      player.x,
+      player.y +
+      player.height -
+      hitboxOffset -
+      player.crouchVal * config.crouchDst,
+      player.z
+    );
   }
 }
 
