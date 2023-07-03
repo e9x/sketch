@@ -468,7 +468,7 @@ export function AimbotMenu() {
       </Set>
       <Set title="Multipoint">
         <Switch title="Multipoint" defaultChecked={multiPoint}
-          onChange={(event) => setMultiPoint(event.currentTarget.checked)} />
+          onChange={(event) => setMultiPoint(event.currentTarget.checked)} attention description="Although multipoint is more accurate, it's very slow" />
         <Slider title="Multipoint Scale" description="Lower is closer to the center, higher is closer to the edges" min={0} max={1} step={0.1} defaultValue={multiPointScale}
           onChange={(event) => setMultiPointScale(event.currentTarget.valueAsNumber)} />
       </Set>
