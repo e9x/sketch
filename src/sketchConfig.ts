@@ -32,6 +32,8 @@ export interface SketchConfig {
   menuButton: boolean;
   silentFail: boolean;
   noAdsFovMlt: boolean;
+  multiPoint: boolean;
+  multiPointScale: number;
 }
 
 /**
@@ -67,6 +69,8 @@ const defaultConfig: SketchConfig = {
   menuButton: true,
   silentFail: false,
   noAdsFovMlt: false,
+  multiPoint: false,
+  multiPointScale: 0.5,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());

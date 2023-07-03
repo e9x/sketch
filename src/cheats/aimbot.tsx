@@ -64,20 +64,32 @@ function drawAimbotCircle(
 function playerAimPoint(player: Player) {
   const hitbox = sketchConfig.get("hitbox");
   const config = getConfig();
-  const { THREE } = getGame();
-  const hitboxOffset =
-    hitbox === "head"
-      ? config.headScale / 2
-      : config.playerHeight - config.headScale - config.legHeight;
+  const localPlayer = getLocalPlayer();
+  const game = getGame();
+  const mpScale = sketchConfig.get("multiPointScale");
 
-  return new THREE.Vector3(
-    player.x,
-    player.y +
-    player.height -
-    hitboxOffset -
-    player.crouchVal * config.crouchDst,
-    player.z
-  );
+  const dimensions = {
+    x: player.x,
+    y: player.y,
+    z: player.z,
+    w: (player.height * 0.6),
+    h: player.height - player.crouchVal * config.crouchDst - 0.2,
+  };
+
+  // start at 2/3 (chest) or 3/3 (top) when
+  for (let y = (hitbox === "chest" ? 2 : 3); y > 0; y--) {
+    for (let x = 0; x < 3; x++) {
+      for (let z = 0; z < 3; z++) {
+        const lineEnd = new game.THREE.Vector3(
+          player.x + dimensions.w * (x ? (x % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale,
+          player.y + dimensions.h * (y / 3),
+          player.z + dimensions.w * (z ? (z % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale
+        );
+        const intersects = game.canSee(localPlayer, lineEnd.x, lineEnd.y, lineEnd.z) === null;
+        if (intersects) return lineEnd;
+      }
+    }
+  }
 }
 
 function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
@@ -272,7 +284,7 @@ export function aimbotHook() {
 
     if (targetPlayer) {
       target = playerAimPoint(targetPlayer);
-      if (!validPoint(target, center)) {
+      if (!target || !validPoint(target, center)) {
         target = undefined;
         targetPlayer = undefined;
       }
@@ -288,10 +300,10 @@ export function aimbotHook() {
       const render = getRender();
       const fovCheck = sketchConfig.get("fovCheck");
 
-      const found = game.players.list
+      const found = (game.players.list
         .filter(validTarget)
         .map((player) => ({ player, point: playerAimPoint(player) }))
-        .filter(({ point }) => validPoint(point, center))
+        .filter(({ point }) => point && validPoint(point, center)) as ({ player: Player, point: THREE.Vector3 })[])
         .map(({ player, point }) => ({
           player,
           screen: pos2D(point),
@@ -357,6 +369,8 @@ export function AimbotMenu() {
   const [smoothFactor, setSmoothFactor] = useSketchConfig("smoothFactor");
   const [fovRadius, setFOVRadius] = useSketchConfig("fovRadius");
   const [drawFOV, setDrawFOV] = useSketchConfig("drawFOV");
+  const [multiPoint, setMultiPoint] = useSketchConfig("multiPoint");
+  const [multiPointScale, setMultiPointScale] = useSketchConfig("multiPointScale");
   const [targetOnAimKey, setTargetAimOnKey] = useSketchConfig("targetOnAimKey");
 
   return (
@@ -432,6 +446,12 @@ export function AimbotMenu() {
           defaultChecked={drawFOV}
           onChange={(event) => setDrawFOV(event.currentTarget.checked)}
         />
+      </Set>
+      <Set title="Multipoint">
+        <Switch title="Multipoint" defaultChecked={multiPoint}
+          onChange={(event) => setMultiPoint(event.currentTarget.checked)} />
+        <Slider title="Multipoint Scale" description="Lower is closer to the center, higher is closer to the edges" min={0} max={1} step={0.1} defaultValue={multiPointScale}
+          onChange={(event) => setMultiPointScale(event.currentTarget.valueAsNumber)} />
       </Set>
       <Set title="Rage">
         <Switch
