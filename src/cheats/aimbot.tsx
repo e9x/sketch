@@ -73,7 +73,7 @@ function playerAimPoint(player: Player) {
     y: player.y,
     z: player.z,
     w: (player.height * 0.6),
-    h: player.height - player.crouchVal * config.crouchDst - 0.2,
+    h: player.height - player.crouchVal * config.crouchDst - 0.3,
   };
 
   // start at 2/3 (chest) or 3/3 (top) when
