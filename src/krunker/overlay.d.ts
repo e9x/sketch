@@ -1,19 +1,18 @@
-export const medalsList: string[];
-export const propWheel: boolean;
-export let scale: number;
-export const canvas: HTMLCanvasElement;
-export const ctx: CanvasRenderingContext2D;
-export function render(...args: unknown[]): void;
-export const healColor: string;
+export declare const medalsList: string[];
+export declare const propWheel: boolean;
+export declare let scale: number;
+export declare const canvas: HTMLCanvasElement;
+export declare const ctx: CanvasRenderingContext2D;
+export declare function render(...args: unknown[]): void;
+export declare const healColor: string;
 // hurt
-export const healthColE: string; 
+export declare const healthColE: string;
 // heal?
-export const healthColT: string; 
-export const nametagOpacity: number;
-export const nametagScale: number;
-export const nametagStyle: number;
-export const dynamicHP: boolean;
-export const kpdData: boolean;
-export const kpdVision: boolean;
-export const hideNames: boolean;
-
+export declare const healthColT: string;
+export declare const nametagOpacity: number;
+export declare const nametagScale: number;
+export declare const nametagStyle: number;
+export declare const dynamicHP: boolean;
+export declare const kpdData: boolean;
+export declare const kpdVision: boolean;
+export declare const hideNames: boolean;

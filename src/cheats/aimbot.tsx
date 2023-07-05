@@ -75,20 +75,23 @@ function playerAimPoint(player: Player) {
       x: player.x,
       y: player.y,
       z: player.z,
-      w: (player.height * 0.6),
+      w: player.height * 0.6,
       h: player.height - player.crouchVal * config.crouchDst - 0.3,
     };
 
     // start at 2/3 (chest) or 3/3 (top) when
-    for (let y = (hitbox === "chest" ? 2 : 3); y > 0; y--) {
+    for (let y = hitbox === "chest" ? 2 : 3; y > 0; y--) {
       for (let x = 0; x < 3; x++) {
         for (let z = 0; z < 3; z++) {
           const lineEnd = new game.THREE.Vector3(
-            player.x + dimensions.w * (x ? (x % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale,
+            player.x +
+              dimensions.w * (x ? (x % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale,
             player.y + dimensions.h * (y / 3),
-            player.z + dimensions.w * (z ? (z % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale
+            player.z +
+              dimensions.w * (z ? (z % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale
           );
-          const intersects = game.canSee(localPlayer, lineEnd.x, lineEnd.y, lineEnd.z) === null;
+          const intersects =
+            game.canSee(localPlayer, lineEnd.x, lineEnd.y, lineEnd.z) === null;
           if (intersects) return lineEnd;
         }
       }
@@ -103,9 +106,9 @@ function playerAimPoint(player: Player) {
     return new THREE.Vector3(
       player.x,
       player.y +
-      player.height -
-      hitboxOffset -
-      player.crouchVal * config.crouchDst,
+        player.height -
+        hitboxOffset -
+        player.crouchVal * config.crouchDst,
       player.z
     );
   }
@@ -131,7 +134,7 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
       target.y,
       target.z
     ) || 0) -
-    localPlayer.recoilAnimY * config.recoilMlt
+      localPlayer.recoilAnimY * config.recoilMlt
   );
 
   rotation.setY(
@@ -290,7 +293,11 @@ export function aimbotHook() {
         return;
     }
 
-    if (targetPlayer && (!validTarget(targetPlayer) || !game.players.list.includes(targetPlayer))) targetPlayer = undefined;
+    if (
+      targetPlayer &&
+      (!validTarget(targetPlayer) || !game.players.list.includes(targetPlayer))
+    )
+      targetPlayer = undefined;
 
     let target: THREE.Vector3 | undefined;
 
@@ -319,10 +326,15 @@ export function aimbotHook() {
       const render = getRender();
       const fovCheck = sketchConfig.get("fovCheck");
 
-      const found = (game.players.list
-        .filter(validTarget)
-        .map((player) => ({ player, point: playerAimPoint(player) }))
-        .filter(({ point }) => point && validPoint(point, center)) as ({ player: Player, point: THREE.Vector3 })[])
+      const found = (
+        game.players.list
+          .filter(validTarget)
+          .map((player) => ({ player, point: playerAimPoint(player) }))
+          .filter(({ point }) => point && validPoint(point, center)) as {
+          player: Player;
+          point: THREE.Vector3;
+        }[]
+      )
         .map(({ player, point }) => ({
           player,
           screen: pos2D(point),
@@ -389,7 +401,8 @@ export function AimbotMenu() {
   const [fovRadius, setFOVRadius] = useSketchConfig("fovRadius");
   const [drawFOV, setDrawFOV] = useSketchConfig("drawFOV");
   const [multiPoint, setMultiPoint] = useSketchConfig("multiPoint");
-  const [multiPointScale, setMultiPointScale] = useSketchConfig("multiPointScale");
+  const [multiPointScale, setMultiPointScale] =
+    useSketchConfig("multiPointScale");
   const [targetOnAimKey, setTargetAimOnKey] = useSketchConfig("targetOnAimKey");
 
   return (
@@ -467,10 +480,24 @@ export function AimbotMenu() {
         />
       </Set>
       <Set title="Multipoint">
-        <Switch title="Multipoint" defaultChecked={multiPoint}
-          onChange={(event) => setMultiPoint(event.currentTarget.checked)} attention description="Although multipoint is more accurate, it's very slow" />
-        <Slider title="Multipoint Scale" description="Lower is closer to the center, higher is closer to the edges" min={0} max={1} step={0.1} defaultValue={multiPointScale}
-          onChange={(event) => setMultiPointScale(event.currentTarget.valueAsNumber)} />
+        <Switch
+          title="Multipoint"
+          defaultChecked={multiPoint}
+          onChange={(event) => setMultiPoint(event.currentTarget.checked)}
+          attention
+          description="Although multipoint is more accurate, it's very slow"
+        />
+        <Slider
+          title="Multipoint Scale"
+          description="Lower is closer to the center, higher is closer to the edges"
+          min={0}
+          max={1}
+          step={0.1}
+          defaultValue={multiPointScale}
+          onChange={(event) =>
+            setMultiPointScale(event.currentTarget.valueAsNumber)
+          }
+        />
       </Set>
       <Set title="Rage">
         <Switch
