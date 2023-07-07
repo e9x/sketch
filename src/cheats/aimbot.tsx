@@ -1,4 +1,4 @@
-import { iInputs } from "../consts";
+import { experimentalMultipoint, iInputs } from "../consts";
 import {
   getConfig,
   getGame,
@@ -66,9 +66,7 @@ function playerAimPoint(player: Player) {
   const config = getConfig();
   const localPlayer = getLocalPlayer();
   const game = getGame();
-  const mp = sketchConfig.get("multiPoint");
-
-  if (mp) {
+  if (experimentalMultipoint && sketchConfig.get("multiPoint")) {
     const mpScale = sketchConfig.get("multiPointScale");
 
     const dimensions = {
@@ -479,26 +477,30 @@ export function AimbotMenu() {
           onChange={(event) => setDrawFOV(event.currentTarget.checked)}
         />
       </Set>
-      <Set title="Multipoint">
-        <Switch
-          title="Multipoint"
-          defaultChecked={multiPoint}
-          onChange={(event) => setMultiPoint(event.currentTarget.checked)}
-          attention
-          description="Although multipoint is more accurate, it's very slow"
-        />
-        <Slider
-          title="Multipoint Scale"
-          description="Lower is closer to the center, higher is closer to the edges"
-          min={0}
-          max={1}
-          step={0.1}
-          defaultValue={multiPointScale}
-          onChange={(event) =>
-            setMultiPointScale(event.currentTarget.valueAsNumber)
-          }
-        />
-      </Set>
+      {experimentalMultipoint && (
+        <>
+          <Set title="Multipoint">
+            <Switch
+              title="Multipoint"
+              defaultChecked={multiPoint}
+              onChange={(event) => setMultiPoint(event.currentTarget.checked)}
+              attention
+              description="Although multipoint is more accurate, it's very slow"
+            />
+            <Slider
+              title="Multipoint Scale"
+              description="Lower is closer to the center, higher is closer to the edges"
+              min={0}
+              max={1}
+              step={0.1}
+              defaultValue={multiPointScale}
+              onChange={(event) =>
+                setMultiPointScale(event.currentTarget.valueAsNumber)
+              }
+            />
+          </Set>
+        </>
+      )}
       <Set title="Rage">
         <Switch
           title="Turret"

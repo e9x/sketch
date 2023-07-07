@@ -29,6 +29,8 @@ export const isDevelopment = process.env.NODE_ENV !== "production";
 
 export const isNode = typeof require === "function";
 
+export const experimentalMultipoint = process.env.SKETCH_MULTIPOINT === "true";
+
 export function getStorage() {
   if (isNode)
     return new FSJSONStorage(
