@@ -9,4 +9,8 @@ export declare const ingressDataSize: number;
 export declare const egressPacketCount: number;
 export declare const egressDataSize: number;
 export declare const captchaHolder: HTMLElement | null;
-export declare function send(packet: string, ...data: string[]): void;
+export declare function send(packet: string, ...data: unknown[]): void;
+export declare function _dispatchEvent(
+  packet: string,
+  ...data: unknown[]
+): void;

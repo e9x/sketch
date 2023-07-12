@@ -20,11 +20,17 @@ interface Weapon {
   ammo: number;
 }
 
+export interface Skin {
+  ind: number;
+  cnt: number;
+}
+
 export declare class Player {
   constructor(...args: unknown[]);
   perks: number[];
   isKranked: boolean;
   chargeTime: number;
+  skins: Skin[];
   attributes: {
     dmg: 1 | 0;
     drunk: 1 | 0;

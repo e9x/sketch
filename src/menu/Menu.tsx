@@ -3,6 +3,7 @@ import { BhopMenu } from "../cheats/bhop";
 import { ESPMenu } from "../cheats/esp";
 import { ForceAutoMenu } from "../cheats/forceAuto";
 import { RecoilControlMenu } from "../cheats/recoilControl";
+import { SkinHackMenu } from "../cheats/skins";
 import { TriggerbotMenu } from "../cheats/triggerbot";
 import { discordURL, docsURL, sketchVersion } from "../consts";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
@@ -226,6 +227,7 @@ export default function Menu() {
             return (
               <>
                 <HeadlessSet>
+                  <SkinHackMenu />
                   <Switch
                     title="Disable ADS FOV multiplier"
                     defaultChecked={noAdsFovMlt}

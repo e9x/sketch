@@ -4,6 +4,7 @@ import { bhopHook } from "./cheats/bhop";
 import { espHook } from "./cheats/esp";
 import { forceAutoHook } from "./cheats/forceAuto";
 import { recoilControlHook } from "./cheats/recoilControl";
+import { skinHackHook } from "./cheats/skins";
 import { triggerbotHook } from "./cheats/triggerbot";
 import KeyBeg from "./components/KeyBeg";
 import NotUpdated from "./components/NotUpdated";
@@ -24,6 +25,7 @@ espHook();
 triggerbotHook();
 recoilControlHook();
 forceAutoHook();
+skinHackHook();
 
 const hook = (dataArg: string, src: string) => {
   // hook __webpack_require__, specifically the part where it returns module.exports and when it's generating the exports, not caching it

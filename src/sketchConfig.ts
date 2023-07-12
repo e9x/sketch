@@ -34,6 +34,7 @@ export interface SketchConfig {
   noAdsFovMlt: boolean;
   multiPoint: boolean;
   multiPointScale: number;
+  skinHack: boolean;
 }
 
 /**
@@ -71,6 +72,7 @@ const defaultConfig: SketchConfig = {
   noAdsFovMlt: false,
   multiPoint: false,
   multiPointScale: 0.5,
+  skinHack: false,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());

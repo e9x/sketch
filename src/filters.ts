@@ -92,13 +92,33 @@ function doGameHooks() {
     return push.call(this, inputs);
   };
 
-  ioHooks.push((packet) => {
+  ioSendHooks.push((packet) => {
     if (packet === "q" && blockedInputs) {
       blockedInputs = false;
       return false;
     }
   });
 }
+
+export const playerConstructorHooks: ((player: Player) => void)[] = [];
+
+matchers.push((module: Module<typeof Player>) => {
+  if (
+    typeof module.exports !== "function" ||
+    !module.exports.toString().includes("this.deaths=") ||
+    !module.exports.toString().includes("this.stats=")
+  )
+    return;
+
+  const Player = module.exports;
+
+  module.exports = class extends Player {
+    constructor(...args: any[]) {
+      super(...args);
+      for (const hook of playerConstructorHooks) hook(this);
+    }
+  };
+});
 
 matchers.push((module: Module<typeof Game>) => {
   if (
@@ -267,9 +287,18 @@ matchers.push((module: Module<typeof configModule>) => {
 });
 
 /**
- * When the result of the hook is false, inputs will be blocked
+ * When the result of the hook is false, the packet won't be sent
  */
-export const ioHooks: ((packet: string, data: any[]) => boolean | void)[] = [];
+export const ioSendHooks: ((packet: string, data: any) => boolean | void)[] =
+  [];
+
+/**
+ * When the result of the hook is false, the packet won't be propagated to the game
+ */
+export const ioDispatchHooks: ((
+  packet: string,
+  data: any
+) => boolean | void)[] = [];
 
 let io: typeof ioModule | undefined;
 
@@ -279,11 +308,17 @@ export function getIO() {
 }
 
 function doIOHooks() {
-  const { send } = getIO();
+  const { send, _dispatchEvent } = getIO();
 
   getIO().send = function (packet, ...data) {
-    for (const hook of ioHooks) if (hook(packet, data) === false) return;
+    for (const hook of ioSendHooks) if (hook(packet, data) === false) return;
     return send.call(this, packet, ...data);
+  };
+
+  getIO()._dispatchEvent = function (packet, ...data) {
+    for (const hook of ioDispatchHooks)
+      if (hook(packet, data) === false) return;
+    return _dispatchEvent.call(this, packet, ...data);
   };
 }
 
