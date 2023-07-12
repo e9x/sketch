@@ -76,6 +76,7 @@ export function SkinHackMenu() {
   return (
     <Switch
       title="Skin Hack"
+      description="Unlocks all the skins. Your skins will only appear to you. They won't show to other players. You must be signed in."
       defaultChecked={skinHack}
       onChange={(event) => setSkinHack(event.currentTarget.checked)}
     />
