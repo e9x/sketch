@@ -140,11 +140,17 @@ matchers.push((module: Module<typeof Game>) => {
     // game.controls = ...
     // game.ui = ...
 
+    // can be determined by comparing the arguments to new Game();
+    // on sandbox, the game is created twice...
+    // args[1] is actually 0. this might be a host ID?
+    const isMainGame = typeof args[1] === "number";
+
     // we have to wait for the properties to be assigned
-    setTimeout(() => {
-      game = this;
-      doGameHooks();
-    });
+    if (isMainGame)
+      setTimeout(() => {
+        game = this;
+        doGameHooks();
+      });
 
     return result;
   };
