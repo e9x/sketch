@@ -45,7 +45,7 @@ export default function KeyBeg({ done }: { done: (token: string) => void }) {
         </a>
       </p>
       <p>
-        <a href="https://sketch.sys32.dev/docs/quick-start/" target="_blank">
+        <a href="https://krunker.zip/docs/quick-start/" target="_blank">
           Video Tutorial
         </a>
       </p>
