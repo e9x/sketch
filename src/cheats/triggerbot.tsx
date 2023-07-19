@@ -12,14 +12,19 @@ export function triggerbotHook() {
   let didShoot = false;
 
   inputHooks.push((inputs) => {
-    if (!sketchConfig.get("triggerbot")) return;
+    const triggerbotSmoothBot =
+      sketchConfig.get("aimbot") === "smooth" && sketchConfig.get("bot");
+
+    if (!triggerbotSmoothBot && !sketchConfig.get("triggerbot")) return;
 
     const game = getGame();
 
     const triggerbotKey = sketchConfig.get("triggerbotKey");
 
     if (
-      (triggerbotKey === -1 || game.controls.keys[triggerbotKey] === 1) &&
+      (triggerbotSmoothBot ||
+        triggerbotKey === -1 ||
+        game.controls.keys[triggerbotKey] === 1) &&
       inputs[iInputs.scope]
     ) {
       if (Date.now() < continueTime) inputs[iInputs.shoot] = 1;
@@ -51,7 +56,10 @@ export function triggerbotHook() {
         if (shoot) {
           if (!detectTime) {
             // Date.now() + detectDelay
-            detectTime = Date.now() + sketchConfig.get("triggerbotMin") * 1000;
+            detectTime =
+              Date.now() +
+              (triggerbotSmoothBot ? 0 : sketchConfig.get("triggerbotMin")) *
+                1000;
           }
 
           if (detectTime < Date.now()) {
@@ -62,7 +70,10 @@ export function triggerbotHook() {
         } else if (didShoot) {
           detectTime = 0;
           // Date.now() + continueFor
-          continueTime = Date.now() + sketchConfig.get("triggerbotMax") * 1000;
+          continueTime =
+            Date.now() +
+            (triggerbotSmoothBot ? 0 : sketchConfig.get("triggerbotMax")) *
+              1000;
           didShoot = false;
         }
       }

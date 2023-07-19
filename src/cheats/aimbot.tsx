@@ -216,6 +216,7 @@ export function aimbotHook() {
     }
   });
 
+  // bot auto reload
   inputHooks.push((inputs) => {
     const bot = sketchConfig.get("bot");
 
@@ -362,7 +363,7 @@ export function aimbotHook() {
     }
 
     if (target) {
-      if (bot) inputs[iInputs.shoot] = 1;
+      if (bot && aimbot === "silent") inputs[iInputs.shoot] = 1;
 
       const rotation = new THREE.Vector2(
         inputs[iInputs.xDir] / 1000,
