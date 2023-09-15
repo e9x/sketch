@@ -44,12 +44,6 @@ const envReplacements = {
   }, {}),
 };
 
-const usBanner = `/*!
- * Copyright (C) The Gaming Gurus
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- */\n/*eslint-disable*/`;
-
 const sketchNodeLoader = `typeof require==="function"&&${JSON.stringify(
   sketchMeta.require
 )}.map(u=>{const h=new XMLHttpRequest;h.open("GET",u,!1);h.send();new Function("e","eval(e)")(h.responseText+\`\n//# sourceURL=\${u}\`)});`;
@@ -87,7 +81,6 @@ const options = defineConfig([
         "process.env.": "({}).",
         preventAssignment: true,
       }),
-      banner(() => usBanner),
       metablock({
         file: fileURLToPath(new URL("tracker.json", import.meta.url)),
         override: {
@@ -118,7 +111,6 @@ const options = defineConfig([
               "process.env.": "({}).",
               preventAssignment: true,
             }),
-            banner(() => usBanner),
             metablock({
               file: fileURLToPath(new URL("tracker.json", import.meta.url)),
               override: {
@@ -187,7 +179,7 @@ const options = defineConfig([
             simplify: true,
           },
         }),
-      banner(() => usBanner + sketchNodeLoader),
+      banner(() =>  sketchNodeLoader),
       metablock({
         file: fileURLToPath(new URL("meta.json", import.meta.url)),
         override: {
@@ -218,7 +210,6 @@ const options = defineConfig([
               "process.env.": "({}).",
               preventAssignment: true,
             }),
-            banner(() => usBanner),
             metablock({
               file: sketchMetaFile,
               override: {
