@@ -19,19 +19,10 @@ export interface TokenConfig {
   diyToken?: [token: string, date: number];
   tmpToken: string;
   token?: string;
-  /*
-   * if they went to linkvertise yet
-   * to make sure they're not bypassing the linkvertise or disabling the script before going on it
-   *
-   * if they remove the @match for linkvertise, it will break the script
-   * we need the @match to detect linkvertise bypassers
-   */
-  lv: boolean;
 }
 
 const defaultConfig: TokenConfig = {
   diy: DIYStage.false,
-  lv: false,
   tmpToken: "",
 };
 

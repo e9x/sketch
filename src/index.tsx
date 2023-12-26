@@ -6,7 +6,6 @@ import { forceAutoHook } from "./cheats/forceAuto";
 import { recoilControlHook } from "./cheats/recoilControl";
 import { skinHackHook } from "./cheats/skins";
 import { triggerbotHook } from "./cheats/triggerbot";
-import KeyBeg from "./components/KeyBeg";
 import NotUpdated from "./components/NotUpdated";
 import Outdated from "./components/Outdated";
 import { isKrunker, sketchVersion, supportedGame } from "./consts";
@@ -15,7 +14,6 @@ import type { Module } from "./filters";
 import { getInit, gameLoad, fetchWASM } from "./inject";
 import { sketchButton } from "./menu/createUI";
 import sketchConfig from "./sketchConfig";
-import tokenConfig from "./tokenConfig";
 import { waitFor } from "./util";
 import { createRoot } from "react-dom/client";
 
@@ -145,27 +143,17 @@ async function main() {
     return newRoot().root.render(<NotUpdated />);
   }
 
-  let token = tokenConfig.get("token");
-
   while (true) {
-    if (!token) {
-      if (sketchConfig.get("silentFail")) return fetchWASM();
-      token = await begKey();
-      tokenConfig.set("token", token);
-    }
+    const krunkbox = new KrunkBox();
 
-    const krunkbox = new KrunkBox(token);
+    const game = await getInit(krunkbox, hook);
 
-    const game = (await krunkbox.valid())
-      ? await getInit(krunkbox, hook)
-      : APIError.BadToken;
-
-    if (game === APIError.BadToken) {
+    /*if (game === APIError.BadToken) {
       tokenConfig.delete("token");
       if (sketchConfig.get("silentFail")) return fetchWASM();
       token = undefined;
       continue;
-    }
+    }*/
 
     if (game === APIError.DIY) return;
 
@@ -189,20 +177,4 @@ async function main() {
 
     break;
   }
-}
-
-function begKey() {
-  return new Promise<string>((resolve) => {
-    const { root, overlay } = newRoot();
-
-    root.render(
-      <KeyBeg
-        done={(token) => {
-          root.unmount();
-          overlay.remove();
-          resolve(token);
-        }}
-      />
-    );
-  });
 }
