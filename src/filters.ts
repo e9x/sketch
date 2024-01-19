@@ -36,6 +36,7 @@ export function getGame() {
   return game;
 }
 
+// in-game player, not menu player
 let localPlayer: Player | undefined;
 
 export function getLocalPlayer() {
@@ -100,6 +101,21 @@ function doGameHooks() {
   });
 }
 
+/**
+ * player created while in the menu
+ * basically local player but it never spawns
+ * and it's not the localPlayer
+ */
+let menuPlayer: Player | undefined;
+
+export function getMenuPlayer() {
+  if (!menuPlayer) throw new Error("Too early");
+  return menuPlayer;
+}
+
+/**
+ * basically when menuPlayer is created
+ */
 export const playerConstructorHooks: ((player: Player) => void)[] = [];
 
 matchers.push((module: Module<typeof Player>) => {
@@ -115,6 +131,7 @@ matchers.push((module: Module<typeof Player>) => {
   module.exports = class extends Player {
     constructor(...args: any[]) {
       super(...args);
+      menuPlayer = this;
       for (const hook of playerConstructorHooks) hook(this);
     }
   };
@@ -351,6 +368,7 @@ if (isDevelopment) {
     getGame,
     getRender,
     getLocalPlayer,
+    getMenuPlayer,
     getOverlay,
     getConfig,
     getIO,

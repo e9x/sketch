@@ -1,4 +1,5 @@
 import {
+  getMenuPlayer,
   ioDispatchHooks,
   ioSendHooks,
   playerConstructorHooks,
@@ -59,12 +60,14 @@ export function skinHackHook() {
       while (skinValue.length % offset !== 0) offset++;
 
       for (let i = 0; i < skinValue.length; i += offset) {
-        skinValue[i + 12] = [skinData.main, skinData.secondary];
-        skinValue[i + 13] = skinData.hat;
-        skinValue[i + 14] = skinData.body;
-        skinValue[i + 19] = skinData.knife;
-        skinValue[i + 24] = skinData.dye;
-        skinValue[i + 33] = skinData.waist;
+        if (skinValue[i + 5] === getMenuPlayer().name) {
+          skinValue[i + 12] = [skinData.main, skinData.secondary];
+          skinValue[i + 13] = skinData.hat;
+          skinValue[i + 14] = skinData.body;
+          skinValue[i + 19] = skinData.knife;
+          skinValue[i + 24] = skinData.dye;
+          skinValue[i + 33] = skinData.waist;
+        }
       }
     }
   });
