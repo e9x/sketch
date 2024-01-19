@@ -16,6 +16,9 @@ expand(config());
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 
+// if a http server should start and a dev user.js should build
+const buildForDev = process.env.BUILD_DEV || isDevelopment;
+
 const sketchMetaFile = fileURLToPath(new URL("meta.json", import.meta.url));
 /**
  * @type {import("./meta.json")}
@@ -179,7 +182,7 @@ const options = defineConfig([
             simplify: true,
           },
         }),
-      banner(() =>  sketchNodeLoader),
+      banner(() => sketchNodeLoader),
       metablock({
         file: fileURLToPath(new URL("meta.json", import.meta.url)),
         override: {
@@ -192,7 +195,7 @@ const options = defineConfig([
     ],
   },
   // SKETCH FULL DEV
-  ...(isDevelopment
+  ...(buildForDev
     ? [
         {
           input: "./src/dev.ts",
