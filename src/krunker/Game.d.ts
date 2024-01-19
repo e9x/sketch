@@ -51,7 +51,6 @@ declare class Game {
     fiRat?: number;
     movDrP?: number;
   };
-  raycaster: THREE.Raycaster;
   isSandbox: boolean;
   controls: Controls;
   ui: {

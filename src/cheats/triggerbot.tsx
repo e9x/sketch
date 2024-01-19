@@ -11,6 +11,8 @@ export function triggerbotHook() {
   let continueTime = 0;
   let didShoot = false;
 
+  let raycaster: THREE.Raycaster | undefined;
+
   inputHooks.push((inputs) => {
     const triggerbotSmoothBot =
       sketchConfig.get("aimbot") === "smooth" && sketchConfig.get("bot");
@@ -37,7 +39,9 @@ export function triggerbotHook() {
         render.camera.getWorldDirection(direction);
         render.camera.getWorldPosition(position);
 
-        game.raycaster.set(position, direction);
+        if (!raycaster) raycaster = new game.THREE.Raycaster();
+
+        raycaster.set(position, direction);
 
         let shoot = false;
 
@@ -46,7 +50,7 @@ export function triggerbotHook() {
             isEnemy(player) &&
             player.objInstances &&
             player.canBSeen &&
-            game.raycaster.intersectObjects(player.objInstances.children, true)
+            raycaster.intersectObjects(player.objInstances.children, true)
               .length
           ) {
             shoot = true;
