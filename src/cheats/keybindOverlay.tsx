@@ -35,7 +35,7 @@ export function keybindOverlayHook() {
       const keyHeight = 30;
       const keyHeightGap = 8;
 
-      const boxPadding = 16; // inset
+      const boxPadding = 12; // inset
 
       const boxWidth = 300;
       const boxInsetWidth = boxWidth - boxPadding * 2;
