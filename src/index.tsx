@@ -16,6 +16,7 @@ import { getInit, gameLoad, fetchWASM } from "./inject";
 import { sketchButton } from "./menu/createUI";
 import sketchConfig from "./sketchConfig";
 import { waitFor } from "./util";
+import { tweaksHook } from "cheats/tweaks";
 import { createRoot } from "react-dom/client";
 
 aimbotHook();
@@ -26,6 +27,7 @@ recoilControlHook();
 forceAutoHook();
 skinHackHook();
 keybindOverlayHook();
+tweaksHook();
 
 const hook = (dataArg: string, src: string) => {
   // hook __webpack_require__, specifically the part where it returns module.exports and when it's generating the exports, not caching it

@@ -1,27 +1,11 @@
 import type AIManager from "./AI";
 import type { AI } from "./AI";
 import type Controls from "./Controls";
-import type MapObject from "./Object";
+import type MapManager from "./GameMap";
+import type { SpawnPoint } from "./GameMap";
 import type { Player, manager } from "./Player";
-import type Terrain from "./Terrain";
 import type classes from "./classes";
 import type THREE from "three";
-
-interface SpawnPoint {
-  comp: boolean;
-  dir: number;
-  spread: number;
-  team: number;
-  teamOnly: boolean;
-  x: number;
-  y: number;
-  z: number;
-  /**
-   * Set by calling getSpawnPoint()
-   * SERVER
-   */
-  dst?: number;
-}
 
 declare class Game {
   constructor(...args: unknown[]);
@@ -35,19 +19,14 @@ declare class Game {
     };
     forceCharge: boolean;
   };
-  map: {
-    terrain: Terrain | null;
-    manager: {
-      objects: MapObject[];
-    };
-    spawns: SpawnPoint[];
-  };
+  map: MapManager;
   latestData: boolean;
   isComp: boolean;
   COLLISIONS: unknown;
   THREE: typeof THREE;
   players: manager;
   config: {
+    thirdPerson?: boolean;
     fiRat?: number;
     movDrP?: number;
   };

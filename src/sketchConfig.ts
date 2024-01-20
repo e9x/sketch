@@ -37,6 +37,10 @@ export interface SketchConfig {
   skinHack: boolean;
   keybindOverlay: boolean;
   healthBars: boolean;
+  adblock: boolean;
+  thirdPerson: boolean;
+  skyColor: boolean;
+  skyColorHex: string;
 }
 
 /**
@@ -77,6 +81,10 @@ const defaultConfig: SketchConfig = {
   skinHack: false,
   keybindOverlay: false,
   healthBars: false,
+  adblock: false,
+  thirdPerson: false,
+  skyColor: false,
+  skyColorHex: "#000",
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());

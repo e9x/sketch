@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { MapData, GameMode } from "./GameMap";
 import type { Player } from "./Player";
 import type THREE from "three";
 
@@ -6,6 +7,13 @@ declare class RenderManager {
   constructor(...args: any[]);
   THREE: typeof THREE;
   scene: THREE.Scene;
+  skyDome: THREE.Object3D;
+  init(
+    map: MapData,
+    mode: GameMode,
+    noRender: undefined,
+    eventIndex: number
+  ): void;
   isMobile: boolean;
   invisMat: THREE.MeshBasicMaterial;
   camera: THREE.PerspectiveCamera;

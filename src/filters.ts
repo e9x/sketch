@@ -12,6 +12,8 @@ import type configModule from "./krunker/config";
 import type * as ioModule from "./krunker/io";
 import type * as Overlay from "./krunker/overlay";
 import sketchConfig from "./sketchConfig";
+import type THREE from "three";
+import type { ColorRepresentation } from "three";
 
 export interface Module<T = any> {
   exports: T;
@@ -163,12 +165,36 @@ matchers.push((module: Module<typeof Game>) => {
     // args[1] is actually 0. this might be a host ID?
     const isMainGame = typeof args[1] === "number";
 
-    // we have to wait for the properties to be assigned
-    if (isMainGame)
+    if (isMainGame) {
+      // need to hook config IMMEDIATELY (for sandbox)
+      let realConfig = this.config;
+
+      Object.defineProperty(this, "config", {
+        get() {
+          return realConfig;
+        },
+        set(config: Game["config"]) {
+          realConfig = config;
+
+          let realThirdPerson = config.thirdPerson;
+
+          Object.defineProperty(config, "thirdPerson", {
+            get() {
+              return sketchConfig.get("thirdPerson") || realThirdPerson;
+            },
+            set(value) {
+              realThirdPerson = value;
+            },
+          });
+        },
+      });
+
+      // we have to wait for the properties to be assigned for other hooks
       setTimeout(() => {
         game = this;
         doGameHooks();
       });
+    }
 
     return result;
   };
@@ -251,6 +277,13 @@ matchers.push((module: Module<typeof MapObjectModule>) => {
 export const renderHooks: (() => void)[] = [];
 export const preRenderHooks: (() => void)[] = [];
 
+let realClearColor: ColorRepresentation | undefined;
+
+export function getRealClearColor() {
+  if (!realClearColor) throw new Error("Too early");
+  return realClearColor;
+}
+
 function doRenderHooks() {
   const { render } = getRender();
 
@@ -260,6 +293,36 @@ function doRenderHooks() {
     if (localPlayer) for (const hook of renderHooks) hook();
     return result;
   };
+
+  const renderer = getRender().renderer;
+
+  Object.defineProperty(getRender(), "skyDome", {
+    set(value: THREE.Object3D) {
+      // remove descriptor
+      delete (getRender() as any).skyDome;
+      getRender().skyDome = value;
+
+      let { visible } = value;
+
+      Object.defineProperty(value, "visible", {
+        get: () => (sketchConfig.get("skyColor") ? false : visible),
+        set: (v) => (visible = v),
+      });
+    },
+    configurable: true,
+  });
+
+  if (renderer) {
+    const { setClearColor } = renderer;
+
+    renderer.setClearColor = (color) => {
+      realClearColor = color;
+      setClearColor.call(
+        renderer,
+        sketchConfig.get("skyColor") ? sketchConfig.get("skyColorHex") : color
+      );
+    };
+  }
 }
 
 matchers.push((module: Module<typeof RenderManager>) => {
@@ -282,11 +345,8 @@ matchers.push((module: Module<typeof RenderManager>) => {
     // game.controls = ...
     // game.ui = ...
 
-    // we have to wait for the properties to be assigned
-    setTimeout(() => {
-      render = this;
-      doRenderHooks();
-    });
+    render = this;
+    doRenderHooks();
 
     return result;
   };
