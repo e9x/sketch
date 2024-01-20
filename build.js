@@ -95,7 +95,7 @@ const sketchMain = await context({
         version: pkg.version,
         ...sketchMeta,
       }) +
-      "\n" +
+      "\n/*eslint-disable*/" +
       sketchNodeLoader,
   },
 });
