@@ -15,15 +15,13 @@ export const docsURL = "https://krunker.zip/";
 
 export const isDevelopment = process.env.NODE_ENV !== "production";
 
-let isNode = false;
+let isNode: boolean;
 
 try {
   require("os");
   isNode = true;
 } catch (err) {
-  console.debug(
-    "SHOULD BE AN ERROR LIKE dynamic require of os is not supported in browser...but valid in nodejs env"
-  );
+  isNode = false;
 }
 
 export function getStorage() {
