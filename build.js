@@ -90,10 +90,8 @@ const sketchMain = await context({
   banner: {
     js:
       userscriptMetadataGenerator({
-        author: pkg.author,
-        description: pkg.description,
-        version: pkg.version,
         ...sketchMeta,
+        version: pkg.version,
       }) +
       "\n/*eslint-disable*/" +
       sketchNodeLoader,

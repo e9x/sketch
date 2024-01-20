@@ -1,5 +1,7 @@
 {
   "name": "Sketch",
+  "author": "The Gaming Gurus",
+  "description": "try to take over the world!",
   "namespace": "https://krunker.zip",
   "icon": "https://www.google.com/s2/favicons?sz=64&domain=krunker.io",
   "match": ["https://krunker.io/*"],
