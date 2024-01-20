@@ -36,6 +36,7 @@ export interface SketchConfig {
   multiPointScale: number;
   skinHack: boolean;
   keybindOverlay: boolean;
+  healthBars: boolean;
 }
 
 /**
@@ -75,6 +76,7 @@ const defaultConfig: SketchConfig = {
   multiPointScale: 0.5,
   skinHack: false,
   keybindOverlay: false,
+  healthBars: false,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());

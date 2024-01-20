@@ -20,6 +20,7 @@ export declare class AI {
   sid: number;
   index: number;
   health: number;
+  maxHealth: number;
   team: number;
   canBSeen: boolean;
   mesh: THREE.Object3D;

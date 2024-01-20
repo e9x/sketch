@@ -401,7 +401,11 @@ export function espHook() {
         }
       }
 
-    if (sketchConfig.get("boxes") && !isInMenus()) {
+    // closely related logic
+    const boxes = sketchConfig.get("boxes");
+    const healthBars = sketchConfig.get("healthBars");
+
+    if ((boxes || healthBars) && !isInMenus()) {
       overlay.ctx.save();
       overlay.ctx.scale(overlay.scale, overlay.scale);
 
@@ -412,10 +416,33 @@ export function espHook() {
 
         if (!box) continue;
 
-        overlay.ctx.strokeStyle =
-          "#" + getEntityMaterial(entity, materials.colors).getHexString();
-        overlay.ctx.lineWidth = 1.5;
-        overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
+        if (boxes) {
+          overlay.ctx.strokeStyle =
+            "#" + getEntityMaterial(entity, materials.colors).getHexString();
+          overlay.ctx.lineWidth = 1.5;
+          overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
+        }
+
+        if (healthBars) {
+          const barMargin = box.width * 0.05;
+          const barWidth = box.width * 0.1;
+          overlay.ctx.fillStyle = "#F00";
+          overlay.ctx.fillRect(
+            box.right + barMargin,
+            box.top,
+            barWidth,
+            box.height
+          );
+
+          overlay.ctx.fillStyle = "#0F0";
+          const remaining = box.height * (entity.health / entity.maxHealth);
+          overlay.ctx.fillRect(
+            box.right + barMargin,
+            box.top + (box.height - remaining),
+            barWidth,
+            remaining
+          );
+        }
       }
 
       overlay.ctx.restore();
@@ -428,6 +455,7 @@ export function ESPMenu() {
   const [boxes, setBoxes] = useSketchConfig("boxes");
   const [chams, setChams] = useSketchConfig("chams");
   const [tracers, setTracers] = useSketchConfig("tracers");
+  const [healthBars, setHealthBars] = useSketchConfig("healthBars");
 
   return (
     <>
@@ -454,6 +482,12 @@ export function ESPMenu() {
         description="Draws a line between your camera and other players"
         defaultChecked={tracers}
         onChange={(event) => setTracers(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Health Bars"
+        description="Shows a health bar next to a player"
+        defaultChecked={healthBars}
+        onChange={(event) => setHealthBars(event.currentTarget.checked)}
       />
     </>
   );
