@@ -4,6 +4,7 @@ import {
   ioSendHooks,
   playerConstructorHooks,
 } from "../filters";
+import type { Player } from "../krunker/Player";
 import type { Skin } from "../krunker/Player";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import Switch from "krunker-ui/components/Switch";
@@ -26,22 +27,24 @@ export function skinHackHook() {
     cnt: 1,
   })) as Skin[];
 
+  const realSkins = new WeakMap<Player, Skin[]>();
+
   playerConstructorHooks.push((player) => {
-    let valueSkins = player.skins;
+    realSkins.set(player, player.skins);
 
     Object.defineProperty(player, "skins", {
       get() {
         if (sketchConfig.get("skinHack")) return dummySkinArray;
-        else return valueSkins;
+        else return realSkins.get(player);
       },
       set(value) {
-        valueSkins = value;
+        realSkins.set(player, value);
       },
     });
   });
 
   ioSendHooks.push((packet, data) => {
-    if (packet === "en")
+    if (packet === "en") {
       skinData = {
         main: data[0][2][0],
         secondary: data[0][2][1],
@@ -51,6 +54,29 @@ export function skinHackHook() {
         dye: data[0][14],
         waist: data[0][17],
       };
+
+      const menuPlayer = getMenuPlayer();
+      if (!menuPlayer) return;
+      const skins = realSkins.get(menuPlayer) || menuPlayer.skins;
+
+      // remove skins if they don't have it
+
+      // primary, secondary
+      for (const skinId in [0, 1])
+        if (
+          data[0][2][skinId] !== -1 &&
+          !skins.find(({ ind }) => ind === data[0][2][skinId])
+        )
+          data[0][2][skinId] = -1;
+
+      // hat, body, knife, dye, waist
+      for (const skinId of [3, 4, 9, 14, 17])
+        if (
+          data[0][skinId] !== -1 &&
+          !skins.find(({ ind }) => ind === data[0][skinId])
+        )
+          data[0][skinId] = -1;
+    }
   });
 
   ioDispatchHooks.push((packet, data) => {
