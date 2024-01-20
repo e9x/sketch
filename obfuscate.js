@@ -25,7 +25,7 @@ export function obfuscate() {
             deadCodeInjection: true,
             selfDefending: false,
             splitStrings: true,
-            stringArrayEncoding: ["rc4"],
+            stringArrayEncoding: ["base64"],
             stringArrayThreshold: 1,
             transformObjectKeys: true,
             renameProperties: false,

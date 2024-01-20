@@ -130,26 +130,3 @@ if (process.argv.includes("--watch")) {
   await sketchMain.rebuild();
   await sketchMain.dispose();
 }
-
-/*
-obfuscator({
-  include:
-    /Menu\.tsx|createUI\.tsx|Outdated\.tsx|NotUpdated\.tsx|index\.tsx|KrunkBox\.ts/,
-  options: {
-    target: "browser",
-    deadCodeInjection: true,
-    selfDefending: false,
-    splitStrings: true,
-    stringArrayEncoding: ["rc4"],
-    stringArrayThreshold: 1,
-    transformObjectKeys: true,
-    renameProperties: false,
-    renameGlobals: false,
-    numbersToExpressions: false,
-    controlFlowFlattening: true,
-    stringArray: true,
-    stringArrayCallsTransformThreshold: 1,
-    simplify: true,
-  },
-}),
-*/
