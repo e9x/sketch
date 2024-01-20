@@ -105,11 +105,12 @@ function doGameHooks() {
  * player created while in the menu
  * basically local player but it never spawns
  * and it's not the localPlayer
+ *
+ * menuPlayer can be undefined when the player isn't signed in
  */
 let menuPlayer: Player | undefined;
 
 export function getMenuPlayer() {
-  if (!menuPlayer) throw new Error("Too early");
   return menuPlayer;
 }
 

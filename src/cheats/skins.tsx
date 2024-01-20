@@ -55,12 +55,16 @@ export function skinHackHook() {
 
   ioDispatchHooks.push((packet, data) => {
     if (sketchConfig.get("skinHack") && skinData && packet === "0") {
+      const menuPlayer = getMenuPlayer();
+
+      if (!menuPlayer) return;
+
       const skinValue = data[0][0];
       let offset = 38;
       while (skinValue.length % offset !== 0) offset++;
 
       for (let i = 0; i < skinValue.length; i += offset) {
-        if (skinValue[i + 5] === getMenuPlayer().name) {
+        if (skinValue[i + 5] === menuPlayer.name) {
           skinValue[i + 12] = [skinData.main, skinData.secondary];
           skinValue[i + 13] = skinData.hat;
           skinValue[i + 14] = skinData.body;
