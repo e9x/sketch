@@ -160,19 +160,6 @@ async function main() {
     await gameLoad;
     sketchButton();
 
-    // load menu font
-    const link = document.createElement("link");
-    link.href =
-      "https://fonts.googleapis.com/css2?family=Delicious+Handrawn&display=swap";
-    link.rel = "stylesheet";
-    // load the fonts as soon as they're available
-    // to prevent the placeholder font when it's first rendered
-    link.addEventListener("load", () => {
-      for (const font of document.fonts)
-        if (font.family === "Delicious Handrawn") font.load();
-    });
-    document.head.append(link);
-
     game();
 
     break;
