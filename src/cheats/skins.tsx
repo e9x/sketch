@@ -44,7 +44,7 @@ export function skinHackHook() {
   });
 
   ioSendHooks.push((packet, data) => {
-    if (packet === "en") {
+    if (packet === "en" && sketchConfig.get("skinHack")) {
       skinData = {
         main: data[0][2][0],
         secondary: data[0][2][1],
