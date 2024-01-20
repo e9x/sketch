@@ -166,12 +166,15 @@ const options = defineConfig([
       }),
       !isDevelopment &&
         obfuscator({
-          include: /index.tsx|KrunkBox\.ts|KeyBeg\.tsx/,
+          include:
+            /Menu\.tsx|createUI\.tsx|Outdated\.tsx|NotUpdated\.tsx|index\.tsx|KrunkBox\.ts/,
           options: {
             target: "browser",
             deadCodeInjection: true,
             selfDefending: false,
             splitStrings: true,
+            stringArrayEncoding: ["rc4"],
+            stringArrayThreshold: 1,
             transformObjectKeys: true,
             renameProperties: false,
             renameGlobals: false,
