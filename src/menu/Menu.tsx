@@ -2,6 +2,7 @@ import { AimbotMenu } from "../cheats/aimbot";
 import { BhopMenu } from "../cheats/bhop";
 import { ESPMenu } from "../cheats/esp";
 import { ForceAutoMenu } from "../cheats/forceAuto";
+import { KeybindOverlayMenu } from "../cheats/keybindOverlay";
 import { RecoilControlMenu } from "../cheats/recoilControl";
 import { SkinHackMenu } from "../cheats/skins";
 import { TriggerbotMenu } from "../cheats/triggerbot";
@@ -149,6 +150,7 @@ export default function Menu() {
             return (
               <>
                 <Set title="Menu">
+                  <KeybindOverlayMenu />
                   <BindHolder title="Menu Key">
                     <Bind
                       bind={menuKey}
