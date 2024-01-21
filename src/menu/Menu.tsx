@@ -4,9 +4,7 @@ import { BhopMenu } from "../cheats/bhop";
 import { ESPMenu } from "../cheats/esp";
 import { ForceAutoMenu } from "../cheats/forceAuto";
 import { KeybindOverlayMenu } from "../cheats/keybindOverlay";
-import { RecoilControlMenu } from "../cheats/recoilControl";
 import { SkinHackMenu } from "../cheats/skins";
-import { TriggerbotMenu } from "../cheats/triggerbot";
 import { WatermarkMenu } from "../cheats/watermark";
 import { discordURL, docsURL, sketchVersion } from "../consts";
 import {
@@ -162,7 +160,6 @@ export default function Menu() {
             return (
               <>
                 <Set title="Menu">
-                  <KeybindOverlayMenu />
                   <BindHolder title="Menu Key">
                     <Bind
                       bind={menuKey}
@@ -209,6 +206,8 @@ export default function Menu() {
                       }
                     }}
                   />
+                  <KeybindOverlayMenu />
+                  <WatermarkMenu />
                 </Set>
                 <HeadlessSet>
                   <Link title="Guide" href={docsURL} />
@@ -221,37 +220,17 @@ export default function Menu() {
           },
         },
         {
-          name: "Aim",
+          name: "Combat",
           body: () => {
             return <AimbotMenu />;
           },
         },
         {
-          name: "Skill",
-          body: () => {
-            return (
-              <>
-                <Set title="Skill">
-                  <BhopMenu />
-                  <ForceAutoMenu />
-                </Set>
-                <Set title="Triggerbot">
-                  <TriggerbotMenu />
-                </Set>
-                <Set title="Recoil Control">
-                  <RecoilControlMenu />
-                </Set>
-              </>
-            );
-          },
-        },
-        {
-          name: "Visual",
+          name: "Misc",
           body: () => {
             return (
               <>
                 <HeadlessSet>
-                  <AdblockMenu />
                   <Switch
                     title="Third Person"
                     description="Enables third person mode"
@@ -265,7 +244,22 @@ export default function Menu() {
                       }
                     }}
                   />
-                  <WatermarkMenu />
+                  <AdblockMenu />
+                </HeadlessSet>
+                <Set title="Movements">
+                  <BhopMenu />
+                  <ForceAutoMenu />
+                </Set>
+              </>
+            );
+          },
+        },
+        {
+          name: "Visual",
+          body: () => {
+            return (
+              <>
+                <HeadlessSet>
                   <SkinHackMenu />
                   <Switch
                     title="Disable ADS FOV multiplier"
@@ -275,9 +269,6 @@ export default function Menu() {
                     }
                   />
                 </HeadlessSet>
-                <Set title="ESP">
-                  <ESPMenu />
-                </Set>
                 <Set title="Sky Color">
                   <ColorPicker
                     title="Sky Color"
@@ -310,6 +301,9 @@ export default function Menu() {
                       }
                     }}
                   />
+                </Set>
+                <Set title="ESP">
+                  <ESPMenu />
                 </Set>
               </>
             );

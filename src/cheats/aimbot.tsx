@@ -26,6 +26,8 @@ import {
 import type { SketchConfig } from "../sketchConfig";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { random } from "../util";
+import { RecoilControlMenu } from "./recoilControl";
+import { TriggerbotMenu } from "./triggerbot";
 import BindHolder, { Bind } from "krunker-ui/components/Bind";
 import Select from "krunker-ui/components/Select";
 import { Set } from "krunker-ui/components/Set";
@@ -510,6 +512,12 @@ export function AimbotMenu() {
           defaultChecked={wallbangs}
           onChange={(event) => setWallbangs(event.currentTarget.checked)}
         />
+      </Set>
+      <Set title="Triggerbot">
+        <TriggerbotMenu />
+      </Set>
+      <Set title="Recoil Control">
+        <RecoilControlMenu />
       </Set>
     </>
   );
