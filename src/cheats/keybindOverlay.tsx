@@ -45,7 +45,7 @@ export function keybindOverlayHook() {
       const boxX = 10;
       const boxY = height / 2 - boxHeight / 2;
 
-      overlay.ctx.fillStyle = "#202020";
+      overlay.ctx.fillStyle = "#202020e2";
       overlay.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
 
       overlay.ctx.translate(boxX + boxPadding / 2, boxY + boxPadding / 2);

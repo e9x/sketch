@@ -54,7 +54,7 @@ export function watermarkHook() {
       const boxX = width / 2 - boxWidth / 2;
       const boxY = 10;
 
-      overlay.ctx.fillStyle = "#202020";
+      overlay.ctx.fillStyle = "#202020e2";
       overlay.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
 
       overlay.ctx.translate(boxX + boxPadding / 2, boxY + boxPadding / 2);
