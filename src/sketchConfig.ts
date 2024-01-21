@@ -73,7 +73,7 @@ const defaultConfig: SketchConfig = {
   triggerbotKey: -1,
   triggerbotMin: 0,
   triggerbotMax: 0,
-  menuKey: -1,
+  menuKey: 112, // F1
   menuButton: true,
   silentFail: false,
   noAdsFovMlt: false,
