@@ -1,3 +1,4 @@
+import { AdblockMenu } from "../cheats/adblock";
 import { AimbotMenu } from "../cheats/aimbot";
 import { BhopMenu } from "../cheats/bhop";
 import { ESPMenu } from "../cheats/esp";
@@ -6,11 +7,17 @@ import { KeybindOverlayMenu } from "../cheats/keybindOverlay";
 import { RecoilControlMenu } from "../cheats/recoilControl";
 import { SkinHackMenu } from "../cheats/skins";
 import { TriggerbotMenu } from "../cheats/triggerbot";
-import { TweaksMenu } from "../cheats/tweaks";
 import { WatermarkMenu } from "../cheats/watermark";
 import { discordURL, docsURL, sketchVersion } from "../consts";
+import {
+  getGame,
+  getLocalPlayer,
+  getRealClearColor,
+  getRender,
+} from "../filters";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import BindHolder, { Bind } from "krunker-ui/components/Bind";
+import ColorPicker from "krunker-ui/components/ColorPicker";
 import Control from "krunker-ui/components/Control";
 import Link from "krunker-ui/components/Link";
 import { HeadlessSet, Set } from "krunker-ui/components/Set";
@@ -82,6 +89,9 @@ export default function Menu() {
   const [menuButton] = useSketchConfig("menuButton");
   const [noAdsFovMlt, setNoAdsFovMlt] = useSketchConfig("noAdsFovMlt");
   const [silentFail, setSilentFail] = useSketchConfig("silentFail");
+  const [thirdPerson, setThirdPerson] = useSketchConfig("thirdPerson");
+  const [skyColor, setSkyColor] = useSketchConfig("skyColor");
+  const [skyColorHex, setSkyColorHex] = useSketchConfig("skyColorHex");
 
   return (
     <Settings
@@ -241,6 +251,20 @@ export default function Menu() {
             return (
               <>
                 <HeadlessSet>
+                  <AdblockMenu />
+                  <Switch
+                    title="Third Person"
+                    description="Enables third person mode"
+                    defaultChecked={thirdPerson}
+                    onChange={(event) => {
+                      setThirdPerson(event.currentTarget.checked);
+                      try {
+                        getGame().players.regenMeshes(getLocalPlayer());
+                      } catch {
+                        // game or localPlayer aren't a thing yet
+                      }
+                    }}
+                  />
                   <WatermarkMenu />
                   <SkinHackMenu />
                   <Switch
@@ -254,14 +278,41 @@ export default function Menu() {
                 <Set title="ESP">
                   <ESPMenu />
                 </Set>
+                <Set title="Sky Color">
+                  <ColorPicker
+                    title="Sky Color"
+                    description="Changes the sky's color"
+                    defaultValue={skyColorHex}
+                    onChange={(event) => {
+                      setSkyColorHex(event.currentTarget.value);
+                      if (sketchConfig.get("skyColor"))
+                        try {
+                          // trigger an update
+                          getRender().renderer.setClearColor(
+                            getRealClearColor()
+                          );
+                        } catch {
+                          //
+                        }
+                    }}
+                  />
+                  <Switch
+                    title="Use Custom Sky Color"
+                    description="Changes the sky's color"
+                    defaultChecked={skyColor}
+                    onChange={(event) => {
+                      setSkyColor(event.currentTarget.checked);
+                      try {
+                        // trigger an update
+                        getRender().renderer.setClearColor(getRealClearColor());
+                      } catch {
+                        //
+                      }
+                    }}
+                  />
+                </Set>
               </>
             );
-          },
-        },
-        {
-          name: "Tweaks",
-          body: () => {
-            return <TweaksMenu />;
           },
         },
       ]}

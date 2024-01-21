@@ -1,4 +1,5 @@
 import KrunkBox, { APIError } from "./KrunkBox";
+import { adblockHook } from "./cheats/adblock";
 import { aimbotHook } from "./cheats/aimbot";
 import { bhopHook } from "./cheats/bhop";
 import { espHook } from "./cheats/esp";
@@ -17,7 +18,6 @@ import { getInit, gameLoad, fetchWASM } from "./inject";
 import { sketchButton } from "./menu/createUI";
 import sketchConfig from "./sketchConfig";
 import { waitFor } from "./util";
-import { tweaksHook } from "cheats/tweaks";
 import { createRoot } from "react-dom/client";
 
 aimbotHook();
@@ -28,7 +28,7 @@ recoilControlHook();
 forceAutoHook();
 skinHackHook();
 keybindOverlayHook();
-tweaksHook();
+adblockHook();
 watermarkHook();
 
 const hook = (dataArg: string, src: string) => {
