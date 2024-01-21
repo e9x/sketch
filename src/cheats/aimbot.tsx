@@ -389,6 +389,27 @@ export function aimbotHook() {
       }
     }
   });
+
+  let spinCount = 0;
+
+  inputHooks.push((inputs) => {
+    if (inputs[iInputs.shoot]) return;
+
+    if (inputs[iInputs.moveDir] !== -1)
+      inputs[iInputs.moveDir] =
+        (inputs[iInputs.moveDir] +
+          spinCount -
+          Math.round(7 * (inputs[iInputs.yDir] / 1000 / (Math.PI * 2)))) %
+        7;
+    // crouch while not moving
+    else inputs[iInputs.crouch] = 1;
+
+    inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
+
+    inputs[iInputs.yDir] = (spinCount / 7) * (Math.PI * 2) * 1000;
+
+    if (inputs[iInputs.frame] % 1 === 0) spinCount = (spinCount + 1) % 7;
+  });
 }
 
 export function AimbotMenu() {
@@ -405,6 +426,7 @@ export function AimbotMenu() {
   const [multiPointScale, setMultiPointScale] =
     useSketchConfig("multiPointScale");
   const [targetOnAimKey, setTargetAimOnKey] = useSketchConfig("targetOnAimKey");
+  const [spinbot, setSpinbot] = useSketchConfig("spinbot");
 
   return (
     <>
@@ -428,6 +450,11 @@ export function AimbotMenu() {
           <option value="smooth">Assist</option>
           <option value="silent">Silent</option>
         </Select>
+        <Switch
+          title="Spinbot"
+          defaultChecked={spinbot}
+          onChange={(event) => setSpinbot(event.currentTarget.checked)}
+        />
         <Switch
           title="Target on Aim Key"
           description="Picks a target as soon as the aim key is pressed, and won't lock onto a new target until it's pressed again."
