@@ -1,6 +1,8 @@
 import { iInputs } from "../consts";
 import { getGame, getRender, inputHooks } from "../filters";
 import { isEnemy } from "../krunkerUtil";
+import type { OBB } from "../obb";
+import { createOBB } from "../obb";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import BindHolder, { Bind } from "krunker-ui/components/Bind";
 import Slider from "krunker-ui/components/Slider";
@@ -12,6 +14,8 @@ export function triggerbotHook() {
   let didShoot = false;
 
   let raycaster: THREE.Raycaster | undefined;
+
+  let obb: OBB | undefined;
 
   inputHooks.push((inputs) => {
     const triggerbotSmoothBot =
@@ -46,15 +50,31 @@ export function triggerbotHook() {
         let shoot = false;
 
         for (const player of game.players.list)
-          if (
-            isEnemy(player) &&
-            player.objInstances &&
-            player.canBSeen &&
-            raycaster.intersectObjects(player.objInstances.children, true)
-              .length
-          ) {
-            shoot = true;
-            break;
+          if (isEnemy(player) && player.objInstances && player.canBSeen) {
+            // Calculate the Box3 and its Matrix.
+            const box = new game.THREE.Box3().setFromObject(
+              player.objInstances
+            );
+            const matrix = player.objInstances.matrixWorld;
+
+            // Use the Box3 and its Matrix to calculate the OBB.
+            const rotationMatrix = new game.THREE.Matrix3().setFromMatrix4(
+              matrix
+            );
+
+            if (!obb) obb = createOBB(game.THREE);
+            obb.rotation.copy(rotationMatrix);
+            obb.halfSize.subVectors(box.max, box.min).multiplyScalar(0.5);
+            obb.center.addVectors(box.min, obb.halfSize);
+
+            // Check if the ray intersects the object space bounding box.
+            const hit = obb.intersectsRay(raycaster.ray);
+
+            // Check intersection
+            if (hit) {
+              shoot = true;
+              break;
+            }
           }
 
         if (shoot) {
@@ -68,6 +88,7 @@ export function triggerbotHook() {
 
           if (detectTime < Date.now()) {
             inputs[iInputs.shoot] = 1;
+            inputs[iInputs.scope] = 1;
           }
 
           didShoot = true;
