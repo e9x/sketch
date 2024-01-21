@@ -193,6 +193,16 @@ export function isInMenus() {
   );
 }
 
+/**
+ * will not return an accurate FPS unless showFPS is enabled in game or it's forced to calculate FPS
+ */
+export function getFPS() {
+  return document.getElementById("ingameFPS")?.textContent || "0";
+}
+
+export function getPing() {
+  return document.getElementById("pingText")?.textContent || "0";
+}
 /*export function isInGame() {
   return (
     document.getElementById("deathUIHolder")?.style.display !== "none" &&

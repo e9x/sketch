@@ -7,6 +7,7 @@ import { keybindOverlayHook } from "./cheats/keybindOverlay";
 import { recoilControlHook } from "./cheats/recoilControl";
 import { skinHackHook } from "./cheats/skins";
 import { triggerbotHook } from "./cheats/triggerbot";
+import { watermarkHook } from "./cheats/watermark";
 import NotUpdated from "./components/NotUpdated";
 import Outdated from "./components/Outdated";
 import { isKrunker, sketchVersion, supportedGame } from "./consts";
@@ -28,6 +29,7 @@ forceAutoHook();
 skinHackHook();
 keybindOverlayHook();
 tweaksHook();
+watermarkHook();
 
 const hook = (dataArg: string, src: string) => {
   // hook __webpack_require__, specifically the part where it returns module.exports and when it's generating the exports, not caching it
@@ -43,6 +45,13 @@ const hook = (dataArg: string, src: string) => {
       `!${player}.isYou&&${player}.objInstances){if(${player}.canBSeen||${dataArg}.nametags){`
   );
 
+  // force the game to calculate FPS if the watermark is enabled
+  src = src.replace(
+    /if\((\w+)\.tmp\.showFPS\)\{for\(/,
+    (match, settings) =>
+      `if(${dataArg}.watermark||${settings}.tmp.showFPS){for(`
+  );
+
   // *r.adsFov[r.getPlayerWeaponId(t)]
   src = src.replace(
     /\*(\w+)\.adsFov/g,
@@ -54,6 +63,9 @@ const hook = (dataArg: string, src: string) => {
   /* javascript-obfuscator:disable */
   return {
     data: {
+      get watermark() {
+        return sketchConfig.get("watermark");
+      },
       get noAdsFov() {
         return sketchConfig.get("noAdsFovMlt");
       },

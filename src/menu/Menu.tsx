@@ -7,6 +7,7 @@ import { RecoilControlMenu } from "../cheats/recoilControl";
 import { SkinHackMenu } from "../cheats/skins";
 import { TriggerbotMenu } from "../cheats/triggerbot";
 import { TweaksMenu } from "../cheats/tweaks";
+import { WatermarkMenu } from "../cheats/watermark";
 import { discordURL, docsURL, sketchVersion } from "../consts";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import BindHolder, { Bind } from "krunker-ui/components/Bind";
@@ -240,6 +241,7 @@ export default function Menu() {
             return (
               <>
                 <HeadlessSet>
+                  <WatermarkMenu />
                   <SkinHackMenu />
                   <Switch
                     title="Disable ADS FOV multiplier"

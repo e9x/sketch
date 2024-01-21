@@ -41,6 +41,7 @@ export interface SketchConfig {
   thirdPerson: boolean;
   skyColor: boolean;
   skyColorHex: string;
+  watermark: boolean;
 }
 
 /**
@@ -85,6 +86,7 @@ const defaultConfig: SketchConfig = {
   thirdPerson: false,
   skyColor: false,
   skyColorHex: "#000",
+  watermark: false,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
