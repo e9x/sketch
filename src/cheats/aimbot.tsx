@@ -393,6 +393,8 @@ export function aimbotHook() {
   let spinCount = 0;
 
   inputHooks.push((inputs) => {
+    if (!sketchConfig.get("spinbot")) return;
+
     if (inputs[iInputs.shoot]) return;
 
     if (inputs[iInputs.moveDir] !== -1)
