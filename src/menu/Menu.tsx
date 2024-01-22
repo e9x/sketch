@@ -193,8 +193,8 @@ export default function Menu() {
                     }}
                   />
                   <Switch
-                    title="Hide Updates/Key"
-                    description="Recommended for streamers. When enabled, the cheat will silently fail if there's an update, the access key expires, or the cheat isn't updated. To disable this setting, visit the Sketch guide and look for the 'Resetting Hide Updates/Key' section, which contains a link to disable the setting."
+                    title="Streamer Mode"
+                    description="When enabled, the cheat will silently fail if there's an update, the access key expires, or the cheat isn't updated. To disable this setting, visit the Sketch guide and look for the 'Resetting Hide Updates/Key' section, which contains a link to disable the setting."
                     checked={silentFail}
                     onChange={(event) => {
                       if (
