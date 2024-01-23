@@ -43,6 +43,7 @@ export interface SketchConfig {
   skyColorHex: string;
   watermark: boolean;
   spinbot: boolean;
+  triggerbotDistance: number;
 }
 
 /**
@@ -89,6 +90,7 @@ const defaultConfig: SketchConfig = {
   skyColorHex: "#000",
   watermark: false,
   spinbot: false,
+  triggerbotDistance: 1,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());

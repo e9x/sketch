@@ -49,12 +49,16 @@ export function triggerbotHook() {
 
         let shoot = false;
 
+        const triggerbotDistance = sketchConfig.get("triggerbotDistance");
+
         for (const player of game.players.list)
           if (isEnemy(player) && player.objInstances && player.canBSeen) {
             const box = new game.THREE.Box3();
 
             for (const mesh of getPlayerMeshes(player, false))
               if (mesh.visible) box.expandByObject(mesh);
+
+            box.expandByScalar(triggerbotDistance);
 
             if (!obb) obb = createOBB(game.THREE);
             obb.rotation.setFromMatrix4(player.objInstances.matrixWorld);
@@ -107,6 +111,8 @@ export function TriggerbotMenu() {
   const [triggerbotKey, setTriggerbotKey] = useSketchConfig("triggerbotKey");
   const [triggerbotMin, setTriggerbotMin] = useSketchConfig("triggerbotMin");
   const [triggerbotMax, setTriggerbotMax] = useSketchConfig("triggerbotMax");
+  const [triggerbotDistance, settriggerbotDistance] =
+    useSketchConfig("triggerbotDistance");
 
   return (
     <>
@@ -123,6 +129,17 @@ export function TriggerbotMenu() {
         description="Shoots enemys that come into your line of sight while you're holding right click"
         defaultChecked={triggerbot}
         onChange={(event) => setTriggerbot(event.currentTarget.checked)}
+      />
+      <Slider
+        title="Triggerbot Distance"
+        description="Distance from the enemy that triggerbot will target. 1 = shoots when any part of enemy is in crosshair, 10 = shoots even when the enemy is near the crosshair"
+        defaultValue={triggerbotDistance}
+        onChange={(event) =>
+          settriggerbotDistance(event.currentTarget.valueAsNumber)
+        }
+        min={1}
+        max={10}
+        step={0.5}
       />
       <Slider
         title="Triggerbot Minimum (Seconds)"
