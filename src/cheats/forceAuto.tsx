@@ -3,6 +3,7 @@ import { getLocalPlayer, inputHooks } from "../filters";
 import { getAimTime, canShoot, getReload } from "../krunkerUtil";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { random } from "../util";
+import { getTriggerbotWantsShoot } from "./triggerbot";
 import Switch from "krunker-ui/components/Switch";
 
 export function forceAutoHook() {
@@ -10,7 +11,9 @@ export function forceAutoHook() {
   let shootStart = 0;
 
   inputHooks.push((inputs) => {
-    if (!sketchConfig.get("forceAuto")) return;
+    // Run forceAuto if triggerbot was the cause of inputs[iInputs.shoot] being set
+    // Relies on forceAutoHook() being called after triggerbotHook()
+    if (!sketchConfig.get("forceAuto") && !getTriggerbotWantsShoot()) return;
 
     const localPlayer = getLocalPlayer();
 

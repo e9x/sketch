@@ -8,6 +8,16 @@ import BindHolder, { Bind } from "krunker-ui/components/Bind";
 import Slider from "krunker-ui/components/Slider";
 import Switch from "krunker-ui/components/Switch";
 
+let triggerbotWantsShoot = false;
+
+/**
+ *
+ * @returns Whether triggerbot set inputs[iInputs.shoot] on the current inputHooks frame
+ */
+export function getTriggerbotWantsShoot() {
+  return triggerbotWantsShoot;
+}
+
 export function triggerbotHook() {
   let detectTime = 0;
   let continueTime = 0;
@@ -18,6 +28,8 @@ export function triggerbotHook() {
   let obb: OBB | undefined;
 
   inputHooks.push((inputs) => {
+    triggerbotWantsShoot = false;
+
     const triggerbotSmoothBot =
       sketchConfig.get("aimbot") === "smooth" && sketchConfig.get("bot");
 
@@ -85,6 +97,8 @@ export function triggerbotHook() {
           if (detectTime < Date.now()) {
             inputs[iInputs.shoot] = 1;
             inputs[iInputs.scope] = 1;
+            // for forceAuto
+            triggerbotWantsShoot = true;
           }
 
           didShoot = true;
