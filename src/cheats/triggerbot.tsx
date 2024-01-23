@@ -137,7 +137,7 @@ export function TriggerbotMenu() {
         onChange={(event) =>
           settriggerbotDistance(event.currentTarget.valueAsNumber)
         }
-        min={1}
+        min={0}
         max={10}
         step={0.5}
       />
