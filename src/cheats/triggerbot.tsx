@@ -1,8 +1,8 @@
 import { iInputs } from "../consts";
 import { getGame, getRender, inputHooks } from "../filters";
 import { isEnemy } from "../krunkerUtil";
-import type { OBB } from "../obb";
-import { createOBB } from "../obb";
+import type { OBB } from "../lib/obb";
+import { createOBB } from "../lib/obb";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import BindHolder, { Bind } from "krunker-ui/components/Bind";
 import Slider from "krunker-ui/components/Slider";
