@@ -245,13 +245,14 @@ export function isMesh(e: THREE.Object3D): e is THREE.Mesh {
   return e.type === "Mesh";
 }
 
-export function getPlayerMeshes(player: Player) {
+export function getPlayerMeshes(player: Player, weapons = true) {
   const meshes: THREE.Mesh[] = [];
 
   for (const mesh of player.legMeshes) meshes.push(mesh);
   for (const mesh of player.mergedArmMeshes) meshes.push(mesh);
-  for (const e of player.weaponMeshes)
-    for (const mesh of e.children) meshes.push(mesh);
+  if (weapons)
+    for (const e of player.weaponMeshes)
+      for (const mesh of e.children) meshes.push(mesh);
   if (player.headObj) meshes.push(player.headObj);
   if (player.lowerBody)
     for (const e of player.lowerBody.children)

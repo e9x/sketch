@@ -1,6 +1,6 @@
 import { iInputs } from "../consts";
 import { getGame, getRender, inputHooks } from "../filters";
-import { isEnemy } from "../krunkerUtil";
+import { getPlayerMeshes, isEnemy } from "../krunkerUtil";
 import type { OBB } from "../lib/obb";
 import { createOBB } from "../lib/obb";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
@@ -51,26 +51,18 @@ export function triggerbotHook() {
 
         for (const player of game.players.list)
           if (isEnemy(player) && player.objInstances && player.canBSeen) {
-            // Calculate the Box3 and its Matrix.
-            const box = new game.THREE.Box3().setFromObject(
-              player.objInstances
-            );
-            const matrix = player.objInstances.matrixWorld;
+            const box = new game.THREE.Box3();
 
-            // Use the Box3 and its Matrix to calculate the OBB.
-            const rotationMatrix = new game.THREE.Matrix3().setFromMatrix4(
-              matrix
-            );
+            for (const mesh of getPlayerMeshes(player, false))
+              if (mesh.visible) box.expandByObject(mesh);
 
             if (!obb) obb = createOBB(game.THREE);
-            obb.rotation.copy(rotationMatrix);
+            obb.rotation.setFromMatrix4(player.objInstances.matrixWorld);
             obb.halfSize.subVectors(box.max, box.min).multiplyScalar(0.5);
             obb.center.addVectors(box.min, obb.halfSize);
 
-            // Check if the ray intersects the object space bounding box.
             const hit = obb.intersectsRay(raycaster.ray);
 
-            // Check intersection
             if (hit) {
               shoot = true;
               break;
