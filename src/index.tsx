@@ -20,11 +20,11 @@ import sketchConfig from "./sketchConfig";
 import { waitFor } from "./util";
 import { createRoot } from "react-dom/client";
 
+triggerbotHook();
 bhopHook();
 // aimbot spinbot messes with crouch and bhop
 aimbotHook();
 espHook();
-triggerbotHook();
 recoilControlHook();
 forceAutoHook();
 skinHackHook();
