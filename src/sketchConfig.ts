@@ -90,7 +90,7 @@ const defaultConfig: SketchConfig = {
   skyColorHex: "#000",
   watermark: false,
   spinbot: false,
-  triggerbotDistance: 1,
+  triggerbotDistance: 0.5,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
