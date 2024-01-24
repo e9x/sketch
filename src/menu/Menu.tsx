@@ -14,6 +14,7 @@ import {
   getRender,
 } from "../filters";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
+import { updateSketchMenuButton } from "./createUI";
 import BindHolder, { Bind } from "krunker-ui/components/Bind";
 import ColorPicker from "krunker-ui/components/ColorPicker";
 import Control from "krunker-ui/components/Control";
@@ -173,8 +174,6 @@ export default function Menu() {
                   </BindHolder>
                   <Switch
                     title="Menu Button"
-                    attention
-                    description="Requires Restart"
                     defaultChecked={menuButton}
                     onChange={(event) => {
                       if (menuKey === -1) {
@@ -188,7 +187,7 @@ export default function Menu() {
                           "menuButton",
                           event.currentTarget.checked
                         );
-                        location.reload();
+                        updateSketchMenuButton();
                       }
                     }}
                   />
