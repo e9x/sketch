@@ -47,6 +47,7 @@ const hook = (dataArg: string, src: string) => {
   );
 
   // force the game to calculate FPS if the watermark is enabled
+  // this works because the game hides the FPS element even if this code is ran
   src = src.replace(
     /if\((\w+)\.tmp\.showFPS\)\{for\(/,
     (match, settings) =>
