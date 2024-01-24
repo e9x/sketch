@@ -1,5 +1,5 @@
 import { iInputs } from "../consts";
-import { getGame, getRender, inputHooks } from "../filters";
+import { getGame, getLocalPlayer, getRender, inputHooks } from "../filters";
 import { getPlayerMeshes, isEnemy } from "../krunkerUtil";
 import type { OBB } from "../lib/obb";
 import { createOBB } from "../lib/obb";
@@ -43,7 +43,10 @@ export function triggerbotHook() {
       (triggerbotSmoothBot ||
         triggerbotKey === -1 ||
         game.controls.keys[triggerbotKey] === 1) &&
-      inputs[iInputs.scope]
+      // differs from aimbot because aimbot always requires a scope, this requires u to just look at an enemy while scoped
+      // TODO: make the scope configurable: require scope - if triggerbot requires you to be aimed
+      // auto scope - automatically scopes in then shoots
+      (inputs[iInputs.scope] || getLocalPlayer().weapon.noAim)
     ) {
       if (Date.now() < continueTime) inputs[iInputs.shoot] = 1;
       else {
