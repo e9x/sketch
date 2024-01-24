@@ -515,7 +515,7 @@ export function AimbotMenu() {
           defaultChecked={multiPoint}
           onChange={(event) => setMultiPoint(event.currentTarget.checked)}
           attention
-          description="Although multipoint is more accurate, it's very slow"
+          description="Improves aimbot accuracy. Has a small performance cost"
         />
         <Slider
           title="Multipoint Scale"
