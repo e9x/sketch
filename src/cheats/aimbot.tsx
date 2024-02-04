@@ -23,17 +23,19 @@ import {
   lerp,
   getOverlaySizeScaled,
 } from "../krunkerUtil";
-import type { SketchConfig } from "../sketchConfig";
+import type { AimbotTarget, SketchConfig } from "../sketchConfig";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { random } from "../util";
 import { RecoilControlMenu } from "./recoilControl";
 import { TriggerbotMenu } from "./triggerbot";
 import { BindHolder, Bind } from "krunker-ui/components/Bind";
+import { Control } from "krunker-ui/components/Control";
 import { Select } from "krunker-ui/components/Select";
 import { Set } from "krunker-ui/components/Set";
 import { Slider } from "krunker-ui/components/Slider";
 import { Switch } from "krunker-ui/components/Switch";
 import type { AI } from "krunker/AI";
+import { useEffect, useRef, useState } from "react";
 
 // optimize call (tampermonkey is slow)
 const { Math } = window;
@@ -169,6 +171,17 @@ function validTarget(target: Player | AI) {
   if (!target.canBSeen) return false;
 
   return true;
+}
+
+function onTargetList(target: Player) {
+  const targetListMode = sketchConfig.get("targetListMode");
+  if (targetListMode === "off") return true;
+
+  const targetList = sketchConfig.get("targetList");
+
+  if (targetListMode === "blacklist")
+    return targetList.every((t) => t[1] !== target.id);
+  else return targetList.some((t) => t[1] === target.id);
 }
 
 function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
@@ -329,7 +342,9 @@ export function aimbotHook() {
 
       const found = (
         game.players.list
+
           .filter(validTarget)
+          .filter(onTargetList)
           .map((player) => ({ player, point: playerAimPoint(player) }))
           .filter(({ point }) => point && validPoint(point, center)) as {
           player: Player;
@@ -429,6 +444,33 @@ export function AimbotMenu() {
     useSketchConfig("multiPointScale");
   const [targetOnAimKey, setTargetAimOnKey] = useSketchConfig("targetOnAimKey");
   const [spinbot, setSpinbot] = useSketchConfig("spinbot");
+  const [targetListMode, setTargetListMode] = useSketchConfig("targetListMode");
+  const [targetList, setTargetList] = useSketchConfig("targetList");
+  const [targets, setTargets] = useState<AimbotTarget[]>([]);
+  const addTargetList = useRef<HTMLSelectElement | null>(null);
+
+  useEffect(() => {
+    const callback = () => {
+      try {
+        const game = getGame();
+        setTargets(
+          game.players.list
+            .filter(
+              (player) =>
+                !player.isYou &&
+                targetList.every((target) => target[1] !== player.id)
+            )
+            .map((player) => [player.name, player.id])
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    callback();
+
+    const interval = setInterval(callback, 1e3);
+    return () => clearInterval(interval);
+  }, [targetList, setTargets]);
 
   return (
     <>
@@ -485,6 +527,75 @@ export function AimbotMenu() {
           <option value="head">Head</option>
           <option value="chest">Chest</option>
         </Select>
+      </Set>
+      <Set title="Aimbot Target">
+        <Select
+          title="Target List Mode"
+          defaultValue={targetListMode}
+          onChange={(event) =>
+            setTargetListMode(
+              event.currentTarget.value as SketchConfig["targetListMode"]
+            )
+          }
+        >
+          <option value="off">Off</option>
+          <option value="whitelist">Whitelist</option>
+          <option value="blacklist">Blacklist</option>
+        </Select>
+        <Control title="Add player">
+          <div
+            className="settingsBtn"
+            onClick={() => {
+              const target = targets.find(
+                (target) => target[1] === addTargetList.current!.value
+              );
+              if (!target) return;
+              setTargetList([...targetList, target!]);
+              addTargetList.current!.value = "";
+            }}
+          >
+            Add
+          </div>
+          <select className="inputGrey2" ref={addTargetList}>
+            <option value="">Pick a player</option>
+            {targets.map(([name, id]) => (
+              <option value={id} key={id}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </Control>
+        <div className="settName">
+          <table
+            className="pListTable"
+            style={{
+              marginTop: "8px",
+              overflowY: "scroll",
+              height: "calc(100% - 75px)",
+            }}
+          >
+            <tbody>
+              {targetList.map((target) => (
+                <tr key={target[1]}>
+                  <td className="pListName">{target[0]}</td>
+                  <td className="pListActions">
+                    <span
+                      onMouseEnter={() => playTick()}
+                      className="punishButton kick"
+                      onClick={() => {
+                        setTargetList(
+                          targetList.filter((t) => t[1] !== target[1])
+                        );
+                      }}
+                    >
+                      Remove
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Set>
       <Set title="FOV">
         <Switch

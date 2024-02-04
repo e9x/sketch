@@ -2,6 +2,8 @@ import type { DataHook } from "./Config";
 import Config, { useConfig } from "./Config";
 import { getStorage } from "./consts";
 
+export type AimbotTarget = [name: string, id: string];
+
 export interface SketchConfig {
   aimbot: "off" | "smooth" | "silent";
   hitbox: "head" | "chest";
@@ -44,6 +46,8 @@ export interface SketchConfig {
   watermark: boolean;
   spinbot: boolean;
   triggerbotDistance: number;
+  targetList: AimbotTarget[];
+  targetListMode: "off" | "whitelist" | "blacklist";
 }
 
 /**
@@ -91,6 +95,8 @@ const defaultConfig: SketchConfig = {
   watermark: false,
   spinbot: false,
   triggerbotDistance: 0.5,
+  targetList: [],
+  targetListMode: "off",
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
