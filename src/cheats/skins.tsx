@@ -7,7 +7,7 @@ import {
 import type { Player } from "../krunker/Player";
 import type { Skin } from "../krunker/Player";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
-import Switch from "krunker-ui/components/Switch";
+import { Switch } from "krunker-ui/components/Switch";
 
 interface SkinHackSkins {
   main: number;

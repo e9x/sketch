@@ -4,9 +4,9 @@ import { getPlayerMeshes, isEnemy } from "../krunkerUtil";
 import type { OBB } from "../lib/obb";
 import { createOBB } from "../lib/obb";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
-import BindHolder, { Bind } from "krunker-ui/components/Bind";
-import Slider from "krunker-ui/components/Slider";
-import Switch from "krunker-ui/components/Switch";
+import { BindHolder, Bind } from "krunker-ui/components/Bind";
+import { Slider } from "krunker-ui/components/Slider";
+import { Switch } from "krunker-ui/components/Switch";
 
 let triggerbotWantsShoot = false;
 

@@ -15,13 +15,13 @@ import {
 } from "../filters";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { updateSketchMenuButton } from "./createUI";
-import BindHolder, { Bind } from "krunker-ui/components/Bind";
-import ColorPicker from "krunker-ui/components/ColorPicker";
-import Control from "krunker-ui/components/Control";
-import Link from "krunker-ui/components/Link";
+import { BindHolder, Bind } from "krunker-ui/components/Bind";
+import { ColorPicker } from "krunker-ui/components/ColorPicker";
+import { Control } from "krunker-ui/components/Control";
+import { Link } from "krunker-ui/components/Link";
 import { HeadlessSet, Set } from "krunker-ui/components/Set";
-import Switch from "krunker-ui/components/Switch";
-import Settings from "krunker-ui/settings";
+import { Switch } from "krunker-ui/components/Switch";
+import { Settings } from "krunker-ui/settings";
 
 function downloadFile(fileName: string, fileData: string) {
   const downloadLink = document.createElement("a");

@@ -1,7 +1,7 @@
 import { getOverlay, overlayRenderHooks } from "../filters";
 import { getFPS, getPing, isInMenus } from "../krunkerUtil";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
-import Switch from "krunker-ui/components/Switch";
+import { Switch } from "krunker-ui/components/Switch";
 
 const userPreference = ["en-US", "en-GB", "my"].includes(navigator.language)
   ? "12"

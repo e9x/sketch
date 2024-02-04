@@ -19,7 +19,7 @@ import {
   pos2D,
 } from "../krunkerUtil";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
-import Switch from "krunker-ui/components/Switch";
+import { Switch } from "krunker-ui/components/Switch";
 
 // nametags is handled in index.ts
 // see get nametags() { ... }

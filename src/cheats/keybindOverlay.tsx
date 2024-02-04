@@ -1,6 +1,6 @@
 import { getOverlay, overlayRenderHooks } from "../filters";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
-import Switch from "krunker-ui/components/Switch";
+import { Switch } from "krunker-ui/components/Switch";
 import { getKeyName } from "krunker-ui/keys";
 import { isInMenus } from "krunkerUtil";
 

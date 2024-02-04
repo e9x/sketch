@@ -28,11 +28,11 @@ import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { random } from "../util";
 import { RecoilControlMenu } from "./recoilControl";
 import { TriggerbotMenu } from "./triggerbot";
-import BindHolder, { Bind } from "krunker-ui/components/Bind";
-import Select from "krunker-ui/components/Select";
+import { BindHolder, Bind } from "krunker-ui/components/Bind";
+import { Select } from "krunker-ui/components/Select";
 import { Set } from "krunker-ui/components/Set";
-import Slider from "krunker-ui/components/Slider";
-import Switch from "krunker-ui/components/Switch";
+import { Slider } from "krunker-ui/components/Slider";
+import { Switch } from "krunker-ui/components/Switch";
 import type { AI } from "krunker/AI";
 
 // optimize call (tampermonkey is slow)
