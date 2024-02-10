@@ -82,7 +82,6 @@ export function skinHackHook() {
       while (skinValue.length % offset !== 0) offset++;
 
       for (let i = 0; i < skinValue.length; i += offset) {
-        console.log(skinValue[i + 5]);
         if (skinValue[i + 5] === menuPlayer.name) {
           skinValue[i + 12] = [skinData.main, skinData.secondary];
           skinValue[i + 13] = skinData.hat;
