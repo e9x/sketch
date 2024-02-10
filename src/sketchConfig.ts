@@ -11,6 +11,7 @@ export interface SketchConfig {
   wallbangs: boolean;
   fovCheck: boolean;
   aimKey: number;
+  aimReactionTime: number;
   fovRadius: number;
   smoothFactor: number;
   drawFOV: boolean;
@@ -60,6 +61,7 @@ const defaultConfig: SketchConfig = {
   wallbangs: false,
   fovCheck: true,
   aimKey: -1,
+  aimReactionTime: 0,
   fovRadius: 150,
   smoothFactor: 0.7,
   drawFOV: false,

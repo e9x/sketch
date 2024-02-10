@@ -255,11 +255,19 @@ export function aimbotHook() {
   let targetPlayer: Player | undefined;
   let aimKeyHeld = false;
 
+  let aimReaction = 0;
+  let didAim = false;
+  let lastDidAim = false;
+
   inputHooks.push((inputs) => {
     const aimbot = sketchConfig.get("aimbot");
+    const aimReactionTime = sketchConfig.get("aimReactionTime") * 1000;
     const aimKey = sketchConfig.get("aimKey");
     const game = getGame();
     const { THREE } = game;
+
+    lastDidAim = didAim;
+    didAim = false;
 
     if (
       aimbot === "off" ||
@@ -290,6 +298,16 @@ export function aimbotHook() {
         case "smooth":
           if (!inputs[iInputs.scope]) return;
           break;
+      }
+
+      if (aimReactionTime) {
+        // just now aimed, set aimReaction
+        if (!lastDidAim) aimReaction = Date.now();
+
+        didAim = true;
+        lastDidAim = true;
+
+        if (Date.now() - aimReaction < aimReactionTime) return;
       }
     }
 
@@ -436,6 +454,8 @@ export function AimbotMenu() {
   const [wallbangs, setWallbangs] = useSketchConfig("wallbangs");
   const [hitbox, setHitbox] = useSketchConfig("hitbox");
   const [aimKey, setAimKey] = useSketchConfig("aimKey");
+  const [aimReactionTime, setAimReactionTime] =
+    useSketchConfig("aimReactionTime");
   const [smoothFactor, setSmoothFactor] = useSketchConfig("smoothFactor");
   const [fovRadius, setFOVRadius] = useSketchConfig("fovRadius");
   const [drawFOV, setDrawFOV] = useSketchConfig("drawFOV");
@@ -494,6 +514,17 @@ export function AimbotMenu() {
           <option value="smooth">Assist</option>
           <option value="silent">Silent</option>
         </Select>
+        <Slider
+          title="Aim reaction time"
+          description="Time before aiming at target after aiming/pressing aim key"
+          defaultValue={aimReactionTime}
+          min={0}
+          max={1}
+          step={0.05}
+          onChange={(event) =>
+            setAimReactionTime(event.currentTarget.valueAsNumber)
+          }
+        />
         <Switch
           title="Spinbot"
           defaultChecked={spinbot}
