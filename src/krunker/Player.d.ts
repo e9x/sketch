@@ -47,6 +47,7 @@ export declare class Player {
   isPlayer: true;
   isAI: undefined;
   isYou: boolean;
+  accid: number;
   id: string;
   sid: string;
   premiumT?: number;
