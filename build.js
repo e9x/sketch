@@ -4,7 +4,6 @@ import cors from "cors";
 import { expand } from "dotenv-expand";
 import { config } from "dotenv-flow";
 import { build, context } from "esbuild";
-import eslint from "esbuild-plugin-eslint";
 import express from "express";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -84,7 +83,6 @@ const sketchMain = await context({
         namedExports: ["createRoot"],
       },
     }),
-    eslint(),
   ],
   platform: "browser",
   banner: {
@@ -115,7 +113,6 @@ if (process.argv.includes("--watch")) {
           ...sketchDevMeta,
         }) + "\n",
     },
-    plugins: [eslint()],
   });
 
   const app = express();
