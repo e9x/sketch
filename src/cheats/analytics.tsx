@@ -15,6 +15,7 @@ export function analyticsHook() {
       if (
         plr.name === `Guest_${plr.sid}` ||
         plr.name === `Anonymous_${plr.sid}` ||
+        plr.name === `Player_${plr.sid}` ||
         !plr.accid
       )
         continue;
