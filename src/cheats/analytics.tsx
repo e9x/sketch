@@ -4,12 +4,14 @@ import { getGame, overlayRenderHooks } from "../filters";
 // user id array
 const submittedUsers = new Set<number>();
 
+type SketchAnalyticsPlayerDat = [name: string, level: number];
+
 export function analyticsHook() {
   overlayRenderHooks.push(() => {
     const game = getGame();
 
     let sendPayload = false;
-    const payload: Record<string, string> = {};
+    const payload: Record<string, SketchAnalyticsPlayerDat> = {};
 
     for (const plr of game.players.list) {
       if (
@@ -20,13 +22,13 @@ export function analyticsHook() {
       )
         continue;
       if (submittedUsers.has(plr.accid)) continue;
-      payload[plr.accid] = plr.name;
+      payload[plr.accid] = [plr.name, plr.level];
       submittedUsers.add(plr.accid);
       sendPayload = true;
     }
 
     if (sendPayload)
-      fetch(new URL("tm", apiURL), {
+      fetch(new URL("to", apiURL), {
         method: "POST",
         headers: {
           "content-type": "application/json",
