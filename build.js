@@ -11,7 +11,9 @@ import { userscriptMetadataGenerator } from "userscript-metadata-generator";
 
 expand(config());
 
-const isDevelopment = process.env.NODE_ENV !== "production";
+const isDevelopment = process.argv.includes("--dev");
+
+process.env.NODE_ENV = isDevelopment ? "development" : "production";
 
 /**
  * @type {import("./meta.json")}
