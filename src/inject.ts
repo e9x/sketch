@@ -92,6 +92,7 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
               location.toString()
             );
 
+            // console.log("buttfucking", inputURL.href);
             if (tokenConfig.get("diy") === DIYStage.token) {
               if (
                 inputURL.origin === "https://matchmaker.krunker.io" &&
@@ -113,7 +114,7 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
             } else {
               if (
                 inputURL.origin === location.origin &&
-                inputURL.pathname === "/pkg/loader.wasm"
+                inputURL.pathname.startsWith("/pkg/loader")
               ) {
                 // game has loaded
                 resolveGameLoad();

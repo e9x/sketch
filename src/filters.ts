@@ -15,15 +15,6 @@ import sketchConfig from "./sketchConfig";
 import type THREE from "three";
 import type { ColorRepresentation } from "three";
 
-export interface Module<T = any> {
-  exports: T;
-  i: number;
-}
-
-type Matcher = (module: Module) => void;
-
-const matchers: Matcher[] = [];
-
 let render: RenderManager | undefined;
 
 export function getRender() {
@@ -121,39 +112,23 @@ export function getMenuPlayer() {
  */
 export const playerConstructorHooks: ((player: Player) => void)[] = [];
 
-matchers.push((module: Module<typeof Player>) => {
-  if (
-    typeof module.exports !== "function" ||
-    !module.exports.toString().includes("this.deaths=") ||
-    !module.exports.toString().includes("this.stats=")
-  )
-    return;
-
-  const Player = module.exports;
-
-  module.exports = class extends Player {
+export function hookPlayer(ohhhh: typeof Player) {
+  return class extends ohhhh {
     constructor(...args: any[]) {
+      // console.trace(args, "fuck");
       super(...args);
       menuPlayer = this;
       for (const hook of playerConstructorHooks) hook(this);
     }
   };
-});
+}
 
-matchers.push((module: Module<typeof Game>) => {
-  if (
-    typeof module.exports !== "function" ||
-    !module.exports.toString().includes("this.players=new")
-  )
-    return;
-
-  const Game = module.exports;
+export function setGame(value: typeof Game) {
+  const Game = value;
 
   // @ts-ignore
-  module.exports = function (
-    this: Game,
-    ...args: ConstructorParameters<typeof Game>
-  ) {
+  return function (this: Game, ...args: ConstructorParameters<typeof Game>) {
+    // console.trace("Fuck", args, this);
     const result = Game.call(this, ...args);
 
     // new Game()
@@ -198,7 +173,7 @@ matchers.push((module: Module<typeof Game>) => {
 
     return result;
   };
-});
+}
 
 /**
  * After the overlay is rendered
@@ -226,17 +201,10 @@ export function getOverlay() {
   return overlay;
 }
 
-matchers.push((module: Module<typeof Overlay>) => {
-  if (
-    typeof module.exports !== "object" ||
-    module.exports === null ||
-    !("medalsList" in module.exports)
-  )
-    return;
-
-  overlay = module.exports;
+export function setOverlay(value: typeof Overlay | undefined) {
+  overlay = value;
   doOverlayHooks();
-});
+}
 
 let MapObject: typeof MapObjectModule | undefined;
 
@@ -258,16 +226,10 @@ export function getMapObject() {
   return MapObject;
 }
 
-matchers.push((module: Module<typeof MapObjectModule>) => {
-  if (
-    typeof module.exports !== "function" ||
-    !module.exports.toString().includes("this.penetrable=")
-  )
-    return;
-
-  MapObject = module.exports;
+export function setMapObject(value: typeof MapObjectModule | undefined) {
+  MapObject = value;
   doMapObjectHooks();
-});
+}
 
 /**
  * After the 3D game is rendered
@@ -282,6 +244,11 @@ let realClearColor: ColorRepresentation | undefined;
 export function getRealClearColor() {
   if (!realClearColor) throw new Error("Too early");
   return realClearColor;
+}
+
+export function setRender(value: RenderManager | undefined) {
+  render = value;
+  doRenderHooks();
 }
 
 function doRenderHooks() {
@@ -325,33 +292,6 @@ function doRenderHooks() {
   }
 }
 
-matchers.push((module: Module<typeof RenderManager>) => {
-  if (
-    typeof module.exports !== "function" ||
-    !module.exports.toString().includes("this.GEOS=")
-  )
-    return;
-
-  const RenderManager = module.exports;
-
-  // @ts-ignore
-  module.exports = function (
-    this: RenderManager,
-    ...args: ConstructorParameters<typeof RenderManager>
-  ) {
-    const result = RenderManager.call(this, ...args);
-
-    // new Game()
-    // game.controls = ...
-    // game.ui = ...
-
-    render = this;
-    doRenderHooks();
-
-    return result;
-  };
-});
-
 let config: typeof configModule | undefined;
 
 export function getConfig() {
@@ -359,16 +299,9 @@ export function getConfig() {
   return config;
 }
 
-matchers.push((module: Module<typeof configModule>) => {
-  if (
-    typeof module.exports !== "object" ||
-    module.exports === null ||
-    !("gameVersion" in module.exports)
-  )
-    return;
-
-  config = module.exports;
-});
+export function setConfig(value: typeof configModule | undefined) {
+  config = value;
+}
 
 /**
  * When the result of the hook is false, the packet won't be sent
@@ -404,22 +337,6 @@ function doIOHooks() {
       if (hook(packet, data) === false) return;
     return _dispatchEvent.call(this, packet, ...data);
   };
-}
-
-matchers.push((module: Module<typeof ioModule>) => {
-  if (
-    typeof module.exports !== "object" ||
-    module.exports === null ||
-    !("ahNum" in module.exports)
-  )
-    return;
-
-  io = module.exports;
-  doIOHooks();
-});
-
-export function matchModule(module: Module) {
-  for (const matcher of matchers) matcher(module);
 }
 
 if (isDevelopment) {
