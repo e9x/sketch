@@ -143,9 +143,9 @@ function doIOHooks() {
 }
 
 patches.GetRender = [
-  /=(\w+)\.THREE,qt=window\.SOUND=/,
-  (match, RenderManager) =>
-    `=(${dataArg}.molestRender(${RenderManager})).THREE,qt=window.SOUND=`,
+  /=(\w+)\.THREE,(\w+=window\.SOUND=)/,
+  (match, RenderManager, crap) =>
+    `=(${dataArg}.molestRender(${RenderManager})).THREE,` + crap,
 ];
 
 data.molestRender = function (module: RenderManager) {

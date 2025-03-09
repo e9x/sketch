@@ -20,6 +20,7 @@ import {
 } from "../krunkerUtil";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "krunker-ui/components/Switch";
+import type * as THREE from "three";
 
 // nametags is handled in index.ts
 // see get nametags() { ... }
@@ -170,8 +171,8 @@ function getEntityMaterial<T extends MaterialType>(
       ? materials.enemy
       : materials.enemyWall
     : entity.canBSeen
-    ? materials.team
-    : materials.teamWall;
+      ? materials.team
+      : materials.teamWall;
 }
 
 function initMaterials() {

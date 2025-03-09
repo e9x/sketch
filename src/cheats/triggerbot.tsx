@@ -7,6 +7,7 @@ import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { BindHolder, Bind } from "krunker-ui/components/Bind";
 import { Slider } from "krunker-ui/components/Slider";
 import { Switch } from "krunker-ui/components/Switch";
+import type * as THREE from "three";
 
 let triggerbotWantsShoot = false;
 
