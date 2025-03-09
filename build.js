@@ -9,11 +9,11 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { userscriptMetadataGenerator } from "userscript-metadata-generator";
 
-expand(config());
-
 const isDevelopment = process.argv.includes("--dev");
 
 process.env.NODE_ENV = isDevelopment ? "development" : "production";
+
+expand(config());
 
 /**
  * @type {import("./meta.json")}
@@ -50,6 +50,8 @@ const envReplacements = {
     return r;
   }, {}),
 };
+
+console.log(envReplacements);
 
 const sketchNodeLoader = `typeof require==="function"&&${JSON.stringify(
   sketchMeta.require

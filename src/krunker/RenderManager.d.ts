@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { MapData, GameMode } from "./GameMap";
 import type { Player } from "./Player";
-import type THREE from "three";
+import type * as THREE from "three";
 
 declare class RenderManager {
   constructor(...args: any[]);

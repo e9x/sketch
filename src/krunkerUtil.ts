@@ -10,7 +10,7 @@ import {
 } from "./filters";
 import type { AI } from "./krunker/AI";
 import type { Player } from "./krunker/Player";
-import type THREE from "three";
+import type * as THREE from "three";
 
 // optimize call (tampermonkey is slow)
 const { Math, document } = window;

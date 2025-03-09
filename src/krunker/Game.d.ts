@@ -5,7 +5,7 @@ import type MapManager from "./GameMap";
 import type { SpawnPoint } from "./GameMap";
 import type { Player, manager } from "./Player";
 import type classes from "./classes";
-import type THREE from "three";
+import type * as THREE from "three";
 
 declare class Game {
   constructor(...args: unknown[]);

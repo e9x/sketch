@@ -12,8 +12,199 @@ import type configModule from "./krunker/config";
 import type * as ioModule from "./krunker/io";
 import type * as Overlay from "./krunker/overlay";
 import sketchConfig from "./sketchConfig";
-import type THREE from "three";
-import type { ColorRepresentation } from "three";
+import type * as THREE from "three";
+
+const { freeze } = Object;
+
+export const data: Record<string, any> = {};
+
+export const hook = (dataArg: string, src: string) => {
+  src = src.replace(/Object\.freeze/g, () => `${dataArg}.BrianMeidell`);
+
+  src = src.replace(
+    /,(\w+)\.medalsList=\[/,
+    (match, module) => `,${dataArg}.overlay(${module}).medalsList=[`
+  );
+
+  // hook routine to define class getters/setters on constructor
+  /*
+  function je(e,a,t){return a&&V7(e.prototype,a),t&&V7(e,t),Object.defineProperty(e,"prototype",{writable:!1}),e}
+  */
+
+  /*src = src.replace(
+    /function (\w+)\((\w+),(\w+),(\w+)\)\{return \3&&\w+\(\2\.prototype,\3\),t&&V7\(\2,\4\),Object\.defineProperty\(\2,"prototype",\{writable:!1\}\),\2\}/,
+    (match, helperFnName) =>
+      `function ${helperFnName}(a,b,c){const og = ${match}; return ${dataArg}.fieldHelper(og, a, b, c)}`
+  );*/
+
+  src = src.replace(
+    /(\w+)={ahNum:0,.*?this\.captchaHolder=null\)\}\};/,
+    (match, ioVar) => `${match}${dataArg}.molestIO(${ioVar});`
+  );
+
+  /*src = src.replace(
+    /function (\w+)(\(\w+,\w+,\w+\)\{var \w+,\w+,\w+,\w+=this;this\.biggestY=)/,
+    (match, Player, func) => {
+      //console.trace("fuck", { Game, body });
+      return `var ${Player}=${dataArg}.molestPlayer(Shitttt);function Shitttt${func}`;
+    }
+  );*/
+
+  src = src.replace(
+    /=(\w+)\.THREE,qt=window\.SOUND=/,
+    (match, RenderManager) =>
+      `=(${dataArg}.molestRender(${RenderManager})).THREE,qt=window.SOUND=`
+  );
+
+  src = src.replace(
+    /function (\w+)\(((?:\w+,?)+)\)(\{Object\.defineProperty\(this,"isServer",{get:function)/,
+    (match, Game, argsss, body) =>
+      `var ${Game}=${dataArg}.molestGame(Fuck);function Fuck(${argsss})${body}`
+  );
+
+  src = src.replace(
+    /function (\w+)\(\w+,\w+=null\)\{.*?this\.penetrable=/,
+    (match, MapObject) => `${dataArg}.MapObject(${MapObject});${match}`
+  );
+
+  src = src.replace(
+    /!(\w+)\.isYou&&\1\.objInstances\){if\(\1\.canBSeen\){/,
+    (match, player) =>
+      `!${player}.isYou&&${player}.objInstances){if(${player}.canBSeen||${dataArg}.nametags){`
+  );
+
+  // force the game to calculate FPS if the watermark is enabled
+  // this works because the game hides the FPS element even if this code is ran
+  src = src.replace(
+    /if\((\w+)\.tmp\.showFPS\)\{for\(/,
+    (match, settings) =>
+      `if(${dataArg}.watermark||${settings}.tmp.showFPS){for(`
+  );
+
+  // *r.adsFov[r.getPlayerWeaponId(t)]
+  src = src.replace(
+    /\*(\w+)\.adsFov/g,
+    (match, render) => `*(${dataArg}.noAdsFov?${dataArg}:${render}).adsFov`
+  );
+
+  src = src.replace(
+    /(\w+)\.init\(0,0,0,"preview",!1\),/,
+    (match, menuPlayer) => match + `${dataArg}.molestMenuPlayer(${menuPlayer}),`
+  );
+
+  // hook helper func that returns the list of skins that the target plr has
+  // function helper(player, unkown)
+  // returns {ind:number,cnt:number}[]
+  // used for ui to list owned items
+
+  src = src.replace(
+    /((\w+)\.isDev\?\w+:)(\2\?\2\.skins:\[\])/,
+    (match, crap, player, skinArray) =>
+      crap + `${dataArg}.uiSkins(${skinArray})`
+  );
+
+  // before .init()
+  // game.players.add()
+  // before skin/hat properties are set
+  src = src.replace(
+    /(\(\w+=new \w+\(\w+,this,\w+\)\))(\.sid=\w+)/,
+    (match, newGamePlayer, shit) =>
+      `${dataArg}.molestNewGamePlayer(${newGamePlayer})` + shit
+  );
+
+  // force the loadout menu to render "owned" skins, even logged out
+  // so schizo..
+  src = src.replace(
+    /(\w+)&&(\(\w+\[\w+\.loadout\[0\]\]!=null)/,
+    (match, player, crap) => `(${dataArg}.skinHack||${player})&&${crap}`
+  );
+
+  // now do customize...
+  src = src.replace(
+    /(\(\w+)\|\|(_.store\.skins)/,
+    (match, con1, con2) => `${con1}||${dataArg}.skinHack||${con2}`
+  );
+
+  // NOW SKIN tone chicken bone
+  // (ee && ee.premiumT > 0 ? "<input class='skinColorItem
+  src = src.replace(
+    /(\((\w+)&&\2.premiumT>0)\?("<input class='skinColorItem)/g,
+    (match, con1, player, out1) => `${con1}||${dataArg}.skinHack?${out1}`
+  );
+
+  // bypass premium check for skinz
+  //:3
+  src = src.replace(
+    /((\w+)&&\2.premiumT>0);(_\.isSandbox)/,
+    (match, condition, player, crap) =>
+      `${dataArg}.skinHack||${condition};` + crap
+  );
+
+  const genericAdsArray = [...Array(64)].fill(0);
+
+  /* javascript-obfuscator:disable */
+  Object.assign(data, {
+    molestIO(lol: any) {
+      io = lol;
+      doIOHooks();
+    },
+    molestNewGamePlayer(player: any) {
+      for (const hook of newGamePlayerHooks) hook(player);
+      return player;
+    },
+    molestMenuPlayer(player: any) {
+      menuPlayer = player;
+    },
+    molestRender(module: RenderManager) {
+      render = module;
+      doRenderHooks();
+      return render;
+    },
+    molestGame(module: typeof Game) {
+      return hookGame(module);
+    },
+    MapObject(map: any) {
+      MapObject = map;
+      doMapObjectHooks();
+      return module;
+    },
+    overlay(module: any) {
+      overlay = module;
+      doOverlayHooks();
+      return module;
+    },
+    BrianMeidell(obj: any) {
+      if ("gameVersion" in obj) config = obj;
+      return freeze(obj);
+    },
+    get watermark() {
+      return sketchConfig.get("watermark");
+    },
+    get noAdsFov() {
+      return sketchConfig.get("noAdsFovMlt");
+    },
+    get adsFov() {
+      try {
+        const ads: number[] = [];
+
+        ads[getRender().getPlayerWeaponId(getLocalPlayer())] = 0;
+
+        return ads;
+      } catch {
+        return genericAdsArray;
+      }
+    },
+    get nametags() {
+      return sketchConfig.get("nametags");
+    },
+  });
+
+  return {
+    data,
+    src,
+  };
+  /* javascript-obfuscator:enable */
+};
 
 let render: RenderManager | undefined;
 
@@ -44,13 +235,19 @@ export const inputHooks: ((inputs: number[]) => boolean | void)[] = [];
 
 let blockedInputs = false;
 
+export const newGamePlayerHooks: ((player: Player) => void)[] = [];
+
+export const addPlayerHooks: ((player: Player) => void)[] = [];
+
 function doGameHooks() {
   const { add } = getGame().players;
 
   getGame().players.add = function (...args) {
     const player = add.call(this, ...args);
 
-    if (player.isYou) localPlayer = player;
+    if (player.isYou) {
+      localPlayer = player;
+    }
 
     const { procInputs } = player;
 
@@ -61,6 +258,10 @@ function doGameHooks() {
       }
       return procInputs.call(this, ...args);
     };
+
+    for (const hook of addPlayerHooks) {
+      hook(player);
+    }
 
     return player;
   };
@@ -102,6 +303,7 @@ function doGameHooks() {
  * menuPlayer can be undefined when the player isn't signed in
  */
 let menuPlayer: Player | undefined;
+export const menuPlayerHooks: (() => void)[] = [];
 
 export function getMenuPlayer() {
   return menuPlayer;
@@ -112,18 +314,7 @@ export function getMenuPlayer() {
  */
 export const playerConstructorHooks: ((player: Player) => void)[] = [];
 
-export function hookPlayer(ohhhh: typeof Player) {
-  return class extends ohhhh {
-    constructor(...args: any[]) {
-      // console.trace(args, "fuck");
-      super(...args);
-      menuPlayer = this;
-      for (const hook of playerConstructorHooks) hook(this);
-    }
-  };
-}
-
-export function setGame(value: typeof Game) {
+function hookGame(value: typeof Game) {
   const Game = value;
 
   // @ts-ignore
@@ -201,11 +392,6 @@ export function getOverlay() {
   return overlay;
 }
 
-export function setOverlay(value: typeof Overlay | undefined) {
-  overlay = value;
-  doOverlayHooks();
-}
-
 let MapObject: typeof MapObjectModule | undefined;
 
 function doMapObjectHooks() {
@@ -226,11 +412,6 @@ export function getMapObject() {
   return MapObject;
 }
 
-export function setMapObject(value: typeof MapObjectModule | undefined) {
-  MapObject = value;
-  doMapObjectHooks();
-}
-
 /**
  * After the 3D game is rendered
  * 2x faster than overlayRenderHooks
@@ -239,16 +420,11 @@ export function setMapObject(value: typeof MapObjectModule | undefined) {
 export const renderHooks: (() => void)[] = [];
 export const preRenderHooks: (() => void)[] = [];
 
-let realClearColor: ColorRepresentation | undefined;
+let realClearColor: THREE.ColorRepresentation | undefined;
 
 export function getRealClearColor() {
   if (!realClearColor) throw new Error("Too early");
   return realClearColor;
-}
-
-export function setRender(value: RenderManager | undefined) {
-  render = value;
-  doRenderHooks();
 }
 
 function doRenderHooks() {
@@ -282,7 +458,7 @@ function doRenderHooks() {
   if (renderer) {
     const { setClearColor } = renderer;
 
-    renderer.setClearColor = (color) => {
+    renderer.setClearColor = (color: any) => {
       realClearColor = color;
       setClearColor.call(
         renderer,
@@ -297,10 +473,6 @@ let config: typeof configModule | undefined;
 export function getConfig() {
   if (!config) throw new Error("Too early");
   return config;
-}
-
-export function setConfig(value: typeof configModule | undefined) {
-  config = value;
 }
 
 /**
