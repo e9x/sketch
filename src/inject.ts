@@ -6,7 +6,10 @@ import tokenConfig, { DIYStage } from "./tokenConfig";
 
 type Hook<Data> = (src: string) => { dataArg: string; data: Data; src: string };
 
-export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
+export async function getInit<Data>(
+  krunkbox: KrunkBox,
+  hook: Hook<Data>
+): Promise<APIError.DIY | APIError.BadToken | (() => void)> {
   let token: string;
 
   if (new URLSearchParams(location.search).has("sandbox")) {
@@ -47,22 +50,27 @@ export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
         break;
     }
 
-  const source = await krunkbox.source();
+  try {
+    const source = await krunkbox.source();
 
-  const skins = await krunkbox.skins();
+    const skins = await krunkbox.skins();
 
-  // just a really long version of `any`
-  (window as unknown as { skinfx: string }).skinfx = skins;
+    // just a really long version of `any`
+    (window as unknown as { skinfx: string }).skinfx = skins;
 
-  const { src, data, dataArg } = hook(source);
+    const { src, data, dataArg } = hook(source);
 
-  const game = new Function(
-    "WP_MMToken",
-    dataArg,
-    src + (isDevelopment ? "//# sourceURL=https://krunker.io/js/game.js" : "")
-  ) as (WP_MMToken: string, dataArg: Data) => void;
+    const game = new Function(
+      "WP_MMToken",
+      dataArg,
+      src + (isDevelopment ? "//# sourceURL=https://krunker.io/js/game.js" : "")
+    ) as (WP_MMToken: string, dataArg: Data) => void;
 
-  return () => game(token, data);
+    return () => game(token, data);
+  } catch (err) {
+    if (err === APIError.BadToken) return err;
+    else throw err;
+  }
 }
 
 let doFetchWASM: (() => void) | undefined;

@@ -1,7 +1,13 @@
 import { apiURL, isDevelopment } from "./consts";
 import { sleep } from "./util";
 
+export enum WorkInkErrors {
+  BadToken,
+  DuplicateToken,
+}
+
 export enum APIError {
+  BadToken,
   /**
    * Do it yourself
    */
@@ -22,17 +28,24 @@ async function sleepError() {
 // todo: ratelimit based on IP + useragent? too easy
 // delete tmp tokens after 10 minutes
 export default class KrunkBox {
-  static async generateTmpToken(signal?: AbortSignal) {
+  _token: string | undefined;
+  static async processWorkInk(token: string) {
     while (true) {
       const res = await fetch(new URL("hi", apiURL).toString(), {
-        signal,
-      }).catch((err) => {
-        if (err instanceof DOMException) throw err;
-        if (isDevelopment) console.error(err);
+        method: "POST",
+        body: token,
+        headers: {
+          "content-type": "text/plain",
+        },
       });
 
-      if (!res?.ok) {
-        await sleepError();
+      if (res.status === 402) return WorkInkErrors.BadToken;
+      if (res.status === 422) return WorkInkErrors.DuplicateToken;
+
+      if (!res.ok) {
+        // server error, try again in some
+        console.log("Server error, trying again in 3s");
+        await sleep(3e3);
         continue;
       }
 
@@ -78,13 +91,29 @@ export default class KrunkBox {
       };
     }
   }
+  constructor(token: string) {
+    this.token = token;
+  }
+  get token(): string {
+    if (!this._token) throw new Error("No token available");
+    return this._token;
+  }
+  set token(value: string | undefined) {
+    this._token = value;
+    if (value === undefined) GM_deleteValue("token");
+    else GM_setValue("token", value);
+  }
   async source() {
     while (true) {
-      const res = await fetch(new URL("source", apiURL).toString()).catch(
-        (err) => {
-          if (isDevelopment) console.error(err);
-        }
-      );
+      const res = await fetch(new URL("source", apiURL).toString(), {
+        headers: {
+          // only have to send the token
+          // doesn't get rotated here due to source() and hash() being called at the same time
+          "x-token": this.token,
+        },
+      }).catch((err) => {
+        if (isDevelopment) console.error(err);
+      });
 
       // has not been minified/processed yet
       if (res?.status === 404) {
@@ -102,9 +131,17 @@ export default class KrunkBox {
   }
   async skins() {
     while (true) {
-      const res = await fetch(new URL("skins", apiURL)).catch((err) => {
+      const res = await fetch(new URL("skins", apiURL), {
+        headers: {
+          // only have to send the token
+          // doesn't get rotated here due to source() and hash() being called at the same time
+          "x-token": this.token,
+        },
+      }).catch((err) => {
         if (isDevelopment) console.error(err);
       });
+
+      if (res?.status === 402) throw APIError.BadToken;
 
       // has not been minified/processed yet
       if (res?.status === 404) {

@@ -1,3 +1,4 @@
+import tokenConfig from "tokenConfig";
 import KrunkBox, { APIError } from "./KrunkBox";
 import { adblockHook } from "./cheats/adblock";
 import { aimbotHook } from "./cheats/aimbot";
@@ -19,6 +20,7 @@ import sketchConfig from "./sketchConfig";
 import { waitFor } from "./util";
 import { analyticsHook } from "cheats/analytics";
 import { createRoot } from "react-dom/client";
+import KeyBeg from "components/KeyBeg";
 
 triggerbotHook();
 bhopHook();
@@ -99,17 +101,37 @@ async function main() {
     return newRoot().root.render(<NotUpdated />);
   }
 
+  let token = tokenConfig.get("token");
+
   while (true) {
-    const krunkbox = new KrunkBox();
+    if (!token) {
+      if (sketchConfig.get("silentFail")) return;
+      token = await new Promise<string>((resolve) => {
+        const { root, overlay } = newRoot();
+
+        root.render(
+          <KeyBeg
+            done={(token) => {
+              root.unmount();
+              overlay.remove();
+              resolve(token);
+            }}
+          />
+        );
+      });
+      tokenConfig.set("token", token);
+    }
+
+    const krunkbox = new KrunkBox(token);
 
     const game = await getInit(krunkbox, hook);
 
-    /*if (game === APIError.BadToken) {
+    if (game === APIError.BadToken) {
       tokenConfig.delete("token");
       if (sketchConfig.get("silentFail")) return fetchWASM();
       token = undefined;
       continue;
-    }*/
+    }
 
     if (game === APIError.DIY) return;
 
