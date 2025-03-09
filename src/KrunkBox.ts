@@ -134,7 +134,7 @@ export default class KrunkBox {
         if (isDevelopment) console.error(err);
       });
 
-      if (res?.status === 402) throw APIError.BadToken;
+      if (res?.status === 402) return APIError.BadToken;
 
       // has not been minified/processed yet
       if (res?.status === 404) {

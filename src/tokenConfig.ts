@@ -3,7 +3,6 @@ import Config, { useConfig } from "./Config";
 import { getStorage } from "./consts";
 
 export enum DIYStage {
-  false,
   /**
    * Get the token
    */
@@ -15,17 +14,12 @@ export enum DIYStage {
 }
 
 export interface TokenConfig {
-  diy?: DIYStage;
   diyToken?: [token: string, date: number];
-  tmpToken: string;
   token?: string;
   keyFromUrl?: string; // grabbed from /key/:SHIT: portion of url on api
 }
 
-const defaultConfig: TokenConfig = {
-  diy: DIYStage.false,
-  tmpToken: "",
-};
+const defaultConfig: TokenConfig = {};
 
 const storage = getStorage();
 

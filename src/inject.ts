@@ -6,71 +6,59 @@ import tokenConfig, { DIYStage } from "./tokenConfig";
 
 type Hook<Data> = (src: string) => { dataArg: string; data: Data; src: string };
 
+let hasToken = false;
+
 export async function getInit<Data>(
   krunkbox: KrunkBox,
   hook: Hook<Data>
 ): Promise<APIError.DIY | APIError.BadToken | (() => void)> {
-  let token: string;
+  let token = "";
 
   if (new URLSearchParams(location.search).has("sandbox")) {
-    token = "";
     tokenConfig.delete("diyToken");
-    tokenConfig.delete("diy");
-  } else
-    switch (tokenConfig.get("diy")) {
-      case DIYStage.false:
-      case DIYStage.token:
-        tokenConfig.set("diy", DIYStage.token);
-        fetchWASM();
-        return APIError.DIY;
-      case DIYStage.ready:
-        {
-          const diyToken = tokenConfig.get("diyToken");
+  } else {
+    const diyToken = tokenConfig.get("diyToken");
 
-          if (!diyToken) {
-            tokenConfig.delete("diyToken");
-            tokenConfig.delete("diy");
-            location.reload();
-            return APIError.DIY;
-          }
-
-          const interval = Date.now() - diyToken[1];
-
-          if (interval > 60e3 * 2) {
-            tokenConfig.delete("diyToken");
-            tokenConfig.delete("diy");
-            location.reload();
-            return APIError.DIY;
-          }
-
-          token = diyToken[0];
-          tokenConfig.delete("diyToken");
-          tokenConfig.delete("diy");
-        }
-        break;
+    if (!diyToken) {
+      tokenConfig.delete("diyToken");
+      fetchWASM();
+      // location.reload();
+      return APIError.DIY;
     }
 
-  try {
-    const source = await krunkbox.source();
+    const interval = Date.now() - diyToken[1];
 
-    const skins = await krunkbox.skins();
+    if (interval > 60e3 * 2) {
+      tokenConfig.delete("diyToken");
+      location.reload();
+      return APIError.DIY;
+    }
 
-    // just a really long version of `any`
-    (window as unknown as { skinfx: string }).skinfx = skins;
-
-    const { src, data, dataArg } = hook(source);
-
-    const game = new Function(
-      "WP_MMToken",
-      dataArg,
-      src + (isDevelopment ? "//# sourceURL=https://krunker.io/js/game.js" : "")
-    ) as (WP_MMToken: string, dataArg: Data) => void;
-
-    return () => game(token, data);
-  } catch (err) {
-    if (err === APIError.BadToken) return err;
-    else throw err;
+    token = diyToken[0];
+    tokenConfig.delete("diyToken");
   }
+
+  hasToken = true;
+
+  const [source, skins] = await Promise.all([
+    krunkbox.source(),
+    krunkbox.skins(),
+  ]);
+  if (source === APIError.BadToken) return source;
+  if (skins === APIError.BadToken) return skins;
+
+  // just a really long version of `any`
+  (window as unknown as { skinfx: string }).skinfx = skins;
+
+  const { src, data, dataArg } = hook(source);
+
+  const game = new Function(
+    "WP_MMToken",
+    dataArg,
+    src + (isDevelopment ? "//# sourceURL=https://krunker.io/js/game.js" : "")
+  ) as (WP_MMToken: string, dataArg: Data) => void;
+
+  return () => game(token, data);
 }
 
 let doFetchWASM: (() => void) | undefined;
@@ -98,8 +86,7 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
               location.toString()
             );
 
-            // console.log("buttfucking", inputURL.href);
-            if (tokenConfig.get("diy") === DIYStage.token) {
+            if (!hasToken) {
               if (
                 inputURL.origin === "https://matchmaker.krunker.io" &&
                 inputURL.pathname === "/seek-game"
@@ -110,9 +97,7 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
                 const diyToken = String.fromCharCode(
                   ...validationToken.split("").map((e) => e.charCodeAt(0) + 10)
                 );
-
                 tokenConfig.set("diyToken", [diyToken, Date.now()]);
-                tokenConfig.set("diy", DIYStage.ready);
                 location.reload();
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 return new Promise(() => {});
