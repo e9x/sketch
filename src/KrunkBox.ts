@@ -28,7 +28,7 @@ async function sleepError() {
 // todo: ratelimit based on IP + useragent? too easy
 // delete tmp tokens after 10 minutes
 export default class KrunkBox {
-  _token: string | undefined;
+  token: string;
   static async processWorkInk(token: string) {
     while (true) {
       const res = await GM_fetch(new URL("hi", apiURL).toString(), {
@@ -93,15 +93,6 @@ export default class KrunkBox {
   }
   constructor(token: string) {
     this.token = token;
-  }
-  get token(): string {
-    if (!this._token) throw new Error("No token available");
-    return this._token;
-  }
-  set token(value: string | undefined) {
-    this._token = value;
-    if (value === undefined) GM_deleteValue("token");
-    else GM_setValue("token", value);
   }
   async source() {
     while (true) {

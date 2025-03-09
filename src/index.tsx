@@ -134,6 +134,7 @@ async function main() {
           break;
         default:
           token = res;
+          tokenConfig.set("token", token);
       }
     }
   }
@@ -158,7 +159,6 @@ async function main() {
     }
 
     const krunkbox = new KrunkBox(token);
-
     const game = await getInit(krunkbox, hook);
 
     if (game === APIError.BadToken) {
