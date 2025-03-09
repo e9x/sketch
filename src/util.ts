@@ -100,7 +100,6 @@ export function GM_fetch(url: string, opts: FetchOptions = {}) {
             .filter(Boolean) // empty lines
             .reduce((headers, line) => {
               const [name, value] = line.split(/:\s*?/);
-              console.log([name, value]);
               headers.set(name, value);
               return headers;
             }, new Headers()),
