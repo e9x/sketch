@@ -62,14 +62,20 @@ export const overlayRenderHooks: (() => void)[] = [];
 export const preOverlayRenderHooks: (() => void)[] = [];
 
 function doOverlayHooks() {
-  const { render } = getOverlay();
+  const overlay = getOverlay();
 
-  getOverlay().render = function (...args) {
-    if (localPlayer) for (const hook of preOverlayRenderHooks) hook();
-    const result = render.call(this, ...args);
-    if (localPlayer) for (const hook of overlayRenderHooks) hook();
-    return result;
-  };
+  Object.defineProperty(overlay, "render", {
+    configurable: true,
+    set: (render) => {
+      delete (overlay as any).render;
+      overlay.render = function (...args) {
+        if (localPlayer) for (const hook of preOverlayRenderHooks) hook();
+        const result = render.call(this, ...args);
+        if (localPlayer) for (const hook of overlayRenderHooks) hook();
+        return result;
+      };
+    },
+  });
 }
 
 let overlay: typeof Overlay | undefined;

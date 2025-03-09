@@ -36,6 +36,7 @@ import { Slider } from "krunker-ui/components/Slider";
 import { Switch } from "krunker-ui/components/Switch";
 import type { AI } from "krunker/AI";
 import { useEffect, useRef, useState } from "react";
+import type * as THREE from "three";
 
 // optimize call (tampermonkey is slow)
 const { Math } = window;
