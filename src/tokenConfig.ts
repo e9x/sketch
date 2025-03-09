@@ -19,6 +19,7 @@ export interface TokenConfig {
   diyToken?: [token: string, date: number];
   tmpToken: string;
   token?: string;
+  keyFromUrl?: string; // grabbed from /key/:SHIT: portion of url on api
 }
 
 const defaultConfig: TokenConfig = {
@@ -27,20 +28,6 @@ const defaultConfig: TokenConfig = {
 };
 
 const storage = getStorage();
-
-{
-  interface OldTokenConfig {
-    diy?: DIYStage;
-    diyToken?: [token: string, date: number] | string;
-  }
-
-  const oldTokenConfig = new Config<OldTokenConfig>(defaultConfig, storage);
-
-  const diyToken = oldTokenConfig.get("diyToken");
-
-  // migrate
-  if (typeof diyToken === "string") oldTokenConfig.delete("diyToken");
-}
 
 const tokenConfig = new Config<TokenConfig>(defaultConfig, storage);
 

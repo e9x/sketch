@@ -1,3 +1,4 @@
+import { GM_fetch } from "../util";
 import { apiURL, isDevelopment } from "../consts";
 import { getGame, overlayRenderHooks } from "../filters";
 
@@ -28,7 +29,7 @@ export function analyticsHook() {
     }
 
     if (sendPayload)
-      fetch(new URL("to", apiURL), {
+      GM_fetch(new URL("to", apiURL).toString(), {
         method: "POST",
         headers: {
           "content-type": "application/json",

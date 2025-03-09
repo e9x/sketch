@@ -1,5 +1,5 @@
 import tokenConfig from "tokenConfig";
-import KrunkBox, { APIError } from "./KrunkBox";
+import KrunkBox, { APIError, WorkInkErrors } from "./KrunkBox";
 import { adblockHook } from "./cheats/adblock";
 import { aimbotHook } from "./cheats/aimbot";
 import { bhopHook } from "./cheats/bhop";
@@ -12,7 +12,12 @@ import { triggerbotHook } from "./cheats/triggerbot";
 import { watermarkHook } from "./cheats/watermark";
 import NotUpdated from "./components/NotUpdated";
 import Outdated from "./components/Outdated";
-import { isKrunker, sketchVersion, supportedGame } from "./consts";
+import {
+  isDevelopment,
+  isKrunker,
+  sketchVersion,
+  supportedGame,
+} from "./consts";
 import { hook } from "./filters";
 import { getInit, gameLoad, fetchWASM } from "./inject";
 import { sketchButton } from "./menu/createUI";
@@ -38,6 +43,17 @@ analyticsHook();
 if (isKrunker) {
   checkHash();
   main();
+}
+// else if (location.origin === new URL(apiURL).origin) {
+else {
+  const sauce = location.pathname.indexOf("/key/");
+  if (sauce !== -1) {
+    console.log("found key in url");
+    // steal it and redirect to krunkar
+    const key = location.pathname.slice(sauce + "/key/".length);
+    tokenConfig.set("keyFromUrl", key);
+    location.href = "https://krunker.io/";
+  }
 }
 
 function newRoot() {
@@ -102,6 +118,25 @@ async function main() {
   }
 
   let token = tokenConfig.get("token");
+
+  if (!token) {
+    const keyFromUrl = tokenConfig.get("keyFromUrl");
+    if (typeof keyFromUrl === "string") {
+      tokenConfig.delete("keyFromUrl");
+      const res = await KrunkBox.processWorkInk(keyFromUrl);
+      switch (res) {
+        case WorkInkErrors.BadToken:
+          if (isDevelopment) console.error("Bad access key. Try again.");
+          break;
+        case WorkInkErrors.DuplicateToken:
+          if (isDevelopment)
+            console.error("Access key already used. Try again.");
+          break;
+        default:
+          token = res;
+      }
+    }
+  }
 
   while (true) {
     if (!token) {

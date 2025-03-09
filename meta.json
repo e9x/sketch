@@ -4,7 +4,7 @@
   "description": "try to take over the world!",
   "namespace": "https://krunker.zip",
   "icon": "https://www.google.com/s2/favicons?sz=64&domain=krunker.io",
-  "match": ["https://krunker.io/*"],
+  "match": ["https://krunker.io/*", "https://krunker.zip/stable/key/*"],
   "exclude": [
     "https://krunker.io/social.html*",
     "https://krunker.io/editor.html*",
@@ -16,7 +16,8 @@
     "GM_setValue",
     "GM_listValues",
     "GM_deleteValue",
-    "GM_openInTab"
+    "GM_openInTab",
+    "GM_xmlhttpRequest"
   ],
   "run-at": "document-start",
   "require": [

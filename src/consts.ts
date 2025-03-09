@@ -36,6 +36,8 @@ export function getExposedWindow() {
   return (isNode ? window : unsafeWindow) as typeof globalThis;
 }
 
+export { isNode };
+
 export const isKrunker = location.hostname === "krunker.io";
 
 /*

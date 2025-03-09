@@ -1,5 +1,5 @@
 import { apiURL, isDevelopment } from "./consts";
-import { sleep } from "./util";
+import { GM_fetch, sleep } from "./util";
 
 export enum WorkInkErrors {
   BadToken,
@@ -31,7 +31,7 @@ export default class KrunkBox {
   _token: string | undefined;
   static async processWorkInk(token: string) {
     while (true) {
-      const res = await fetch(new URL("hi", apiURL).toString(), {
+      const res = await GM_fetch(new URL("hi", apiURL).toString(), {
         method: "POST",
         body: token,
         headers: {
@@ -105,7 +105,7 @@ export default class KrunkBox {
   }
   async source() {
     while (true) {
-      const res = await fetch(new URL("source", apiURL).toString(), {
+      const res = await GM_fetch(new URL("source", apiURL).toString(), {
         headers: {
           // only have to send the token
           // doesn't get rotated here due to source() and hash() being called at the same time
@@ -121,6 +121,8 @@ export default class KrunkBox {
         continue;
       }
 
+      if (res?.status === 402) return APIError.BadToken;
+
       if (!res?.ok) {
         await sleepError();
         continue;
@@ -131,7 +133,7 @@ export default class KrunkBox {
   }
   async skins() {
     while (true) {
-      const res = await fetch(new URL("skins", apiURL), {
+      const res = await GM_fetch(new URL("skins", apiURL).toString(), {
         headers: {
           // only have to send the token
           // doesn't get rotated here due to source() and hash() being called at the same time

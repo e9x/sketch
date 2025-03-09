@@ -57,12 +57,14 @@ const sketchNodeLoader = `typeof require==="function"&&${JSON.stringify(
   sketchMeta.require
 )}.map(u=>{const h=new XMLHttpRequest;h.open("GET",u,!1);h.send();new Function("e","eval(e)")(h.responseText+\`\n//# sourceURL=\${u}\`)});`;
 
+const mainOut = fileURLToPath(new URL("dist/sketch.user.js", import.meta.url));
+
 const sketchMain = await context({
   entryPoints: ["./src/index.tsx"],
   format: "iife",
   sourcemap: "external",
   define: envReplacements,
-  outfile: fileURLToPath(new URL("dist/sketch.user.js", import.meta.url)),
+  outfile: mainOut,
   external: ["os", "fs", "path"],
   bundle: true,
   minify: !isDevelopment,
@@ -100,12 +102,17 @@ const sketchMain = await context({
   },
 });
 
+console.log("produced", mainOut);
+
 if (process.argv.includes("--watch")) {
+  const devOut = fileURLToPath(
+    new URL("dist/sketch.DEV.user.js", import.meta.url)
+  );
   await build({
     entryPoints: ["./src/dev.ts"],
     format: "iife",
     define: envReplacements,
-    outfile: fileURLToPath(new URL("dist/sketch.DEV.user.js", import.meta.url)),
+    outfile: devOut,
     platform: "browser",
     banner: {
       js:
@@ -115,9 +122,12 @@ if (process.argv.includes("--watch")) {
           version: pkg.version,
           ...sketchMeta,
           ...sketchDevMeta,
+          connect: new URL(process.env.SKETCH_API_URL).hostname,
         }) + "\n",
     },
   });
+
+  console.log("produced", devOut);
 
   const app = express();
   app.use(cors());
