@@ -18,172 +18,115 @@ const { freeze } = Object;
 
 export const data: Record<string, any> = {};
 
-export const hook = (dataArg: string, src: string) => {
-  src = src.replace(/Object\.freeze/g, () => `${dataArg}.BrianMeidell`);
+export const patches: Record<
+  string,
+  [
+    match: RegExp | string,
+    replacer: (substring: string, ...args: any[]) => string,
+  ]
+> = {};
 
-  src = src.replace(
+export const hook = (dataArg: string, src: string) => {
+  /* javascript-obfuscator:disable */
+  patches.FreezeHook = [/Object\.freeze/g, () => `${dataArg}.BrianMeidell`];
+  data.BrianMeidell = function (obj: any) {
+    if ("gameVersion" in obj) config = obj;
+    return freeze(obj);
+  };
+
+  patches.GetOverlay = [
     /,(\w+)\.medalsList=\[/,
-    (match, module) => `,${dataArg}.overlay(${module}).medalsList=[`
-  );
+    (match, module) => `,${dataArg}.overlay(${module}).medalsList=[`,
+  ];
+  data.overlay = function (module: any) {
+    overlay = module;
+    doOverlayHooks();
+    return module;
+  };
 
   // hook routine to define class getters/setters on constructor
   /*
   function je(e,a,t){return a&&V7(e.prototype,a),t&&V7(e,t),Object.defineProperty(e,"prototype",{writable:!1}),e}
   */
 
-  /*src = src.replace(
+  /*patches.FieldHelper = [
     /function (\w+)\((\w+),(\w+),(\w+)\)\{return \3&&\w+\(\2\.prototype,\3\),t&&V7\(\2,\4\),Object\.defineProperty\(\2,"prototype",\{writable:!1\}\),\2\}/,
     (match, helperFnName) =>
       `function ${helperFnName}(a,b,c){const og = ${match}; return ${dataArg}.fieldHelper(og, a, b, c)}`
-  );*/
+  ];*/
 
-  src = src.replace(
+  patches.GetIO = [
     /(\w+)={ahNum:0,.*?this\.captchaHolder=null\)\}\};/,
-    (match, ioVar) => `${match}${dataArg}.molestIO(${ioVar});`
-  );
+    (match, ioVar) => `${match}${dataArg}.molestIO(${ioVar});`,
+  ];
+  data.molestIO = function (lol: any) {
+    io = lol;
+    doIOHooks();
+  };
 
-  /*src = src.replace(
-    /function (\w+)(\(\w+,\w+,\w+\)\{var \w+,\w+,\w+,\w+=this;this\.biggestY=)/,
-    (match, Player, func) => {
-      //console.trace("fuck", { Game, body });
-      return `var ${Player}=${dataArg}.molestPlayer(Shitttt);function Shitttt${func}`;
-    }
-  );*/
-
-  src = src.replace(
+  patches.GetRender = [
     /=(\w+)\.THREE,qt=window\.SOUND=/,
     (match, RenderManager) =>
-      `=(${dataArg}.molestRender(${RenderManager})).THREE,qt=window.SOUND=`
-  );
+      `=(${dataArg}.molestRender(${RenderManager})).THREE,qt=window.SOUND=`,
+  ];
+  data.molestRender = function (module: RenderManager) {
+    render = module;
+    doRenderHooks();
+    return render;
+  };
 
-  src = src.replace(
+  patches.GetGame = [
     /function (\w+)\(((?:\w+,?)+)\)(\{Object\.defineProperty\(this,"isServer",{get:function)/,
     (match, Game, argsss, body) =>
-      `var ${Game}=${dataArg}.molestGame(Fuck);function Fuck(${argsss})${body}`
-  );
+      `var ${Game}=${dataArg}.molestGame(Fuck);function Fuck(${argsss})${body}`,
+  ];
+  data.molestGame = function (module: typeof Game) {
+    return hookGame(module);
+  };
 
-  src = src.replace(
+  patches.Wallbangs = [
     /function (\w+)\(\w+,\w+=null\)\{.*?this\.penetrable=/,
-    (match, MapObject) => `${dataArg}.MapObject(${MapObject});${match}`
-  );
+    (match, MapObject) => `${dataArg}.MapObject(${MapObject});${match}`,
+  ];
+  data.MapObject = function (map: any) {
+    MapObject = map;
+    doMapObjectHooks();
+    return module;
+  };
 
-  src = src.replace(
+  patches.Nametags = [
     /!(\w+)\.isYou&&\1\.objInstances\){if\(\1\.canBSeen\){/,
     (match, player) =>
-      `!${player}.isYou&&${player}.objInstances){if(${player}.canBSeen||${dataArg}.nametags){`
-  );
+      `!${player}.isYou&&${player}.objInstances){if(${player}.canBSeen||${dataArg}.nametags){`,
+  ];
+  Object.defineProperty(data, "nametags", {
+    get: () => sketchConfig.get("nametags"),
+  });
 
   // force the game to calculate FPS if the watermark is enabled
   // this works because the game hides the FPS element even if this code is ran
-  src = src.replace(
+  patches.WatermarkFPS = [
     /if\((\w+)\.tmp\.showFPS\)\{for\(/,
     (match, settings) =>
-      `if(${dataArg}.watermark||${settings}.tmp.showFPS){for(`
-  );
+      `if(${dataArg}.watermark||${settings}.tmp.showFPS){for(`,
+  ];
+  Object.defineProperty(data, "watermark", {
+    get: () => sketchConfig.get("watermark"),
+  });
 
   // *r.adsFov[r.getPlayerWeaponId(t)]
-  src = src.replace(
+  patches.FuckAdsFov = [
     /\*(\w+)\.adsFov/g,
-    (match, render) => `*(${dataArg}.noAdsFov?${dataArg}:${render}).adsFov`
-  );
+    (match, render) => `*(${dataArg}.noAdsFov?${dataArg}:${render}).adsFov`,
+  ];
 
-  src = src.replace(
-    /(\w+)\.init\(0,0,0,"preview",!1\),/,
-    (match, menuPlayer) => match + `${dataArg}.molestMenuPlayer(${menuPlayer}),`
-  );
-
-  // hook helper func that returns the list of skins that the target plr has
-  // function helper(player, unkown)
-  // returns {ind:number,cnt:number}[]
-  // used for ui to list owned items
-
-  src = src.replace(
-    /((\w+)\.isDev\?\w+:)(\2\?\2\.skins:\[\])/,
-    (match, crap, player, skinArray) =>
-      crap + `${dataArg}.uiSkins(${skinArray})`
-  );
-
-  // before .init()
-  // game.players.add()
-  // before skin/hat properties are set
-  src = src.replace(
-    /(\(\w+=new \w+\(\w+,this,\w+\)\))(\.sid=\w+)/,
-    (match, newGamePlayer, shit) =>
-      `${dataArg}.molestNewGamePlayer(${newGamePlayer})` + shit
-  );
-
-  // force the loadout menu to render "owned" skins, even logged out
-  // so schizo..
-  src = src.replace(
-    /(\w+)&&(\(\w+\[\w+\.loadout\[0\]\]!=null)/,
-    (match, player, crap) => `(${dataArg}.skinHack||${player})&&${crap}`
-  );
-
-  // now do customize...
-  src = src.replace(
-    /(\(\w+)\|\|(_.store\.skins)/,
-    (match, con1, con2) => `${con1}||${dataArg}.skinHack||${con2}`
-  );
-
-  // NOW SKIN tone chicken bone
-  // (ee && ee.premiumT > 0 ? "<input class='skinColorItem
-  src = src.replace(
-    /(\((\w+)&&\2.premiumT>0)\?("<input class='skinColorItem)/g,
-    (match, con1, player, out1) => `${con1}||${dataArg}.skinHack?${out1}`
-  );
-
-  // bypass premium check for skinz
-  //:3
-  src = src.replace(
-    /((\w+)&&\2.premiumT>0);(_\.isSandbox)/,
-    (match, condition, player, crap) =>
-      `${dataArg}.skinHack||${condition};` + crap
-  );
+  Object.defineProperty(data, "noAdsFov", {
+    get: () => sketchConfig.get("noAdsFovMlt"),
+  });
 
   const genericAdsArray = [...Array(64)].fill(0);
-
-  /* javascript-obfuscator:disable */
-  Object.assign(data, {
-    molestIO(lol: any) {
-      io = lol;
-      doIOHooks();
-    },
-    molestNewGamePlayer(player: any) {
-      for (const hook of newGamePlayerHooks) hook(player);
-      return player;
-    },
-    molestMenuPlayer(player: any) {
-      menuPlayer = player;
-    },
-    molestRender(module: RenderManager) {
-      render = module;
-      doRenderHooks();
-      return render;
-    },
-    molestGame(module: typeof Game) {
-      return hookGame(module);
-    },
-    MapObject(map: any) {
-      MapObject = map;
-      doMapObjectHooks();
-      return module;
-    },
-    overlay(module: any) {
-      overlay = module;
-      doOverlayHooks();
-      return module;
-    },
-    BrianMeidell(obj: any) {
-      if ("gameVersion" in obj) config = obj;
-      return freeze(obj);
-    },
-    get watermark() {
-      return sketchConfig.get("watermark");
-    },
-    get noAdsFov() {
-      return sketchConfig.get("noAdsFovMlt");
-    },
-    get adsFov() {
+  Object.defineProperty(data, "adsFov", {
+    get: () => {
       try {
         const ads: number[] = [];
 
@@ -194,10 +137,78 @@ export const hook = (dataArg: string, src: string) => {
         return genericAdsArray;
       }
     },
-    get nametags() {
-      return sketchConfig.get("nametags");
-    },
   });
+
+  patches.GetMenuPlayer = [
+    /(\w+)\.init\(0,0,0,"preview",!1\),/,
+    (match, menuPlayer) =>
+      match + `${dataArg}.molestMenuPlayer(${menuPlayer}),`,
+  ];
+  data.molestMenuPlayer = function (player: any) {
+    menuPlayer = player;
+  };
+
+  // hook helper func that returns the list of skins that the target plr has
+  // function helper(player, unkown)
+  // returns {ind:number,cnt:number}[]
+  // used for ui to list owned items
+
+  patches.UISkins = [
+    /((\w+)\.isDev\?\w+:)(\2\?\2\.skins:\[\])/,
+    (match, crap, player, skinArray) =>
+      crap + `${dataArg}.uiSkins(${skinArray})`,
+  ];
+
+  // before .init()
+  // game.players.add()
+  // before skin/hat properties are set
+  patches.HookPlayer = [
+    /(\(\w+=new \w+\(\w+,this,\w+\)\))(\.sid=\w+)/,
+    (match, newGamePlayer, shit) =>
+      `${dataArg}.molestNewGamePlayer(${newGamePlayer})` + shit,
+  ];
+  data.molestNewGamePlayer = function (player: any) {
+    for (const hook of newGamePlayerHooks) hook(player);
+    return player;
+  };
+
+  // force the loadout menu to render "owned" skins, even logged out
+  // so schizo..
+  patches.ForceLoadout = [
+    /(\w+)&&(\(\w+\[\w+\.loadout\[0\]\]!=null)/,
+    (match, player, crap) => `(${dataArg}.skinHack||${player})&&${crap}`,
+  ];
+
+  // now do customize...
+  patches.Skins = [
+    /(\(\w+)\|\|(_.store\.skins)/,
+    (match, con1, con2) => `${con1}||${dataArg}.skinHack||${con2}`,
+  ];
+
+  // NOW SKIN tone chicken bone
+  // (ee && ee.premiumT > 0 ? "<input class='skinColorItem
+  patches.PremiumSkinColors = [
+    /(\((\w+)&&\2.premiumT>0)\?("<input class='skinColorItem)/g,
+    (match, con1, player, out1) => `${con1}||${dataArg}.skinHack?${out1}`,
+  ];
+
+  // bypass premium check for skinz
+  //:3
+  patches.PremiumSkins = [
+    /((\w+)&&\2.premiumT>0);(_\.isSandbox)/,
+    (match, condition, player, crap) =>
+      `${dataArg}.skinHack||${condition};` + crap,
+  ];
+
+  for (const name in patches) {
+    const patch = patches[name];
+    let ran = false;
+    src = src.replace(patch[0], (...args) => {
+      ran = true;
+      return patch[1](...args);
+    });
+    console.log("patching", name, "worked:", ran);
+  }
 
   return {
     data,
