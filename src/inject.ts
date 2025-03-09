@@ -4,7 +4,7 @@ import { getExposedWindow, isDevelopment } from "./consts";
 import { hookContext, mirrorAttributes } from "./hook";
 import tokenConfig, { DIYStage } from "./tokenConfig";
 
-type Hook<Data> = (dataArg: string, src: string) => { data: Data; src: string };
+type Hook<Data> = (src: string) => { dataArg: string; data: Data; src: string };
 
 export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
   let token: string;
@@ -54,9 +54,7 @@ export async function getInit<Data>(krunkbox: KrunkBox, hook: Hook<Data>) {
   // just a really long version of `any`
   (window as unknown as { skinfx: string }).skinfx = skins;
 
-  const dataArg = "_" + Math.random().toString(36).slice(2);
-
-  const { src, data } = hook(dataArg, source);
+  const { src, data, dataArg } = hook(source);
 
   const game = new Function(
     "WP_MMToken",
