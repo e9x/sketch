@@ -6,7 +6,7 @@ import tokenConfig, { DIYStage } from "./tokenConfig";
 
 type Hook<Data> = (src: string) => { dataArg: string; data: Data; src: string };
 
-let hasToken = false;
+let needsToken = false;
 
 export async function getInit<Data>(
   krunkbox: KrunkBox,
@@ -23,6 +23,7 @@ export async function getInit<Data>(
       tokenConfig.delete("diyToken");
       fetchWASM();
       // location.reload();
+      needsToken = true;
       return APIError.DIY;
     }
 
@@ -38,7 +39,7 @@ export async function getInit<Data>(
     tokenConfig.delete("diyToken");
   }
 
-  hasToken = true;
+  needsToken = false;
 
   const [source, skins] = await Promise.all([
     krunkbox.source(),
@@ -86,7 +87,7 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
               location.toString()
             );
 
-            if (!hasToken) {
+            if (needsToken) {
               if (
                 inputURL.origin === "https://matchmaker.krunker.io" &&
                 inputURL.pathname === "/seek-game"

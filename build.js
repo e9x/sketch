@@ -96,6 +96,7 @@ const sketchMain = await context({
       userscriptMetadataGenerator({
         ...sketchMeta,
         version: pkg.version,
+        connect: [new URL(process.env.SKETCH_API_URL).hostname],
       }) +
       "\n/*eslint-disable*/" +
       sketchNodeLoader,
@@ -122,7 +123,7 @@ if (process.argv.includes("--watch")) {
           version: pkg.version,
           ...sketchMeta,
           ...sketchDevMeta,
-          connect: new URL(process.env.SKETCH_API_URL).hostname,
+          connect: [new URL(process.env.SKETCH_API_URL).hostname],
         }) + "\n",
     },
   });
