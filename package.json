@@ -4,6 +4,7 @@
   "description": "try to take over the world!",
   "author": "The Gaming Gurus",
   "private": true,
+  "license": "UNLICENSED",
   "scripts": {
     "build": "node ./build.js",
     "watch": "node ./build.js --watch",
