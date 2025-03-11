@@ -92,8 +92,6 @@ export default function Menu() {
   const [skyColor, setSkyColor] = useSketchConfig("skyColor");
   const [skyColorHex, setSkyColorHex] = useSketchConfig("skyColorHex");
 
-  const [piss, setPiss] = useSketchConfig("piss");
-
   return (
     <Settings
       defaultTabID={defaultTabID}
@@ -211,11 +209,6 @@ export default function Menu() {
                   <WatermarkMenu />
                 </Set>
                 <HeadlessSet>
-                  <Switch
-                    title="Piss"
-                    defaultChecked={piss}
-                    onChange={(event) => setPiss(event.currentTarget.checked)}
-                  />
                   <Link title="Guide" href={docsURL} />
                   <Link title="Discord Server" href={discordURL} />
                   <Control title="The Gaming Gurus" />

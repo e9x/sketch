@@ -49,7 +49,6 @@ export interface SketchConfig {
   triggerbotDistance: number;
   targetList: AimbotTarget[];
   targetListMode: "off" | "whitelist" | "blacklist";
-  piss: boolean;
 }
 
 /**
@@ -100,7 +99,6 @@ const defaultConfig: SketchConfig = {
   triggerbotDistance: 0.5,
   targetList: [],
   targetListMode: "off",
-  piss: false,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
