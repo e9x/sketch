@@ -1,5 +1,5 @@
 import tokenConfig from "tokenConfig";
-import KrunkBox, { APIError, WorkInkErrors } from "./KrunkBox";
+import KrunkBox from "./KrunkBox";
 import { adblockHook } from "./cheats/adblock";
 import { aimbotHook } from "./cheats/aimbot";
 import { bhopHook } from "./cheats/bhop";
@@ -124,17 +124,11 @@ async function main() {
     if (typeof keyFromUrl === "string") {
       tokenConfig.delete("keyFromUrl");
       const res = await KrunkBox.processWorkInk(keyFromUrl);
-      switch (res) {
-        case WorkInkErrors.BadToken:
-          if (isDevelopment) console.error("Bad access key. Try again.");
-          break;
-        case WorkInkErrors.DuplicateToken:
-          if (isDevelopment)
-            console.error("Access key already used. Try again.");
-          break;
-        default:
-          token = res;
-          tokenConfig.set("token", token);
+      if (res.success) {
+        token = res.token;
+        tokenConfig.set("token", token);
+      } else {
+        if (isDevelopment) console.error("from url:", res);
       }
     }
   }
@@ -161,19 +155,20 @@ async function main() {
     const krunkbox = new KrunkBox(token);
     const game = await getInit(krunkbox, hook);
 
-    if (game === APIError.BadToken) {
+    if (!game) return;
+
+    if (!game.success) {
+      if (isDevelopment) console.error("init:", game);
       tokenConfig.delete("token");
       if (sketchConfig.get("silentFail")) return fetchWASM();
       token = undefined;
       continue;
     }
 
-    if (game === APIError.DIY) return;
-
     await gameLoad;
     sketchButton();
 
-    game();
+    game.init();
 
     break;
   }

@@ -1,19 +1,6 @@
 import { apiURL, isDevelopment } from "./consts";
 import { GM_fetch, sleep } from "./util";
 
-export enum WorkInkErrors {
-  BadToken,
-  DuplicateToken,
-}
-
-export enum APIError {
-  BadToken,
-  /**
-   * Do it yourself
-   */
-  DIY,
-}
-
 /**
  * Sleep after a server error occurred
  */
@@ -96,7 +83,10 @@ export default class KrunkBox {
   constructor(token: string) {
     this.token = token;
   }
-  async source() {
+  async source(): Promise<
+    | { success: true; source: string }
+    | { success: false; error: [code: string, ...flags: any[]] }
+  > {
     while (true) {
       const res = await GM_fetch(new URL("source", apiURL).toString(), {
         headers: {
@@ -114,17 +104,21 @@ export default class KrunkBox {
         continue;
       }
 
-      if (res?.status === 403) return APIError.BadToken;
+      if (res?.status === 403)
+        return { success: false, error: [await res.text()] };
 
       if (!res?.ok) {
         await sleepError();
         continue;
       }
 
-      return await res.text();
+      return { success: true, source: await res.text() };
     }
   }
-  async skins() {
+  async skins(): Promise<
+    | { success: true; skins: string }
+    | { success: false; error: [code: string, ...flags: any[]] }
+  > {
     while (true) {
       const res = await GM_fetch(new URL("skins", apiURL).toString(), {
         headers: {
@@ -136,7 +130,8 @@ export default class KrunkBox {
         if (isDevelopment) console.error(err);
       });
 
-      if (res?.status === 403) return APIError.BadToken;
+      if (res?.status === 403)
+        return { success: false, error: [await res.text()] };
 
       // has not been minified/processed yet
       if (res?.status === 404) {
@@ -149,7 +144,7 @@ export default class KrunkBox {
         continue;
       }
 
-      return await res.text();
+      return { success: true, skins: await res.text() };
     }
   }
 }

@@ -1,8 +1,7 @@
 import type KrunkBox from "./KrunkBox";
-import { APIError } from "./KrunkBox";
 import { getExposedWindow, isDevelopment } from "./consts";
 import { hookContext, mirrorAttributes } from "./hook";
-import tokenConfig, { DIYStage } from "./tokenConfig";
+import tokenConfig from "./tokenConfig";
 
 type Hook<Data> = (src: string) => { dataArg: string; data: Data; src: string };
 
@@ -11,7 +10,11 @@ let needsToken = false;
 export async function getInit<Data>(
   krunkbox: KrunkBox,
   hook: Hook<Data>
-): Promise<APIError.DIY | APIError.BadToken | (() => void)> {
+): Promise<
+  | { success: false; error: [code: string, ...flags: any[]] }
+  | { success: true; init: () => void }
+  | undefined
+> {
   let token = "";
 
   if (new URLSearchParams(location.search).has("sandbox")) {
@@ -24,7 +27,7 @@ export async function getInit<Data>(
       fetchWASM();
       // location.reload();
       needsToken = true;
-      return APIError.DIY;
+      return;
     }
 
     const interval = Date.now() - diyToken[1];
@@ -32,7 +35,7 @@ export async function getInit<Data>(
     if (interval > 60e3 * 2) {
       tokenConfig.delete("diyToken");
       location.reload();
-      return APIError.DIY;
+      return;
     }
 
     token = diyToken[0];
@@ -45,13 +48,13 @@ export async function getInit<Data>(
     krunkbox.source(),
     krunkbox.skins(),
   ]);
-  if (source === APIError.BadToken) return source;
-  if (skins === APIError.BadToken) return skins;
+  if (!source.success) return source;
+  if (!skins.success) return skins;
 
   // just a really long version of `any`
-  (window as unknown as { skinfx: string }).skinfx = skins;
+  (window as unknown as { skinfx: string }).skinfx = skins.skins;
 
-  const { src, data, dataArg } = hook(source);
+  const { src, data, dataArg } = hook(source.source);
 
   const game = new Function(
     "WP_MMToken",
@@ -59,7 +62,7 @@ export async function getInit<Data>(
     src + (isDevelopment ? "//# sourceURL=https://krunker.io/js/game.js" : "")
   ) as (WP_MMToken: string, dataArg: Data) => void;
 
-  return () => game(token, data);
+  return { success: true, init: () => game(token, data) };
 }
 
 let doFetchWASM: (() => void) | undefined;
