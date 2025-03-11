@@ -29,7 +29,12 @@ async function sleepError() {
 // delete tmp tokens after 10 minutes
 export default class KrunkBox {
   token: string;
-  static async processWorkInk(token: string) {
+  static async processWorkInk(
+    token: string
+  ): Promise<
+    | { success: true; token: string }
+    | { success: false; error: [code: string, ...flags: any[]] }
+  > {
     while (true) {
       const res = await GM_fetch(new URL("hi", apiURL).toString(), {
         method: "POST",
@@ -39,9 +44,6 @@ export default class KrunkBox {
         },
       });
 
-      if (res.status === 402) return WorkInkErrors.BadToken;
-      if (res.status === 422) return WorkInkErrors.DuplicateToken;
-
       if (!res.ok) {
         // server error, try again in some
         console.log("Server error, trying again in 3s");
@@ -49,7 +51,7 @@ export default class KrunkBox {
         continue;
       }
 
-      return await res.text();
+      return await res.json();
     }
   }
   static async sketchVersion(currentVersion: string, supportedGame: string) {

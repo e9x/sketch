@@ -34,15 +34,21 @@ export default function KeyBeg({ done }: { done: (token: string) => void }) {
 
           KrunkBox.processWorkInk(key.current.value.trim())
             .then((res) => {
-              switch (res) {
-                case WorkInkErrors.BadToken:
-                  setError("Bad access key. Try again.");
-                  break;
-                case WorkInkErrors.DuplicateToken:
-                  setError("Access key already used. Try again.");
-                  break;
-                default:
-                  done(res);
+              console.trace(res);
+              if (res.success) done(res.token);
+              else {
+                switch (res.error[0]) {
+                  case "sketch_key_validate.invalid":
+                    setError("Bad access key. Try again.");
+                    break;
+                  case "sketch_key_validate.used":
+                    setError("Access key already used. Try again.");
+                    break;
+                  default:
+                    console.warn("no msg for", res.error[0]);
+                    setError(res.error[0]);
+                    break;
+                }
               }
             })
             .finally(() => setBusy(false));
