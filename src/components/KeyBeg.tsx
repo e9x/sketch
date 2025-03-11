@@ -11,7 +11,8 @@ export default function KeyBeg({ done }: { done: (token: string) => void }) {
   return (
     <>
       <h1>Get your access key for Sketch.</h1>
-      {doFreeKeys ? (
+      {
+        /*doFreeKeys ? (
         <>
           <p>
             In order to pay for servers and development, we've partnered with
@@ -28,12 +29,11 @@ export default function KeyBeg({ done }: { done: (token: string) => void }) {
             </a>
           </p>
         </>
-      ) : (
-        <p>
-          Message @fbixbt on Telegram or @bizzynil for help with your early
-          access key.
+      ) : */ <p>
+          Message <a href="https://t.me/fbixbt">@fbixbt</a> on Telegram or
+          @bizzynil on Discord for help with your early access key.
         </p>
-      )}
+      }
       {error && <p style={{ fontSize: "10px", color: "red" }}>{error}</p>}
       <form
         style={{ display: "flex", flexDirection: "row", gap: 5 }}
