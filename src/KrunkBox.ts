@@ -112,7 +112,7 @@ export default class KrunkBox {
         continue;
       }
 
-      if (res?.status === 402) return APIError.BadToken;
+      if (res?.status === 403) return APIError.BadToken;
 
       if (!res?.ok) {
         await sleepError();
@@ -134,7 +134,7 @@ export default class KrunkBox {
         if (isDevelopment) console.error(err);
       });
 
-      if (res?.status === 402) return APIError.BadToken;
+      if (res?.status === 403) return APIError.BadToken;
 
       // has not been minified/processed yet
       if (res?.status === 404) {

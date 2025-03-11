@@ -14,7 +14,7 @@ export default function KeyBeg({ done }: { done: (token: string) => void }) {
         WorkInk.
       </p>
       <p>
-        <a href={new URL("brainrot", apiURL).href} target="_blank">
+        <a href={new URL("slavelabor", apiURL).href} target="_blank">
           Get Access Key
         </a>
       </p>
