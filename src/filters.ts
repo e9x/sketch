@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
-/* eslint-disable @typescript-eslint/no-this-alias */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { getExposedWindow, isDevelopment } from "./consts";
 import type Game from "./krunker/Game";
 import type MapObjectModule from "./krunker/Object";
@@ -96,15 +91,15 @@ export function getOverlay() {
       `function ${helperFnName}(a,b,c){const og = ${match}; return ${dataArg}.fieldHelper(og, a, b, c)}`
   ];*/
 
-patches.GetIO = [
-  /(\w+)={ahNum:0,.*?this\.captchaHolder=null\)\}\};/,
-  (match, ioVar) => `${match}${dataArg}.molestIO(${ioVar});`,
-];
+// patches.GetIO = [
+//   /(\w+)={ahNum:0,.*?this\.captchaHolder=null\)\}\};/,
+//   (match, ioVar) => `${match}${dataArg}.molestIO(${ioVar});`,
+// ];
 
-data.molestIO = function (lol: any) {
-  io = lol;
-  doIOHooks();
-};
+// data.molestIO = function (lol: any) {
+//   io = lol;
+//   doIOHooks();
+// };
 
 /**
  * When the result of the hook is false, the packet won't be sent
@@ -532,6 +527,6 @@ if (isDevelopment) {
     getMenuPlayer,
     getOverlay,
     getConfig,
-    getIO,
+    //getIO,
   });
 }
