@@ -1,6 +1,4 @@
-import { GM_fetch } from "../util";
-import { apiURL, isDevelopment } from "../consts";
-import { getGame, overlayRenderHooks } from "../filters";
+import { getBox, getGame, overlayRenderHooks } from "../filters";
 
 // user id array
 const submittedUsers = new Set<number>();
@@ -28,17 +26,6 @@ export function analyticsHook() {
       sendPayload = true;
     }
 
-    if (sendPayload)
-      GM_fetch(new URL("to", apiURL), {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }).catch((e) => {
-        if (isDevelopment) {
-          console.error(e);
-        }
-      });
+    if (sendPayload) getBox().schizo(payload);
   });
 }

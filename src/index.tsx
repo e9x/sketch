@@ -23,9 +23,9 @@ import { getInit, gameLoad, fetchWASM } from "./inject";
 import { sketchButton } from "./menu/createUI";
 import sketchConfig from "./sketchConfig";
 import { waitFor } from "./util";
-import { analyticsHook } from "cheats/analytics";
+import { analyticsHook } from "./cheats/analytics";
 import { createRoot } from "react-dom/client";
-import KeyBeg from "components/KeyBeg";
+import KeyBeg from "./components/KeyBeg";
 
 triggerbotHook();
 bhopHook();

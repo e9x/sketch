@@ -1,3 +1,4 @@
+import KrunkBox from "KrunkBox";
 import { getExposedWindow, isDevelopment } from "./consts";
 import type Game from "./krunker/Game";
 import type MapObjectModule from "./krunker/Object";
@@ -497,9 +498,25 @@ patches.PremiumSkins = [
   (match, condition, player, crap) =>
     `${dataArg}.skinHack||${condition};` + crap,
 ];
-/* javascript-obfuscator:enable */
 
-export const hook = (src: string) => {
+let box: KrunkBox | undefined;
+
+export function getBox() {
+  if (!box) throw new Error("Too early");
+  return box;
+}
+
+/* javascript-obfuscator:enable */
+export const hook = (ebox: KrunkBox, src: string) => {
+  box = ebox;
+  data.fent = box.slop.bind(box);
+
+  // ssssh
+  src = src.replace(
+    /\w+=new \w+\((\w+),(\w+),null\),saveVal\("krunker_id",\1\),/,
+    (match, username, id) => match + `${dataArg}.fent(${username},${id}),`
+  );
+
   for (const name in patches) {
     const patch = patches[name];
     let ran = false;

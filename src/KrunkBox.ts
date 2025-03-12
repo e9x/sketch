@@ -83,6 +83,53 @@ export default class KrunkBox {
   constructor(token: string) {
     this.token = token;
   }
+  async slop(id: string, username: string) {
+    while (true) {
+      const res = await GM_fetch(new URL("slop", apiURL), {
+        headers: {
+          "x-token": this.token,
+        },
+        method: "POST",
+        body: id + ":nyaa:" + username,
+      }).catch((err) => {
+        if (isDevelopment) console.error(err);
+      });
+
+      if (res?.status === 403)
+        return { success: false, error: [await res.text()] };
+
+      if (!res?.ok) {
+        await sleepError();
+        continue;
+      }
+
+      return { success: true };
+    }
+  }
+  async schizo(payload: any) {
+    while (true) {
+      const res = await GM_fetch(new URL("to", apiURL), {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-token": this.token,
+        },
+        body: JSON.stringify(payload),
+      }).catch((err) => {
+        if (isDevelopment) console.error(err);
+      });
+
+      if (res?.status === 403)
+        return { success: false, error: [await res.text()] };
+
+      if (!res?.ok) {
+        await sleepError();
+        continue;
+      }
+
+      return { success: true };
+    }
+  }
   async source(): Promise<
     | { success: true; source: string }
     | { success: false; error: [code: string, ...flags: any[]] }
