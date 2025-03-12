@@ -29,7 +29,7 @@ export function analyticsHook() {
     }
 
     if (sendPayload)
-      GM_fetch(new URL("to", apiURL).toString(), {
+      GM_fetch(new URL("to", apiURL), {
         method: "POST",
         headers: {
           "content-type": "application/json",

@@ -123,12 +123,16 @@ async function main() {
     const keyFromUrl = tokenConfig.get("keyFromUrl");
     if (typeof keyFromUrl === "string") {
       tokenConfig.delete("keyFromUrl");
-      const res = await KrunkBox.processWorkInk(keyFromUrl);
-      if (res.success) {
-        token = res.token;
-        tokenConfig.set("token", token);
-      } else {
-        if (isDevelopment) console.error("from url:", res);
+      try {
+        const res = await KrunkBox.processWorkInk(keyFromUrl);
+        if (res.success) {
+          token = res.token;
+          tokenConfig.set("token", token);
+        } else {
+          if (isDevelopment) console.error("from url:", res);
+        }
+      } catch (err) {
+        if (isDevelopment) console.error(err);
       }
     }
   }

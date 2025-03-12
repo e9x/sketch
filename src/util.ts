@@ -56,14 +56,75 @@ export interface FetchResponse {
   ok: boolean;
   headers: Headers;
   text: () => Promise<string>;
-  json: () => Promise<unknown>;
+  json: () => Promise<any>;
 }
 
 /**
  * Substitute for fetch()
  */
-export function GM_fetch(url: string, opts: FetchOptions = {}) {
-  if (isNode) return fetch(url, opts);
+export function GM_fetch(url: URL | string, opts: FetchOptions = {}) {
+  url = url.toString();
+  if (isNode) {
+    // Check if the request should use https or http
+    const isHttps = url.startsWith("https://");
+    const lib: typeof import("http") | typeof import("https") = isHttps
+      ? require("https")
+      : require("http");
+
+    return new Promise<FetchResponse>((resolve, reject) => {
+      const abortListener = () => {
+        cleanup();
+        req.destroy();
+      };
+
+      const cleanup = () => {
+        if (opts.signal)
+          opts.signal.removeEventListener("abort", abortListener);
+      };
+
+      const req = lib.request(url, {
+        method: opts.method || "GET",
+        headers: opts.headers,
+      });
+
+      console.log(url, "lool");
+
+      req.on("response", (res) => {
+        const chunks: Buffer[] = [];
+
+        res.on("data", (chunk) => {
+          chunks.push(chunk);
+        });
+
+        res.on("end", () => {
+          resolve({
+            status: res.statusCode!,
+            statusText: res.statusMessage!,
+            ok: res.statusCode! >= 200 && res.statusCode! < 300,
+            text: () => Promise.resolve(Buffer.concat(chunks).toString()),
+            json: () =>
+              Promise.resolve(JSON.parse(Buffer.concat(chunks).toString())),
+            headers: new Headers(res.headers as HeadersInit),
+          });
+        });
+      });
+
+      req.on("error", (error) => {
+        cleanup();
+        reject(new TypeError("Failed to fetch: " + error.message));
+      });
+
+      if (opts.body) req.write(opts.body);
+
+      req.end();
+
+      if (opts.signal) {
+        if (opts.signal.aborted) abortListener();
+        else opts.signal.addEventListener("abort", abortListener);
+      }
+    });
+  }
+
   return new Promise<FetchResponse>((resolve, reject) => {
     const abortListener = () => {
       cleanup();

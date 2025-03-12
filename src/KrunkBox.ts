@@ -23,7 +23,7 @@ export default class KrunkBox {
     | { success: false; error: [code: string, ...flags: any[]] }
   > {
     while (true) {
-      const res = await GM_fetch(new URL("hi", apiURL).toString(), {
+      const res = await GM_fetch(new URL("hi", apiURL), {
         method: "POST",
         body: token,
         headers: {
@@ -88,7 +88,7 @@ export default class KrunkBox {
     | { success: false; error: [code: string, ...flags: any[]] }
   > {
     while (true) {
-      const res = await GM_fetch(new URL("source", apiURL).toString(), {
+      const res = await GM_fetch(new URL("source", apiURL), {
         headers: {
           // only have to send the token
           // doesn't get rotated here due to source() and hash() being called at the same time
@@ -120,7 +120,7 @@ export default class KrunkBox {
     | { success: false; error: [code: string, ...flags: any[]] }
   > {
     while (true) {
-      const res = await GM_fetch(new URL("skins", apiURL).toString(), {
+      const res = await GM_fetch(new URL("skins", apiURL), {
         headers: {
           // only have to send the token
           // doesn't get rotated here due to source() and hash() being called at the same time
