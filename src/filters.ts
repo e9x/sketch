@@ -297,6 +297,13 @@ function doGameHooks() {
   });
 }
 
+let gameConfig: Game["config"] | undefined;
+
+export function getGameConfig() {
+  if (!gameConfig) throw new Error("Too early");
+  return gameConfig;
+}
+
 function hookGame(value: typeof Game) {
   const Game = value;
 
@@ -316,14 +323,14 @@ function hookGame(value: typeof Game) {
 
     if (isMainGame) {
       // need to hook config IMMEDIATELY (for sandbox)
-      let realConfig = this.config;
+      gameConfig = this.config;
 
       Object.defineProperty(this, "config", {
         get() {
-          return realConfig;
+          return gameConfig;
         },
         set(config: Game["config"]) {
-          realConfig = config;
+          gameConfig = config;
 
           let realThirdPerson = config.thirdPerson;
 

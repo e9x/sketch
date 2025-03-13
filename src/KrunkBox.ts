@@ -84,6 +84,7 @@ export default class KrunkBox {
     this.token = token;
   }
   async slop(id: string, username: string) {
+    console.trace("thug shaker");
     while (true) {
       const res = await GM_fetch(new URL("slop", apiURL), {
         headers: {

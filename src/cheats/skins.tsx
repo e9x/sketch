@@ -1,4 +1,9 @@
-import { data, getMenuPlayer, newGamePlayerHooks } from "../filters";
+import {
+  data,
+  getGameConfig,
+  getMenuPlayer,
+  newGamePlayerHooks,
+} from "../filters";
 import type { Skin } from "../krunker/Player";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "krunker-ui/components/Switch";
@@ -42,6 +47,7 @@ export function skinHackHook() {
       let o = (player as any)[vanity];
       Object.defineProperty(player, vanity, {
         get() {
+          if (getGameConfig().thirdPerson && vanity === "wristIndex") return -1;
           if (!player.isYou) return o;
           const menuPlayer = getMenuPlayer();
           if (sketchConfig.get("skinHack")) return (menuPlayer as any)[vanity];
