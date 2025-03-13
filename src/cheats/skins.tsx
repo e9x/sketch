@@ -1,12 +1,15 @@
 import {
   data,
+  getGame,
   getGameConfig,
+  getLocalPlayer,
   getMenuPlayer,
   newGamePlayerHooks,
 } from "../filters";
-import type { Skin } from "../krunker/Player";
+import type { Player, Skin } from "../krunker/Player";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "krunker-ui/components/Switch";
+import type * as ioModule from "../krunker/io";
 
 export function skinHackHook() {
   const dummySkinArray = [...Array(25000)].map((_, i) => ({
@@ -22,6 +25,28 @@ export function skinHackHook() {
   Object.defineProperty(data, "skinHack", {
     get: () => sketchConfig.get("skinHack"),
   });
+
+  data.spraySemen = (_: Player, skinI?: number) => {
+    skinI ||= Number(
+      getSavedVal("sprayIndex") || getSavedVal("sprayindex") || 2482
+    );
+
+    // console.log(skinI);
+    getGame().players.spray(getLocalPlayer(), skinI);
+  };
+
+  data.BroadcastTheFuckingShitLikeAGoodBoy = (
+    areYouGonnaDoIt: boolean,
+    io: typeof ioModule,
+    ...shit: any[]
+  ) => {
+    if (sketchConfig.get("skinHack")) {
+      // console.trace("skin me", shit);
+      getGame().addSpray(...shit);
+    }
+    //@ts-ignore
+    else if (areYouGonnaDoIt) io.send(...shit);
+  };
 
   newGamePlayerHooks.push((player) => {
     for (const vanity of [

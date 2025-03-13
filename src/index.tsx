@@ -42,7 +42,10 @@ analyticsHook();
 
 if (isKrunker) {
   checkHash();
-  main();
+  main().catch((err) => {
+    console.error(err);
+    panic(err.stack);
+  });
 }
 // else if (location.origin === new URL(apiURL).origin) {
 else {
@@ -56,6 +59,48 @@ else {
   }
 }
 
+function panic(msg: string) {
+  const overlay = document.createElement("div");
+  Object.assign(overlay.style, {
+    position: "fixed",
+    top: "0",
+    left: "0",
+    width: "100vw",
+    height: "100vh",
+    zIndex: `${1e9}`,
+    padding: "8px",
+    fontSize: "14px",
+    whiteSpace: "pre",
+  } as CSSStyleDeclaration);
+
+  const boxes = msg.split("\n").map((line) => {
+    const e = document.createElement("span");
+    e.textContent = line;
+    Object.assign(e.style, {
+      display: "block",
+      maxWidth: "max-content",
+      background: "#000",
+      fontFamily: "monospace",
+      color: "#f00",
+      transition: "background-color 0.2s ease-in-out",
+    } as CSSStyleDeclaration);
+    overlay.append(e);
+    return e;
+  });
+
+  waitFor(() => document.documentElement, 10).then((dom) => {
+    dom.append(overlay);
+
+    setTimeout(() => {
+      for (const e of boxes) e.style.backgroundColor = "#f5ce67";
+
+      setTimeout(() => {
+        for (const e of boxes) e.style.backgroundColor = "#000";
+      }, 200);
+    }, 200);
+  });
+}
+
 function newRoot() {
   const overlay = document.createElement("div");
 
@@ -65,7 +110,7 @@ function newRoot() {
     left: "0",
     width: "100vw",
     height: "100vh",
-    backgroundColor: "white",
+    background: "#fff",
     zIndex: `${1e9}`,
     padding: "8px",
   } as CSSStyleDeclaration);
@@ -159,6 +204,7 @@ async function main() {
     const krunkbox = new KrunkBox(token);
     const game = await getInit(krunkbox, hook);
 
+    // needs to reload to use token
     if (!game) return;
 
     if (!game.success) {

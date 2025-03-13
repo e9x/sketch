@@ -17,3 +17,5 @@ declare interface Math {
 declare interface Number {
   round(to: number): number;
 }
+
+declare function getSavedVal(key: string): string | null;

@@ -133,5 +133,6 @@ export declare class manager {
    * returns the existing player or creates a new instance
    */
   add(...args: unknown[]): Player;
+  spray(...args: unknown[]): unknown;
   regenMeshes(player: Player): void;
 }

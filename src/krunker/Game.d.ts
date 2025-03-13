@@ -35,6 +35,7 @@ declare class Game {
   ui: {
     loading: boolean;
   };
+  addSpray(...args: unknown[]): unknown;
   roundId: string;
   sessionId: string;
   store: unknown;

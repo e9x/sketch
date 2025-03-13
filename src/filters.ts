@@ -12,6 +12,7 @@ import type * as THREE from "three";
 
 const { freeze } = Object;
 
+// export const data: any[] & Record<string, any> = [];
 export const data: Record<string, any> = {};
 
 export const patches: Record<
@@ -92,15 +93,15 @@ export function getOverlay() {
       `function ${helperFnName}(a,b,c){const og = ${match}; return ${dataArg}.fieldHelper(og, a, b, c)}`
   ];*/
 
-// patches.GetIO = [
-//   /(\w+)={ahNum:0,.*?this\.captchaHolder=null\)\}\};/,
-//   (match, ioVar) => `${match}${dataArg}.molestIO(${ioVar});`,
-// ];
+patches.GetIO = [
+  /(\w+)={ahNum:0,.*?this\.captchaHolder=null\)\}\};/,
+  (match, ioVar) => `${match}${dataArg}.molestIO(${ioVar});`,
+];
 
-// data.molestIO = function (lol: any) {
-//   io = lol;
-//   doIOHooks();
-// };
+data.molestIO = function (lol: any) {
+  io = lol;
+  doIOHooks();
+};
 
 /**
  * When the result of the hook is false, the packet won't be sent
@@ -235,6 +236,8 @@ export function getGame() {
  */
 export const inputHooks: ((inputs: number[]) => boolean | void)[] = [];
 
+export const addPlayerHooks: ((player: Player) => void)[] = [];
+
 let blockedInputs = false;
 
 // in-game player, not menu player
@@ -264,6 +267,8 @@ function doGameHooks() {
       }
       return procInputs.call(this, ...args);
     };
+
+    for (const hook of addPlayerHooks) hook(player);
 
     return player;
   };
@@ -506,12 +511,57 @@ patches.PremiumSkins = [
     `${dataArg}.skinHack||${condition};` + crap,
 ];
 
+patches["𝓯𝓻𝓮𝓪𝓴𝔂 𝓼𝓹𝓻𝓪𝔂"] = [
+  /(\w+)\.isSandbox\?(\w+)\.players\.spray\((.*?)\):(\w+)\.send/g,
+  (match, gameVar, dumbGameVar, sprayArgs, ioVar) =>
+    `${gameVar}.isSandbox?${dumbGameVar}.players.spray(${sprayArgs}):${dataArg}.skinHack?${dataArg}.spraySemen(${sprayArgs}):${ioVar}.send`,
+];
+
+// game checks for premium on press and release
+patches["skin picker wheel"] = [
+  /sprayWheel\.isKey\(\w+\)&&\(\w+\.isSandbox\|\|/g,
+  (match) => match + `${dataArg}.skinHack||`,
+];
+
+patches.ChangeGender = [
+  /this.isServer&&\((\w+)\.broadcast\("sp",/,
+  (match, ioVar) =>
+    `(${dataArg}.BroadcastTheFuckingShitLikeAGoodBoy(this.isServer,${ioVar},`,
+];
+
 let box: KrunkBox | undefined;
 
 export function getBox() {
   if (!box) throw new Error("Too early");
   return box;
 }
+
+// https://convertcase.net/unicode-text-converter/
+
+//
+patches["🦁𝓣𝓱𝓮 𝓛𝓲𝓸𝓷 𝓡𝓪𝓹𝓮𝓼 𝓽𝓱𝓮 𝓢𝓶𝓪𝓵𝓵 𝓓𝓸𝓰 𝓦𝓱𝓮𝓷 𝓘𝓽 𝓑𝓪𝓻𝓴𝓼"] = [
+  /if\((\w+)\.isSandbox\|\|(\w+)\.account&&\2\.account\.premiumT>0\)\{var (\w+)=/,
+  (match, gameVar, accVar, skinFreeVar) =>
+    `if(${dataArg}.skinHack||${gameVar}.isSandbox||${accVar}.account&&${accVar}.account.premiumT>0){var ${skinFreeVar}=${dataArg}.skinHack||`,
+];
+
+/*let schizoServer = false;
+export function setSchizoServer(value: boolean) {
+  console.warn("🦁𝓣𝓱𝓮 𝓛𝓲𝓸𝓷 𝓡𝓪𝓹𝓮𝓼 𝓽𝓱𝓮 𝓢𝓶𝓪𝓵𝓵 𝓓𝓸𝓰 𝓦𝓱𝓮𝓷 𝓘𝓽 𝓑𝓪𝓻𝓴𝓼");
+  schizoServer = value;
+}
+
+data.rapeProperty = (cunt: any, t: string, o: any) => {
+  // console.log(cunt, t, o);
+  let finalDesc = { ...o };
+  if (t === "isServer") finalDesc.get = () => schizoServer || o.get();
+  return Object.defineProperty(cunt, t, finalDesc);
+};
+
+patches.TheLionRapesTheLittleDog = [
+  /Object\.defineProperty/g,
+  (match) => `${dataArg}.rapeProperty`,
+];*/
 
 /* javascript-obfuscator:enable */
 export const hook = (ebox: KrunkBox, src: string) => {
@@ -531,7 +581,8 @@ export const hook = (ebox: KrunkBox, src: string) => {
       ran = true;
       return patch[1](...args);
     });
-    if (isDevelopment) console.log("patching", name, "worked:", ran);
+    //if (isDevelopment)
+    console.log("patching", name, "worked:", ran);
   }
 
   return {
