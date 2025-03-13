@@ -9,6 +9,8 @@ if (!supportedGame) throw new TypeError("Invalid SKETCH_SUPPORTED_GAME");
 export const sketchVersion = process.env.SKETCH_VERSION || "";
 if (!sketchVersion) throw new TypeError("Invalid SKETCH_VERSION");
 
+export const isChromeOS = /\bCrOS\b/.test(navigator.userAgent);
+
 export const discordURL = "https://y9x.github.io/discord/";
 
 export const docsURL = "https://krunker.zip/";

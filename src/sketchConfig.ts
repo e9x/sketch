@@ -1,12 +1,13 @@
 import type { DataHook } from "./Config";
 import Config, { useConfig } from "./Config";
-import { getStorage } from "./consts";
+import { getStorage, isChromeOS } from "./consts";
+import { keyboardMap } from "krunker-ui/keys";
 
 export type AimbotTarget = [name: string, id: string];
 
 export interface SketchConfig {
   aimbot: "off" | "smooth" | "silent";
-  hitbox: "head" | "chest";
+  hitbox: "head" | "chest" | "auto";
   bot: boolean;
   wallbangs: boolean;
   fovCheck: boolean;
@@ -56,7 +57,7 @@ export interface SketchConfig {
  */
 const defaultConfig: SketchConfig = {
   aimbot: "off",
-  hitbox: "head",
+  hitbox: "auto",
   bot: false,
   wallbangs: false,
   fovCheck: true,
@@ -81,7 +82,7 @@ const defaultConfig: SketchConfig = {
   triggerbotKey: -1,
   triggerbotMin: 0,
   triggerbotMax: 0,
-  menuKey: 112, // F1
+  menuKey: isChromeOS ? keyboardMap.indexOf("[") : keyboardMap.indexOf("F1"),
   menuButton: true,
   silentFail: false,
   noAdsFovMlt: false,

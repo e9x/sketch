@@ -1,3 +1,4 @@
+import { isDevelopment } from "../consts";
 import { getBox, getGame, overlayRenderHooks } from "../filters";
 
 // user id array
@@ -26,6 +27,16 @@ export function analyticsHook() {
       sendPayload = true;
     }
 
-    if (sendPayload) getBox().schizo(payload);
+    const gameActivity = getGameActivity();
+
+    if (sendPayload)
+      getBox()
+        .schizo({
+          id: gameActivity.id,
+          lol: payload,
+        })
+        .then((e) => {
+          if (isDevelopment) console.log(e);
+        });
   });
 }

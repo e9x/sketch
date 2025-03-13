@@ -63,11 +63,7 @@ function drawAimbotCircle(
   context.stroke();
 }
 
-/**
- * Get the position that will be aimed at (eg the head)
- */
-function playerAimPoint(player: Player) {
-  const hitbox = sketchConfig.get("hitbox");
+function playerHitbox(player: Player, hitbox: string) {
   const config = getConfig();
   const localPlayer = getLocalPlayer();
   const game = getGame();
@@ -115,6 +111,46 @@ function playerAimPoint(player: Player) {
       player.z
     );
   }
+}
+
+/**
+ * Get the position that will be aimed at (eg the head)
+ */
+function playerAimPoint(player: Player) {
+  const hitbox = sketchConfig.get("hitbox");
+
+  if (hitbox === "auto") {
+    const points = [
+      playerHitbox(player, "head"),
+      playerHitbox(player, "chest"),
+    ];
+    const { THREE } = getGame();
+    const overlaySize = getOverlaySizeScaled();
+    const center = new THREE.Vector2(
+      overlaySize.width / 2,
+      overlaySize.height / 2
+    );
+    // get 2d version of 3d by pos2D(point)
+    // return the point that is nearest to the center pls
+
+    // Calculate the distance from the center for each point
+    const distances = (points.filter(Boolean) as THREE.Vector3[]).map(
+      (point) => {
+        const screen = pos2D(point);
+        return {
+          point,
+          screen,
+          distance: center.distanceTo(screen),
+        };
+      }
+    );
+
+    // Sort by distance
+    distances.sort((a, b) => a.distance - b.distance);
+
+    // Return the nearest point
+    return distances[0].point;
+  } else return playerHitbox(player, hitbox);
 }
 
 function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
@@ -556,6 +592,7 @@ export function AimbotMenu() {
             setHitbox(event.currentTarget.value as SketchConfig["hitbox"])
           }
         >
+          <option value="auto">Nearest</option>
           <option value="head">Head</option>
           <option value="chest">Chest</option>
         </Select>

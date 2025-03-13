@@ -19,3 +19,5 @@ declare interface Number {
 }
 
 declare function getSavedVal(key: string): string | null;
+
+declare function getGameActivity(): { id: string };
