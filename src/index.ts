@@ -10,9 +10,8 @@ import { recoilControlHook } from "./cheats/recoilControl";
 import { skinHackHook } from "./cheats/skins";
 import { triggerbotHook } from "./cheats/triggerbot";
 import { watermarkHook } from "./cheats/watermark";
-import NotUpdated from "./components/NotUpdated";
-import Outdated from "./components/Outdated";
 import {
+  discordURL,
   isDevelopment,
   isKrunker,
   sketchVersion,
@@ -24,8 +23,6 @@ import { sketchButton } from "./menu/createUI";
 import sketchConfig from "./sketchConfig";
 import { waitFor } from "./util";
 import { analyticsHook } from "./cheats/analytics";
-import { createRoot } from "react-dom/client";
-import KeyBeg from "./components/KeyBeg";
 
 triggerbotHook();
 bhopHook();
@@ -101,7 +98,7 @@ function panic(msg: string) {
   });
 }
 
-function newRoot() {
+function newOverlay() {
   const overlay = document.createElement("div");
 
   Object.assign(overlay.style, {
@@ -115,13 +112,11 @@ function newRoot() {
     padding: "8px",
   } as CSSStyleDeclaration);
 
-  const root = createRoot(overlay);
-
   waitFor(() => document.documentElement, 10).then((dom) =>
     dom.append(overlay)
   );
 
-  return { root, overlay };
+  return overlay;
 }
 
 /**
@@ -149,17 +144,38 @@ async function main() {
 
   if (version.outdated) {
     if (sketchConfig.get("silentFail")) return fetchWASM();
-    return newRoot().root.render(
-      <Outdated
-        latestVersion={version.latestVersion}
-        updateURL={version.updateURL}
-      />
-    );
+    const overlay = newOverlay();
+    overlay.innerHTML = `<h1>Update Sketch.</h1>
+      <p>
+        Your version of Sketch is outdated. Click <a>this link here</a> to download the latest verison. (<span id="ver"></span>)
+      </p>
+      <p>
+        <button>Refresh</button>
+      </p>`;
+    overlay.querySelector("#ver")!.textContent = version.latestVersion;
+    overlay.querySelector("a")!.href = version.updateURL;
+
+    overlay
+      .querySelector<HTMLInputElement>("#button")!
+      .addEventListener("click", () => {
+        location.reload();
+      });
   }
 
   if (!version.sketchUpdated) {
     if (sketchConfig.get("silentFail")) return;
-    return newRoot().root.render(<NotUpdated />);
+    const overlay = newOverlay();
+
+    overlay.innerHTML =
+      `<h1>Sketch is outdated and an update isn't available.</h1>` +
+      `<hr />` +
+      `<p>You'll have to wait for an update.</p>` +
+      `<p style="font-size:0.6em"><em>Sketch has to be updated every time Krunker updates.</em></p>` +
+      `<p><a id="discord">Discord server</a></p>`;
+
+    const discord = overlay.querySelector<HTMLAnchorElement>("#discord")!;
+    discord.href = discordURL;
+    discord.id = "";
   }
 
   let token = tokenConfig.get("token");
@@ -186,17 +202,69 @@ async function main() {
     if (!token) {
       if (sketchConfig.get("silentFail")) return;
       token = await new Promise<string>((resolve) => {
-        const { root, overlay } = newRoot();
+        const overlay = newOverlay();
 
-        root.render(
-          <KeyBeg
-            done={(token) => {
-              root.unmount();
+        const doFreeKeys = false;
+
+        overlay.innerHTML =
+          `<h1>Get your access key for Sketch.</h1>` +
+          (doFreeKeys
+            ? `<p>In order to pay for servers and development, we've partnered with WorkInk.</p>` +
+              `<p><a id="freeKey" target="_blank">Get Access Key</a></p>` +
+              `<p><a href="https://krunker.zip/docs/quick-start/" target="_blank">Video Tutorial</a></p>`
+            : `<p>Message <u>@bizzynil</u> in our <a id="discord">Discord</a> for help with your early access key.</p>`) +
+          `<p style="font-size:10px;color:red;visbility:hidden" id="error"></p>` +
+          `<form style="display:flex;flex-direction:row;gap:5px">` +
+          `<input type="text" placeholder="Access Key" id="accessKey" required />` +
+          `<input type="submit" value="Done" id="submit" />` +
+          `</form>`;
+
+        const discord = overlay.querySelector<HTMLAnchorElement>("#discord")!;
+        const accessKey =
+          overlay.querySelector<HTMLInputElement>("#accessKey")!;
+        const error = overlay.querySelector<HTMLInputElement>("#error")!;
+        const submit = overlay.querySelector<HTMLInputElement>("#submit")!;
+
+        discord.href = discordURL;
+
+        accessKey.id = error.id = submit.id = discord.id = "";
+
+        accessKey.form!.addEventListener("submit", (event) => {
+          event.preventDefault();
+          accessKey.disabled = true;
+          submit.disabled = true;
+
+          KrunkBox.processWorkInk(accessKey.value.trim())
+            .then((res) => {
+              if (isDevelopment) console.trace(res);
+              if (res.success) {
+                resolve(res.token);
+                overlay.remove();
+              } else {
+                switch (res.error[0]) {
+                  case "sketch_key_validate.invalid":
+                    error.style.visibility = "visibible";
+                    error.textContent = "Bad access key. Try again.";
+                    break;
+                  case "sketch_key_validate.used":
+                    error.style.visibility = "visibible";
+                    error.textContent = "Access key already used. Try again.";
+                    break;
+                  default:
+                    error.style.visibility = "visibible";
+                    if (isDevelopment) console.warn("no msg for", res.error[0]);
+                    error.textContent = res.error[0];
+                    break;
+                }
+                accessKey.disabled = false;
+                submit.disabled = false;
+              }
+            })
+            .catch((err) => {
               overlay.remove();
-              resolve(token);
-            }}
-          />
-        );
+              panic(err.stack);
+            });
+        });
       });
       tokenConfig.set("token", token);
     }

@@ -60,7 +60,7 @@ const sketchNodeLoader = `typeof require==="function"&&${JSON.stringify(
 const mainOut = fileURLToPath(new URL("dist/sketch.user.js", import.meta.url));
 
 const sketchMain = await context({
-  entryPoints: ["./src/index.tsx"],
+  entryPoints: ["./src/index.ts"],
   format: "iife",
   sourcemap: "external",
   define: envReplacements,
