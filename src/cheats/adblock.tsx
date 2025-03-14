@@ -1,5 +1,5 @@
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
-import { getExposedWindow } from "consts";
+import { getExposedWindow } from "../consts";
 import { Switch } from "krunker-ui/components/Switch";
 
 export function adblockHook() {
