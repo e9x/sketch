@@ -21,7 +21,7 @@ import { getInit, gameLoad, fetchWASM } from "./inject";
 import { sketchButton } from "./menu/createUI";
 import sketchConfig from "./sketchConfig";
 import { analyticsHook } from "./cheats/analytics";
-import { panic, begToken, showUpdated, showOutdated } from "./anxiety";
+import { panic, begToken, showUpdated, showFutile } from "./anxiety";
 
 triggerbotHook();
 bhopHook();
@@ -85,7 +85,7 @@ async function main() {
 
   if (!version.sketchUpdated) {
     if (sketchConfig.get("silentFail")) return;
-    return showOutdated(version);
+    return showFutile(version);
   }
 
   let token = tokenConfig.get("token");

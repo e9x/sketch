@@ -109,20 +109,20 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 return new Promise(() => {});
               }
-            } else {
-              if (
-                inputURL.origin === location.origin &&
-                inputURL.pathname.startsWith("/pkg/loader")
-              ) {
-                // game has loaded
-                resolveGameLoad();
-                // eslint-disable-next-line @typescript-eslint/no-empty-function
-                return new Promise((resolve, reject) => {
-                  doFetchWASM = () =>
-                    fetch(input, init).then(resolve).catch(reject);
-                  if (fetchWASMInstantly) doFetchWASM();
-                });
-              }
+            }
+
+            if (
+              inputURL.origin === location.origin &&
+              inputURL.pathname.startsWith("/pkg/loader")
+            ) {
+              // game has loaded
+              resolveGameLoad();
+              // eslint-disable-next-line @typescript-eslint/no-empty-function
+              return new Promise((resolve, reject) => {
+                doFetchWASM = () =>
+                  fetch(input, init).then(resolve).catch(reject);
+                if (fetchWASMInstantly) doFetchWASM();
+              });
             }
 
             return fetch(input, init);

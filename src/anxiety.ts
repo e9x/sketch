@@ -138,14 +138,14 @@ export function begToken() {
 
 export function showUpdated(version: SketchVersion) {
   const overlay = newOverlay();
-  overlay.innerHTML = `<h1>Update Sketch.</h1>
-      <p>
-        Your version of Sketch is outdated. Click <a>this link here</a> to download the latest verison. (<span id="ver"></span>)
-      </p>
-      <p>
-        <button>Refresh</button>
-      </p>`;
-  overlay.querySelector("#ver")!.textContent = version.latestVersion;
+  overlay.innerHTML =
+    `<h1>Update Sketch.</h1>` +
+    `<p>Your version of Sketch is outdated. Click <a>this link here</a> to download the latest verison. (<span id="ver"></span>)</p>` +
+    `<p><button>Refresh</button></p>`;
+  const ver = overlay.querySelector("#ver")!;
+
+  ver.textContent = version.latestVersion;
+  ver.id = "";
   overlay.querySelector("a")!.href = version.updateURL;
 
   overlay
@@ -155,21 +155,16 @@ export function showUpdated(version: SketchVersion) {
     });
 }
 
-export function showOutdated(version: SketchVersion) {
+export function showFutile(version: SketchVersion) {
   const overlay = newOverlay();
-  overlay.innerHTML = `<h1>Update Sketch.</h1>
-      <p>
-        Your version of Sketch is outdated. Click <a>this link here</a> to download the latest verison. (<span id="ver"></span>)
-      </p>
-      <p>
-        <button>Refresh</button>
-      </p>`;
-  overlay.querySelector("#ver")!.textContent = version.latestVersion;
-  overlay.querySelector("a")!.href = version.updateURL;
+  overlay.innerHTML =
+    `<h1>Sketch is outdated and an update isn't available.</h1>` +
+    `<hr />` +
+    `<p>You'll have to wait for an update.</p>` +
+    `<p style="font-size:0.6em"><em>Sketch has to be updated every time Krunker updates.</em></p>` +
+    `<p><a id="discord">Discord server</a></p>`;
 
-  overlay
-    .querySelector<HTMLInputElement>("#button")!
-    .addEventListener("click", () => {
-      location.reload();
-    });
+  const discord = overlay.querySelector<HTMLAnchorElement>("#discord")!;
+  discord.href = discordURL;
+  discord.id = "";
 }
