@@ -67,7 +67,6 @@ export function skinHackHook() {
       "dyeIndex",
       "pcStatIndex",
       "attachIndex",
-      "secIndex",
     ]) {
       let o = (player as any)[vanity];
       Object.defineProperty(player, vanity, {
