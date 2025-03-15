@@ -26,12 +26,13 @@ import {
 import type { AimbotTarget, SketchConfig } from "../sketchConfig";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { random } from "../util";
+import { ForceAutoMenu } from "./forceAuto";
 import { RecoilControlMenu } from "./recoilControl";
 import { TriggerbotMenu } from "./triggerbot";
 import { BindHolder, Bind } from "krunker-ui/components/Bind";
 import { Control } from "krunker-ui/components/Control";
 import { Select } from "krunker-ui/components/Select";
-import { Set } from "krunker-ui/components/Set";
+import { HeadlessSet, Set } from "krunker-ui/components/Set";
 import { Slider } from "krunker-ui/components/Slider";
 import { Switch } from "krunker-ui/components/Switch";
 import type { AI } from "krunker/AI";
@@ -146,10 +147,9 @@ function playerAimPoint(player: Player) {
     );
 
     // Sort by distance
-    distances.sort((a, b) => a.distance - b.distance);
-
+    const near = distances.sort((a, b) => a.distance - b.distance)[0];
     // Return the nearest point
-    return distances[0].point;
+    return near?.point;
   } else return playerHitbox(player, hitbox);
 }
 
@@ -531,6 +531,9 @@ export function AimbotMenu() {
 
   return (
     <>
+      <HeadlessSet>
+        <ForceAutoMenu />
+      </HeadlessSet>
       <Set title="Aimbot">
         <BindHolder title="Aim Key">
           <Bind

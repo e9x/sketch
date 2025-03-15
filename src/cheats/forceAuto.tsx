@@ -42,14 +42,14 @@ export function forceAutoHook() {
 }
 
 export function ForceAutoMenu() {
-  const [triggerbot, setTriggerbot] = useSketchConfig("forceAuto");
+  const [forceAuto, setForceAuto] = useSketchConfig("forceAuto");
 
   return (
     <Switch
       title="Force Auto"
       description="Makes non-automatic guns automatic"
-      defaultChecked={triggerbot}
-      onChange={(event) => setTriggerbot(event.currentTarget.checked)}
+      defaultChecked={forceAuto}
+      onChange={(event) => setForceAuto(event.currentTarget.checked)}
     />
   );
 }

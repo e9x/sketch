@@ -51,17 +51,13 @@ export async function getInit<Data>(
 
   needsToken = false;
 
-  const [source, skins] = await Promise.all([
-    krunkbox.source(),
-    krunkbox.skins(),
-  ]);
-  if (!source.success) return source;
-  if (!skins.success) return skins;
+  const gameData = await krunkbox.gameData();
+  if (!gameData.success) return gameData;
 
   // just a really long version of `any`
-  (window as unknown as { skinfx: string }).skinfx = skins.skins;
+  (window as unknown as { skinfx: string }).skinfx = gameData.skins;
 
-  const { src, data, dataArg } = hook(krunkbox, source.source);
+  const { src, data, dataArg } = hook(krunkbox, gameData.source);
 
   const game = new Function(
     "WP_MMToken",

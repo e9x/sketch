@@ -12,6 +12,15 @@ async function sleepError() {
   await sleep(3e3);
 }
 
+export interface SketchVersion {
+  outdated: boolean;
+  // if we should even tell the user to update
+  // sometimes sketch just isn't updated
+  sketchUpdated: boolean;
+  latestVersion: string;
+  updateURL: string;
+}
+
 // todo: ratelimit based on IP + useragent? too easy
 // delete tmp tokens after 10 minutes
 export default class KrunkBox {
@@ -43,7 +52,7 @@ export default class KrunkBox {
   }
   static async sketchVersion(currentVersion: string, supportedGame: string) {
     while (true) {
-      const res = await fetch(new URL("sketchVersion", apiURL), {
+      const res = await GM_fetch(new URL("sketchVersion", apiURL), {
         method: "POST",
         headers: {
           accept: "application/json",
@@ -51,7 +60,7 @@ export default class KrunkBox {
         },
         body: JSON.stringify({ currentVersion, supportedGame }),
       }).catch((err) => {
-        if (isDevelopment) console.error(err);
+        console.error("Bro", err);
       });
 
       if (res?.status === 425) {
@@ -64,14 +73,7 @@ export default class KrunkBox {
         continue;
       }
 
-      const data = (await res.json()) as {
-        outdated: boolean;
-        // if we should even tell the user to update
-        // sometimes sketch just isn't updated
-        sketchUpdated: boolean;
-        latestVersion: string;
-        updateURL: string;
-      };
+      const data = (await res.json()) as SketchVersion;
 
       return {
         ...data,
@@ -131,12 +133,12 @@ export default class KrunkBox {
       return { success: true };
     }
   }
-  async source(): Promise<
-    | { success: true; source: string }
+  async gameData(): Promise<
+    | { success: true; source: string; skins: string }
     | { success: false; error: [code: string, ...flags: any[]] }
   > {
     while (true) {
-      const res = await GM_fetch(new URL("source", apiURL), {
+      const res = await GM_fetch(new URL("z", apiURL), {
         headers: {
           // only have to send the token
           // doesn't get rotated here due to source() and hash() being called at the same time
@@ -160,39 +162,18 @@ export default class KrunkBox {
         continue;
       }
 
-      return { success: true, source: await res.text() };
-    }
-  }
-  async skins(): Promise<
-    | { success: true; skins: string }
-    | { success: false; error: [code: string, ...flags: any[]] }
-  > {
-    while (true) {
-      const res = await GM_fetch(new URL("skins", apiURL), {
-        headers: {
-          // only have to send the token
-          // doesn't get rotated here due to source() and hash() being called at the same time
-          "x-token": this.token,
-        },
-      }).catch((err) => {
-        if (isDevelopment) console.error(err);
-      });
+      const a = await res.arrayBuffer();
+      const srcLength = Number(res.headers.get("x-src"));
 
-      if (res?.status === 403)
-        return { success: false, error: [await res.text()] };
+      const dec = new TextDecoder();
 
-      // has not been minified/processed yet
-      if (res?.status === 404) {
-        await sleepError();
-        continue;
-      }
+      // console.log({ srcLength });
 
-      if (!res?.ok) {
-        await sleepError();
-        continue;
-      }
-
-      return { success: true, skins: await res.text() };
+      return {
+        success: true,
+        source: dec.decode(a.slice(0, srcLength)),
+        skins: dec.decode(a.slice(srcLength)),
+      };
     }
   }
 }

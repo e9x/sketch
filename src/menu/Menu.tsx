@@ -247,7 +247,6 @@ export default function Menu() {
                 </HeadlessSet>
                 <Set title="Movements">
                   <BhopMenu />
-                  <ForceAutoMenu />
                 </Set>
               </>
             );
