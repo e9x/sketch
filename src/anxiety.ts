@@ -143,13 +143,12 @@ export function showUpdated(version: SketchVersion) {
     `<p>Your version of Sketch is outdated. Click <a>this link here</a> to download the latest verison. (<span id="ver"></span>)</p>` +
     `<p><button>Refresh</button></p>`;
   const ver = overlay.querySelector("#ver")!;
-
   ver.textContent = version.latestVersion;
   ver.id = "";
   overlay.querySelector("a")!.href = version.updateURL;
 
   overlay
-    .querySelector<HTMLInputElement>("#button")!
+    .querySelector<HTMLInputElement>("button")!
     .addEventListener("click", () => {
       location.reload();
     });
