@@ -209,16 +209,38 @@ function validTarget(target: Player | AI) {
 
   return true;
 }
-
 function onTargetList(target: Player) {
   const targetListMode = sketchConfig.get("targetListMode");
+
+  // If targetListMode is off, immediately allow the target
   if (targetListMode === "off") return true;
 
   const targetList = sketchConfig.get("targetList");
+  let found = false;
 
-  if (targetListMode === "blacklist")
-    return targetList.every((t) => t[1] !== target.id);
-  else return targetList.some((t) => t[1] === target.id);
+  for (const e of targetList) {
+    // If the second element of the entry (e[1]) is empty and matches the target name
+    // set it to the target ID
+    if (e[1] === "" && target.name === e[0]) {
+      // Assuming e[0] holds the player name
+      console.log("Identified target", e, target.name, target.id);
+      e[1] = target.id;
+      sketchConfig.set("targetList", targetList);
+    }
+
+    // Check if the target's ID is in the target list
+    if (e[1] === target.id) {
+      found = true;
+      break; // Exit loop early if target ID is found
+    }
+  }
+
+  // Determine the return value based on the list mode
+  if (targetListMode === "blacklist") {
+    return !found; // Returns false if found, true if not found
+  } else {
+    return found; // Returns true if found (whitelist mode)
+  }
 }
 
 function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
@@ -618,9 +640,12 @@ export function AimbotMenu() {
           <div
             className="settingsBtn"
             onClick={() => {
-              const target = targets.find(
-                (target) => target[1] === addTargetList.current!.value
-              );
+              const val = addTargetList.current!.value;
+              let target: AimbotTarget | undefined;
+              if (val === "") {
+                const user = (prompt("What's their username?") || "").trim();
+                if (user !== "") target = [user, ""];
+              } else target = targets.find((target) => target[1] === val);
               if (!target) return;
               setTargetList([...targetList, target!]);
               addTargetList.current!.value = "";
