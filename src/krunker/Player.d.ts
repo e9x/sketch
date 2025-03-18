@@ -33,6 +33,7 @@ export declare class Player {
   chargeTime: number;
   skins: number[];
   charms: number[];
+  wristIndex: number;
   attributes: {
     dmg: 1 | 0;
     drunk: 1 | 0;

@@ -274,6 +274,8 @@ function doGameHooks() {
     "shoeCol",
     "hairCol",
     "meleeIndex",
+    "skins",
+    "charms",
   ];
 
   const game = getGame();
@@ -345,6 +347,7 @@ function doGameHooks() {
       // console.log(player.skins);
       player.skins = skins;
       player.charms = charms;
+      if (game.config.thirdPerson) player.wristIndex = -1;
       generateMeshes.call(this, player, ...args);
 
       for (const vanity of vvv) (player as any)[vanity] = s[vanity];
