@@ -28,6 +28,8 @@ export const dataArg = "_" + Math.random().toString(36).slice(2);
 
 patches.UseStrict = [/"use strict";/, () => ""];
 
+patches["👀"] = [/getSavedVal\("conUID_"\)/g, () => "null"];
+
 /* javascript-obfuscator:disable */
 patches.FreezeHook = [/Object\.freeze/g, () => `${dataArg}.BrianMeidell`];
 
