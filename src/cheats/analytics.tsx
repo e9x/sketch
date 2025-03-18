@@ -30,13 +30,13 @@ export function analyticsHook() {
     const gameActivity = getGameActivity();
 
     if (sendPayload)
-      getBox()
-        .schizo({
-          id: gameActivity.id,
-          lol: payload,
-        })
-        .then((e) => {
-          if (isDevelopment) console.log(e);
-        });
+      getBox().schizo({
+        id: gameActivity.id,
+        lol: payload,
+      });
+
+    // .then((e) => {
+    //   if (isDevelopment) console.log(e);
+    // });
   });
 }

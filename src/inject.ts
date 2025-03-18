@@ -117,7 +117,6 @@ export const gameLoad = new Promise<void>((resolveGameLoad) =>
             ) {
               // game has loaded
               resolveGameLoad();
-              // eslint-disable-next-line @typescript-eslint/no-empty-function
               return new Promise((resolve, reject) => {
                 doFetchWASM = () =>
                   fetch(input, init).then(resolve).catch(reject);

@@ -2,13 +2,14 @@ import KrunkBox from "KrunkBox";
 import { getExposedWindow, isDevelopment } from "./consts";
 import type Game from "./krunker/Game";
 import type MapObjectModule from "./krunker/Object";
-import type { Player } from "./krunker/Player";
+import { Player } from "./krunker/Player";
 import type RenderManager from "./krunker/RenderManager";
 import type configModule from "./krunker/config";
 import type * as ioModule from "./krunker/io";
 import type * as Overlay from "./krunker/overlay";
 import sketchConfig from "./sketchConfig";
 import type * as THREE from "three";
+import * as console from "./crashout";
 
 const { freeze } = Object;
 
@@ -24,6 +25,8 @@ export const patches: Record<
 > = {};
 
 export const dataArg = "_" + Math.random().toString(36).slice(2);
+
+patches.UseStrict = [/"use strict";/, () => ""];
 
 /* javascript-obfuscator:disable */
 patches.FreezeHook = [/Object\.freeze/g, () => `${dataArg}.BrianMeidell`];
@@ -221,6 +224,7 @@ patches.GetGame = [
 ];
 
 data.molestGame = function (module: typeof Game) {
+  // console.log("trace");
   return hookGame(module);
 };
 
@@ -236,8 +240,6 @@ export function getGame() {
  */
 export const inputHooks: ((inputs: number[]) => boolean | void)[] = [];
 
-export const addPlayerHooks: ((player: Player) => void)[] = [];
-
 let blockedInputs = false;
 
 // in-game player, not menu player
@@ -249,7 +251,109 @@ export function getLocalPlayer() {
 }
 
 function doGameHooks() {
-  const { add } = getGame().players;
+  const { add, generateMeshes } = getGame().players;
+  // console.log("penis");
+
+  const vvv = [
+    "dyeIndex",
+    "bodyIndex",
+    "backIndex",
+    "waistIndex",
+    "hatIndex",
+    "headIndex",
+    "faceIndex",
+    "shoeIndex",
+    "petIndex",
+    "wristIndex",
+    "skinCol",
+    "skinColIndex",
+    "shirtCol",
+    "sleeveCol",
+    "pantsCol",
+    "waistCol",
+    "shoeCol",
+    "hairCol",
+    "meleeIndex",
+  ];
+
+  const game = getGame();
+
+  game.players.generateMeshes = function (player, ...args) {
+    if (player.isYou) {
+      const s: Record<any, any> = {};
+      for (const vanity of vvv) {
+        s[vanity] = (player as any)[vanity];
+        let val = (menuPlayer as any)[vanity];
+        (player as any)[vanity] = val;
+      }
+      const classCfg = game.classConfig[player.classIndex];
+      const c = classCfg.loadout;
+      const savedSkins = getSavedVal("skins");
+      const oa: Record<string, number> = savedSkins
+        ? JSON.parse(savedSkins)
+        : savedSkins;
+      const w = oa[c[0]];
+      const secondaryInd = getSavedVal("secondaryInd") || 2;
+      const skins = [
+        w != null ? w : -1,
+        oa[secondaryInd] != null && classCfg.secondary ? oa[secondaryInd] : -1,
+      ];
+      const savedCharms = getSavedVal("charms");
+      const vn = savedCharms ? JSON.parse(savedCharms) : [];
+
+      let favList: number[] = [];
+
+      const Tr = getSavedVal("krk_favList") || "[]";
+      try {
+        favList = JSON.parse(Tr);
+      } catch {}
+
+      function va<T>(e: T[]) {
+        return e[dt(0, e.length - 1)];
+      }
+      function dt(e: number, a: number) {
+        return Math.floor(Math.random() * (a - e + 1)) + e;
+      }
+      function Nn(e?: number, a?: number, t?: number) {
+        var n = game.store.skins
+            .map((_, i) => ({ ind: i, cnt: 1 }))
+            .filter((lol) => {
+              const s = game.store.skins[lol.ind];
+              return (
+                s &&
+                (a !== undefined ? s.type == a : !s.type && s.weapon === e) &&
+                (s.classIndex === undefined ||
+                  s.classIndex == player.classIndex) &&
+                t === undefined
+              );
+            }),
+          r = n.filter(function (s) {
+            return favList.indexOf(s.ind) >= 0;
+          });
+        return r.length ? va(r).ind || -1 : (n.length && va(n).ind) || -1;
+      }
+
+      const charms = [
+        vn[0] == -2 ? Nn(undefined, 12) : parseInt(vn[0]),
+        vn[1] != null && classCfg.secondary
+          ? vn[1] == -2
+            ? Nn(undefined, 12)
+            : parseInt(vn[1])
+          : -1,
+      ];
+
+      // console.log(player.skins);
+      player.skins = skins;
+      player.charms = charms;
+      generateMeshes.call(this, player, ...args);
+
+      for (const vanity of vvv) (player as any)[vanity] = s[vanity];
+    } else {
+      generateMeshes.call(this, player, ...args);
+    }
+
+    return player.objInstances;
+  };
 
   getGame().players.add = function (...args) {
     const player = add.call(this, ...args);
@@ -267,8 +371,6 @@ function doGameHooks() {
       }
       return procInputs.call(this, ...args);
     };
-
-    for (const hook of addPlayerHooks) hook(player);
 
     return player;
   };
@@ -441,14 +543,20 @@ patches.GetMenuPlayer = [
 ];
 
 data.molestMenuPlayer = function (player: any) {
+  // console.log("👅👅");
   menuPlayer = player;
+  /*setTimeout(() => {
+    if (localPlayer) {
+      console.log(localPlayer, localPlayer.hasAnims);
+    }
+  });*/
+  return menuPlayer;
 };
 
 /**
  * player created while in the menu
  * basically local player but it never spawns
  * and it's not the localPlayer
- *
  * menuPlayer can be undefined when the player isn't signed in
  */
 let menuPlayer: Player | undefined;
@@ -480,6 +588,7 @@ export const newGamePlayerHooks: ((player: Player) => void)[] = [];
 
 data.molestNewGamePlayer = function (player: any) {
   for (const hook of newGamePlayerHooks) hook(player);
+
   return player;
 };
 
@@ -549,19 +658,26 @@ patches["🦁𝓣𝓱𝓮 𝓛𝓲𝓸𝓷 𝓡𝓪𝓹𝓮𝓼 𝓽𝓱𝓮 �
 export function setSchizoServer(value: boolean) {
   console.warn("🦁𝓣𝓱𝓮 𝓛𝓲𝓸𝓷 𝓡𝓪𝓹𝓮𝓼 𝓽𝓱𝓮 𝓢𝓶𝓪𝓵𝓵 𝓓𝓸𝓰 𝓦𝓱𝓮𝓷 𝓘𝓽 𝓑𝓪𝓻𝓴𝓼");
   schizoServer = value;
-}
+}*/
 
-data.rapeProperty = (cunt: any, t: string, o: any) => {
-  // console.log(cunt, t, o);
-  let finalDesc = { ...o };
-  if (t === "isServer") finalDesc.get = () => schizoServer || o.get();
-  return Object.defineProperty(cunt, t, finalDesc);
-};
+// data.rapeProperty = (cunt: any, t: string, o: any) => {
+//   console.log(cunt, t, o);
+//   let finalDesc = { ...o };
+//   // not the player list, is the game
+//   if (t === "isServer") {
+//     // !("list" in cunt)
+//     console.log("rape rape rape rape rape rape rape raoe", o.get(), cunt, o, t);
 
-patches.TheLionRapesTheLittleDog = [
-  /Object\.defineProperty/g,
-  (match) => `${dataArg}.rapeProperty`,
-];*/
+//     // finalDesc.get = () => schizoServer || o.get();
+//   }
+
+//   return Object.defineProperty(cunt, t, finalDesc);
+// };
+
+// patches.TheLionRapesTheLittleDog = [
+//   /Object\.defineProperty/g,
+//   (match) => `${dataArg}.rapeProperty`,
+// ];
 
 /* javascript-obfuscator:enable */
 export const hook = (ebox: KrunkBox, src: string) => {

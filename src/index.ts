@@ -119,7 +119,10 @@ async function main() {
     const game = await getInit(krunkbox, hook);
 
     // needs to reload to use token
-    if (!game) return;
+    if (!game) {
+      console.log("refresh to utilize token");
+      return;
+    }
 
     if (!game.success) {
       if (isDevelopment) console.error("init:", game);

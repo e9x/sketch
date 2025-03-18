@@ -27,10 +27,12 @@ export interface Skin {
 
 export declare class Player {
   constructor(...args: unknown[]);
+  hasAnims: boolean;
   perks: number[];
   isKranked: boolean;
   chargeTime: number;
-  skins: Skin[];
+  skins: number[];
+  charms: number[];
   attributes: {
     dmg: 1 | 0;
     drunk: 1 | 0;
@@ -129,10 +131,13 @@ export declare class Player {
 
 export declare class manager {
   list: Player[];
+  generateMeshes(plr: Player, ...args: unknown[]): any;
   /**
    * returns the existing player or creates a new instance
    */
   add(...args: unknown[]): Player;
   spray(...args: unknown[]): unknown;
   regenMeshes(player: Player): void;
+  disposeMesh(player: Player): void;
+  swapWeapon(player: Player, ...args: any[]): void;
 }

@@ -17,6 +17,23 @@ export function skinHackHook() {
     cnt: 1,
   })) as Skin[];
 
+  /*newGamePlayerHooks.push((player) => {
+    console.log("Fuckkkk", player, player.isYou);
+    const { getSkinForLoadout } = player;
+
+    if (player === getMenuPlayer()) {
+      console.log("FUCKjjjjjjjsedfojhasd nooo");
+      return;
+    }
+
+    player.getSkinForLoadout = (i) => {
+      if (player.isYou) {
+        //console.trace("FUCK", i);
+        return getMenuPlayer().getSkinForLoadout(i);
+      } else return getSkinForLoadout(player);
+    };
+  });*/
+
   data.uiSkins = (skinArray: Skin[]) => {
     if (sketchConfig.get("skinHack")) return dummySkinArray;
     else return skinArray;
@@ -47,42 +64,6 @@ export function skinHackHook() {
     //@ts-ignore
     else if (areYouGonnaDoIt) io.send(...shit);
   };
-
-  newGamePlayerHooks.push((player) => {
-    for (const vanity of [
-      "skins",
-      "charms",
-      "faceIndex",
-      "shoeIndex",
-      "hatIndex",
-      "headIndex",
-      "bodyIndex",
-      "backIndex",
-      "waistIndex",
-      "petIndex",
-      "wristIndex",
-      "meleeIndex",
-      "skinColIndex",
-      "hairCol",
-      "dyeIndex",
-      "pcStatIndex",
-      "attachIndex",
-    ]) {
-      let o = (player as any)[vanity];
-      Object.defineProperty(player, vanity, {
-        get() {
-          if (getGameConfig().thirdPerson && vanity === "wristIndex") return -1;
-          if (!player.isYou) return o;
-          const menuPlayer = getMenuPlayer();
-          if (sketchConfig.get("skinHack")) return (menuPlayer as any)[vanity];
-          else return o;
-        },
-        set(value) {
-          o = value;
-        },
-      });
-    }
-  });
 }
 
 export function SkinHackMenu() {
