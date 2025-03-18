@@ -292,14 +292,15 @@ function doGameHooks() {
       }
       const classCfg = game.classConfig[player.classIndex];
       const c = classCfg.loadout;
+      console.log("fuck", c, classCfg, player.classIndex, game.classConfig);
       const savedSkins = getSavedVal("skins");
-      const oa: Record<string, number> = savedSkins
+      const oa: Record<string, number | null> = savedSkins
         ? JSON.parse(savedSkins)
-        : savedSkins;
+        : [];
       const w = oa[c[0]];
       const secondaryInd = getSavedVal("secondaryInd") || 2;
       const skins = [
-        w != null ? w : -1,
+        typeof w === "number" ? w : -1,
         oa[secondaryInd] != null && classCfg.secondary ? oa[secondaryInd] : -1,
       ];
       const savedCharms = getSavedVal("charms");
