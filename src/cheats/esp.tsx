@@ -6,6 +6,9 @@ import {
   getRender,
   preRenderHooks,
   overlayRenderHooks,
+  patches,
+  data,
+  dataArg,
 } from "../filters";
 import type { AI } from "../krunker/AI";
 import type { Player } from "../krunker/Player";
@@ -355,6 +358,15 @@ export function espHook() {
     }
   });
 
+  patches.Nametags = [
+    /!(\w+)\.isYou&&\1\.objInstances\){if\(\1\.canBSeen\){/,
+    (match, player) =>
+      `!${player}.isYou&&${player}.objInstances){if(${player}.canBSeen&&!${dataArg}.nametags){`,
+  ];
+  Object.defineProperty(data, "nametags", {
+    get: () => sketchConfig.get("nametags"),
+  });
+
   overlayRenderHooks.push(() => {
     const overlay = getOverlay();
     const game = getGame();
@@ -404,9 +416,11 @@ export function espHook() {
 
     // closely related logic
     const boxes = sketchConfig.get("boxes");
+    const nametags = sketchConfig.get("nametags");
     const healthBars = sketchConfig.get("healthBars");
+    const willRender = boxes || healthBars || nametags;
 
-    if ((boxes || healthBars) && !isInMenus()) {
+    if (willRender && !isInMenus()) {
       overlay.ctx.save();
       overlay.ctx.scale(overlay.scale, overlay.scale);
 
@@ -416,6 +430,40 @@ export function espHook() {
         const box = playerBox(entity);
 
         if (!box) continue;
+
+        overlay.ctx.fillStyle = "#000"; // Set fill style to black for the square
+        overlay.ctx.lineWidth = 4;
+        overlay.ctx.imageSmoothingEnabled = false;
+
+        overlay.ctx.globalAlpha = 0.9;
+
+        // Calculate text dimensions
+        overlay.ctx.font = "16px monospace"; // Make sure the font is set before measuring
+        const text = entity.name;
+        const textMetrics = overlay.ctx.measureText(text);
+        const textWidth = textMetrics.width;
+        const textHeight = 16; // The font size is 16px
+
+        const tx = box.left + box.width / 2;
+        const ty = box.top - 20;
+
+        // Draw the black square behind the text
+        overlay.ctx.fillRect(
+          tx - textWidth / 2 - 5,
+          ty - 2,
+          textWidth + 10,
+          textHeight + 4
+        ); // Adjust padding as necessary
+
+        // Set fill style back to white for the text
+        overlay.ctx.fillStyle = "#fff";
+
+        // Draw the text on top of the black square
+        overlay.ctx.textAlign = "center";
+        overlay.ctx.textBaseline = "top";
+        overlay.ctx.fillText(text, tx, ty);
+
+        overlay.ctx.globalAlpha = 1;
 
         if (boxes) {
           overlay.ctx.strokeStyle =

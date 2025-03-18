@@ -32,7 +32,7 @@ export function keybindOverlayHook() {
 
       const height = overlay.canvas.height / overlay.scale;
 
-      const keyHeight = 35;
+      const keyHeight = 48;
       const keyHeightGap = 8;
 
       const boxPadding = 24; // inset
@@ -44,7 +44,6 @@ export function keybindOverlayHook() {
         boxPadding;
       const boxX = 10;
       const boxY = height / 2 - boxHeight / 2;
-
       overlay.ctx.fillStyle = "#202020e2";
       overlay.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
 
@@ -89,7 +88,11 @@ export function keybindOverlayHook() {
 
         overlay.ctx.textAlign = "center";
         overlay.ctx.fillStyle = "#fff";
-        overlay.ctx.fillText(keyName, keyWidth / 2, keyHeight / 2 + fontHeight);
+        overlay.ctx.fillText(
+          keyName,
+          keyWidth / 2,
+          (keyHeight - 10) / 2 + fontHeight
+        );
         overlay.ctx.restore();
 
         overlay.ctx.translate(0, keyHeight + keyHeightGap);

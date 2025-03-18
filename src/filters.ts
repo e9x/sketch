@@ -499,15 +499,6 @@ function doMapObjectHooks() {
   });
 }
 
-patches.Nametags = [
-  /!(\w+)\.isYou&&\1\.objInstances\){if\(\1\.canBSeen\){/,
-  (match, player) =>
-    `!${player}.isYou&&${player}.objInstances){if(${player}.canBSeen||${dataArg}.nametags){`,
-];
-Object.defineProperty(data, "nametags", {
-  get: () => sketchConfig.get("nametags"),
-});
-
 // force the game to calculate FPS if the watermark is enabled
 // this works because the game hides the FPS element even if this code is ran
 patches.WatermarkFPS = [
