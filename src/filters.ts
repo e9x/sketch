@@ -292,7 +292,7 @@ function doGameHooks() {
       }
       const classCfg = game.classConfig[player.classIndex];
       const c = classCfg.loadout;
-      console.log("fuck", c, classCfg, player.classIndex, game.classConfig);
+      // console.log("fuck", c, classCfg, player.classIndex, game.classConfig);
       const savedSkins = getSavedVal("skins");
       const oa: Record<string, number | null> = savedSkins
         ? JSON.parse(savedSkins)

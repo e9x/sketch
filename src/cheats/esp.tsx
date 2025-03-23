@@ -1,3 +1,4 @@
+import { ColorPicker } from "krunker-ui/components/ColorPicker";
 import { getExposedWindow } from "../consts";
 import {
   getConfig,
@@ -195,12 +196,20 @@ function initMaterials() {
     teamWall: genericMesh(),
   };
 
-  const genericLine = () =>
-    new game.THREE.LineBasicMaterial({
+  const genericLine = () => {
+    const xo = new game.THREE.LineBasicMaterial({
       transparent: true,
       fog: false,
       depthTest: false,
+      vertexColors: true,
     });
+    xo.onBeforeCompile = (shader) => {
+      shader.vertexShader = `
+      ${shader.vertexShader}
+    `.replace(`uniform float linewidth;`, `attribute float linewidth;`);
+    };
+    return xo;
+  };
 
   const line: Materials<THREE.LineBasicMaterial> = {
     enemy: genericLine(),
@@ -226,10 +235,8 @@ function initMaterials() {
     update: () => {
       materials.updated = true;
 
-      const overlay = getOverlay();
-
-      const enemyHex = parseInt(overlay.healthColE.slice(1), 16);
-      const teamHex = parseInt(overlay.healthColT.slice(1), 16);
+      const enemyHex = parseInt(sketchConfig.get("badColor").slice(1), 16);
+      const teamHex = parseInt(sketchConfig.get("goodColor").slice(1), 16);
 
       colors.enemy.set(enemyHex);
       colors.team.set(teamHex);
@@ -255,24 +262,27 @@ function initMaterials() {
   return materials;
 }
 
+let materials: ReturnType<typeof initMaterials> | undefined;
+
+const getMaterials = () => {
+  if (!materials) materials = initMaterials();
+  // preserve the variable in this scope for nested functions
+  return materials;
+};
+
+const tracerMap = new Map<Player, Line>();
+
+interface Line {
+  line: THREE.Line<
+    THREE.BufferGeometry<THREE.NormalBufferAttributes>,
+    THREE.Material | THREE.Material[]
+  >;
+  buffer: THREE.BufferAttribute;
+}
+
 export function espHook() {
-  let materials: ReturnType<typeof initMaterials> | undefined;
   const hookedMeshes = new WeakSet<THREE.Mesh>();
   const hookedObjects = new WeakSet<THREE.Object3D>();
-
-  const getMaterials = () => {
-    if (!materials) materials = initMaterials();
-    // preserve the variable in this scope for nested functions
-    return materials;
-  };
-
-  interface Line {
-    line: THREE.Line<
-      THREE.BufferGeometry<THREE.NormalBufferAttributes>,
-      THREE.Material | THREE.Material[]
-    >;
-    buffer: THREE.BufferAttribute;
-  }
 
   const generateLine = (points: number) => {
     const game = getGame();
@@ -299,8 +309,6 @@ export function espHook() {
 
     return { line, buffer } as Line;
   };
-
-  const tracerMap = new Map<Player, Line>();
 
   preRenderHooks.push(() => {
     const game = getGame();
@@ -340,7 +348,6 @@ export function espHook() {
           const eP = entity.objInstances.position;
 
           line.material = getEntityMaterial(entity, materials.line);
-
           buffer.setXYZ(0, startPoint.x, startPoint.y, startPoint.z);
           buffer.setXYZ(1, eP.x, eP.y, eP.z);
           buffer.setXYZ(
@@ -505,6 +512,8 @@ export function ESPMenu() {
   const [chams, setChams] = useSketchConfig("chams");
   const [tracers, setTracers] = useSketchConfig("tracers");
   const [healthBars, setHealthBars] = useSketchConfig("healthBars");
+  const [badColor, setBadColor] = useSketchConfig("badColor");
+  const [goodColor, setGoodColor] = useSketchConfig("goodColor");
 
   return (
     <>
@@ -537,6 +546,18 @@ export function ESPMenu() {
         description="Shows a health bar next to a player"
         defaultChecked={healthBars}
         onChange={(event) => setHealthBars(event.currentTarget.checked)}
+      />
+      <ColorPicker
+        title="Hostile player color"
+        description="Changes the ESP color"
+        defaultValue={badColor}
+        onChange={(event) => setBadColor(event.currentTarget.value)}
+      />
+      <ColorPicker
+        title="Friendly player color"
+        description="Changes the ESP color"
+        defaultValue={goodColor}
+        onChange={(event) => setGoodColor(event.currentTarget.value)}
       />
     </>
   );

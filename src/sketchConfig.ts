@@ -50,6 +50,8 @@ export interface SketchConfig {
   triggerbotDistance: number;
   targetList: AimbotTarget[];
   targetListMode: "off" | "whitelist" | "blacklist";
+  badColor: string;
+  goodColor: string;
 }
 
 /**
@@ -100,6 +102,8 @@ const defaultConfig: SketchConfig = {
   triggerbotDistance: 0.5,
   targetList: [],
   targetListMode: "off",
+  badColor: "#ff0000",
+  goodColor: "#00ff00",
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());

@@ -1,4 +1,4 @@
-import type THREEModule from "three";
+import type * as THREEModule from "three";
 import type { OBB } from "three/examples/jsm/math/OBB.js";
 
 export { OBB };

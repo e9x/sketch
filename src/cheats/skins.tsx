@@ -1,11 +1,4 @@
-import {
-  data,
-  getGame,
-  getGameConfig,
-  getLocalPlayer,
-  getMenuPlayer,
-  newGamePlayerHooks,
-} from "../filters";
+import { data, getGame, getLocalPlayer } from "../filters";
 import type { Player, Skin } from "../krunker/Player";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "krunker-ui/components/Switch";
@@ -16,23 +9,6 @@ export function skinHackHook() {
     ind: i,
     cnt: 1,
   })) as Skin[];
-
-  /*newGamePlayerHooks.push((player) => {
-    console.log("Fuckkkk", player, player.isYou);
-    const { getSkinForLoadout } = player;
-
-    if (player === getMenuPlayer()) {
-      console.log("FUCKjjjjjjjsedfojhasd nooo");
-      return;
-    }
-
-    player.getSkinForLoadout = (i) => {
-      if (player.isYou) {
-        //console.trace("FUCK", i);
-        return getMenuPlayer().getSkinForLoadout(i);
-      } else return getSkinForLoadout(player);
-    };
-  });*/
 
   data.uiSkins = (skinArray: Skin[]) => {
     if (sketchConfig.get("skinHack")) return dummySkinArray;
