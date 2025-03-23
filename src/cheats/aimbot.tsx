@@ -68,50 +68,50 @@ function playerHitbox(player: Player, hitbox: string) {
   const config = getConfig();
   const localPlayer = getLocalPlayer();
   const game = getGame();
-  if (sketchConfig.get("multiPoint")) {
-    const mpScale = sketchConfig.get("multiPointScale");
+  // if (sketchConfig.get("multiPoint")) {
+  //   const mpScale = sketchConfig.get("multiPointScale");
 
-    const dimensions = {
-      x: player.x,
-      y: player.y,
-      z: player.z,
-      w: player.height * 0.5,
-      h: player.height - player.crouchVal * config.crouchDst - 0.2,
-    };
+  //   const dimensions = {
+  //     x: player.x,
+  //     y: player.y,
+  //     z: player.z,
+  //     w: player.height * 0.5,
+  //     h: player.height - player.crouchVal * config.crouchDst - 0.2,
+  //   };
 
-    // start at 2/3 (chest) or 3/3 (top) when
-    for (let y = hitbox === "chest" ? 2 : 3; y > 0; y--) {
-      for (let x = 0; x < 3; x++) {
-        for (let z = 0; z < 3; z++) {
-          const lineEnd = new game.THREE.Vector3(
-            player.x +
-              dimensions.w * (x ? (x % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale,
-            player.y + dimensions.h * (y / 3),
-            player.z +
-              dimensions.w * (z ? (z % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale
-          );
-          const intersects =
-            game.canSee(localPlayer, lineEnd.x, lineEnd.y, lineEnd.z) === null;
-          if (intersects) return lineEnd;
-        }
-      }
-    }
-  } else {
-    const { THREE } = getGame();
-    const hitboxOffset =
-      hitbox === "head"
-        ? config.headScale / 2
-        : config.playerHeight - config.headScale - config.legHeight;
+  //   // start at 2/3 (chest) or 3/3 (top) when
+  //   for (let y = hitbox === "chest" ? 2 : 3; y > 0; y--) {
+  //     for (let x = 0; x < 3; x++) {
+  //       for (let z = 0; z < 3; z++) {
+  //         const lineEnd = new game.THREE.Vector3(
+  //           player.x +
+  //             dimensions.w * (x ? (x % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale,
+  //           player.y + dimensions.h * (y / 3),
+  //           player.z +
+  //             dimensions.w * (z ? (z % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale
+  //         );
+  //         const intersects =
+  //           game.canSee(localPlayer, lineEnd.x, lineEnd.y, lineEnd.z) === null;
+  //         if (intersects) return lineEnd;
+  //       }
+  //     }
+  //   }
+  // } else {
+  const { THREE } = getGame();
+  const hitboxOffset =
+    hitbox === "head"
+      ? config.headScale / 2
+      : config.playerHeight - config.headScale - config.legHeight;
 
-    return new THREE.Vector3(
-      player.x,
-      player.y +
-        player.height -
-        hitboxOffset -
-        player.crouchVal * config.crouchDst,
-      player.z
-    );
-  }
+  return new THREE.Vector3(
+    player.x,
+    player.y +
+      player.height -
+      hitboxOffset -
+      player.crouchVal * config.crouchDst,
+    player.z
+  );
+  // }
 }
 
 /**
@@ -518,9 +518,8 @@ export function AimbotMenu() {
   const [smoothFactor, setSmoothFactor] = useSketchConfig("smoothFactor");
   const [fovRadius, setFOVRadius] = useSketchConfig("fovRadius");
   const [drawFOV, setDrawFOV] = useSketchConfig("drawFOV");
-  const [multiPoint, setMultiPoint] = useSketchConfig("multiPoint");
-  const [multiPointScale, setMultiPointScale] =
-    useSketchConfig("multiPointScale");
+  // const [multiPoint, setMultiPoint] = useSketchConfig("multiPoint");
+  // const [multiPointScale, setMultiPointScale] = useSketchConfig("multiPointScale");
   const [targetOnAimKey, setTargetAimOnKey] = useSketchConfig("targetOnAimKey");
   const [spinbot, setSpinbot] = useSketchConfig("spinbot");
   const [targetListMode, setTargetListMode] = useSketchConfig("targetListMode");
@@ -717,7 +716,7 @@ export function AimbotMenu() {
           onChange={(event) => setDrawFOV(event.currentTarget.checked)}
         />
       </Set>
-      <Set title="Multipoint">
+      {/* <Set title="Multipoint">
         <Switch
           title="Multipoint"
           defaultChecked={multiPoint}
@@ -736,7 +735,7 @@ export function AimbotMenu() {
             setMultiPointScale(event.currentTarget.valueAsNumber)
           }
         />
-      </Set>
+      </Set> */}
       <Set title="Rage">
         <Switch
           title="Turret"
