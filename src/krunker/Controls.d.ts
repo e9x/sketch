@@ -1,5 +1,6 @@
 import type { AI } from "./AI";
 import type { Player } from "./Player";
+import type * as THREE from "three";
 
 declare class Controls {
   isn: number;

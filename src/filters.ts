@@ -1,7 +1,7 @@
-import KrunkBox from "KrunkBox";
+// @ts-nocheck
 import { getExposedWindow, isDevelopment } from "./consts";
 import type Game from "./krunker/Game";
-import type MapObjectModule from "./krunker/Object";
+import type MapObject from "./krunker/Object";
 import { Player } from "./krunker/Player";
 import type RenderManager from "./krunker/RenderManager";
 import type configModule from "./krunker/config";
@@ -9,7 +9,8 @@ import type * as ioModule from "./krunker/io";
 import type * as Overlay from "./krunker/overlay";
 import sketchConfig from "./sketchConfig";
 import type * as THREE from "three";
-import * as console from "./crashout";
+import { console, defineProperty } from "./crashout";
+import { mirrorAttributes } from "./hook";
 
 const { freeze } = Object;
 
@@ -31,12 +32,11 @@ patches.UseStrict = [/"use strict";/, () => ""];
 patches["👀"] = [/getSavedVal\("conUID_"\)/g, () => "null"];
 
 /* javascript-obfuscator:disable */
-patches.FreezeHook = [/Object\.freeze/g, () => `${dataArg}.BrianMeidell`];
 
-data.BrianMeidell = function (obj: any) {
-  if ("gameVersion" in obj) config = obj;
-  return freeze(obj);
-};
+// called before game init: get ya hooks in
+export const beforeGame: (() => void)[] = [];
+// called after game init: pull out!
+export const afterGame: (() => void)[] = [];
 
 let config: typeof configModule | undefined;
 
@@ -45,15 +45,19 @@ export function getConfig() {
   return config;
 }
 
-patches.GetOverlay = [
-  /,(\w+)\.medalsList=\[/,
-  (match, module) => `,${dataArg}.overlay(${module}).medalsList=[`,
-];
-data.overlay = function (module: any) {
-  overlay = module;
-  doOverlayHooks();
-  return module;
-};
+beforeGame.push(() => {
+  const { freeze } = Object;
+
+  Object.freeze = mirrorAttributes(function (obj: any) {
+    if ("gameVersion" in obj) {
+      config = obj;
+      console.log("game config:", config);
+    }
+    return freeze(obj);
+  }, freeze);
+
+  afterGame.push(() => (Object.freeze = freeze));
+});
 
 /**
  * After the overlay is rendered
@@ -63,23 +67,6 @@ data.overlay = function (module: any) {
 export const overlayRenderHooks: (() => void)[] = [];
 export const preOverlayRenderHooks: (() => void)[] = [];
 
-function doOverlayHooks() {
-  const overlay = getOverlay();
-
-  Object.defineProperty(overlay, "render", {
-    configurable: true,
-    set: (render) => {
-      delete (overlay as any).render;
-      overlay.render = function (...args) {
-        if (localPlayer) for (const hook of preOverlayRenderHooks) hook();
-        const result = render.call(this, ...args);
-        if (localPlayer) for (const hook of overlayRenderHooks) hook();
-        return result;
-      };
-    },
-  });
-}
-
 let overlay: typeof Overlay | undefined;
 
 export function getOverlay() {
@@ -87,68 +74,79 @@ export function getOverlay() {
   return overlay;
 }
 
+beforeGame.push(() => {
+  defineProperty(Object.prototype, "render", {
+    configurable: true,
+    enumerable: false,
+    set(value) {
+      // console.log({ value });
+      if (!("medalsList" in this))
+        return Object.defineProperty(this, "render", {
+          value,
+          writable: true,
+          enumerable: true,
+          configurable: true,
+        });
+
+      delete Object.prototype.render;
+      this.render = value;
+      console.log("we render c:", this);
+      render = this;
+      doRenderHooks();
+    },
+  });
+
+  afterGame.push(() => delete Object.prototype.render);
+});
+
 // hook routine to define class getters/setters on constructor
-/*
-  function je(e,a,t){return a&&V7(e.prototype,a),t&&V7(e,t),Object.defineProperty(e,"prototype",{writable:!1}),e}
-  */
 
-/*patches.FieldHelper = [
-    /function (\w+)\((\w+),(\w+),(\w+)\)\{return \3&&\w+\(\2\.prototype,\3\),t&&V7\(\2,\4\),Object\.defineProperty\(\2,"prototype",\{writable:!1\}\),\2\}/,
-    (match, helperFnName) =>
-      `function ${helperFnName}(a,b,c){const og = ${match}; return ${dataArg}.fieldHelper(og, a, b, c)}`
-  ];*/
+// easier to patch like this:
+// patches.GetIO = [
+//   /(\w+)={ahNum:0,.*?this\.captchaHolder=null\)\}\};/,
+//   (match, ioVar) => `${match}${dataArg}.molestIO(${ioVar});`,
+// ];
 
-patches.GetIO = [
-  /(\w+)={ahNum:0,.*?this\.captchaHolder=null\)\}\};/,
-  (match, ioVar) => `${match}${dataArg}.molestIO(${ioVar});`,
-];
-
-data.molestIO = function (lol: any) {
-  io = lol;
-  doIOHooks();
-};
+// data.molestIO = function (lol: any) {
+//   io = lol;
+//   doIOHooks();
+// };
 
 /**
  * When the result of the hook is false, the packet won't be sent
  */
-export const ioSendHooks: ((packet: string, data: any) => boolean | void)[] =
-  [];
+// export const ioSendHooks: ((packet: string, data: any) => boolean | void)[] =
+//   [];
 
 /**
  * When the result of the hook is false, the packet won't be propagated to the game
  */
-export const ioDispatchHooks: ((
-  packet: string,
-  data: any
-) => boolean | void)[] = [];
+// export const ioDispatchHooks: ((
+//   packet: string,
+//   data: any
+// ) => boolean | void)[] = [];
 
-let io: typeof ioModule | undefined;
+// let io: typeof ioModule | undefined;
 
-export function getIO() {
-  if (!io) throw new Error("Too early");
-  return io;
-}
+// export function getIO() {
+//   if (!io) throw new Error("Too early");
+//   return io;
+// }
 
-function doIOHooks() {
-  const { send, _dispatchEvent } = getIO();
+// function doIOHooks() {
+//   const { send, _dispatchEvent } = getIO();
 
-  getIO().send = function (packet, ...data) {
-    for (const hook of ioSendHooks) if (hook(packet, data) === false) return;
-    return send.call(this, packet, ...data);
-  };
+//   getIO().send = function (packet, ...data) {
+//     for (const hook of ioSendHooks) if (hook(packet, data) === false) return;
+//     return send.call(this, packet, ...data);
+//   };
 
-  getIO()._dispatchEvent = function (packet, ...data) {
-    for (const hook of ioDispatchHooks)
-      if (hook(packet, data) === false) return;
-    return _dispatchEvent.call(this, packet, ...data);
-  };
-}
-
-patches.GetRender = [
-  /=(\w+)\.THREE,(\w+=window\.SOUND=)/,
-  (match, RenderManager, crap) =>
-    `=(${dataArg}.molestRender(${RenderManager})).THREE,` + crap,
-];
+//   getIO()._dispatchEvent = function (packet, ...data) {
+//     for (const hook of ioDispatchHooks)
+//       if (hook(packet, data) === false) return;
+//     return _dispatchEvent.call(this, packet, ...data);
+//   };
+// }
 
 data.molestRender = function (module: RenderManager) {
   render = module;
@@ -219,16 +217,56 @@ function doRenderHooks() {
   }
 }
 
-patches.GetGame = [
-  /function (\w+)\(((?:\w+,?)+)\)(\{Object\.defineProperty\(this,"isServer",{get:function)/,
-  (match, Game, argsss, body) =>
-    `var ${Game}=${dataArg}.molestGame(Fuck);function Fuck(${argsss})${body}`,
-];
+beforeGame.push(() => {
+  defineProperty(Object.prototype, "controls", {
+    configurable: true,
+    enumerable: false,
+    get() {
+      // console.log("retard", this);
+      return null;
+    },
+    set(value) {
+      if ("isServer" in this) {
+        if (value === null) return;
+        // so at this point value either null or the controls class
+        // once its set to the class, unhook global and fire events , until then just stay put
+        delete Object.prototype.controls;
+        this.controls = value;
+        game = this;
+        // need to hook config IMMEDIATELY (for sandbox)
+        gameConfig = this.config;
+        Object.defineProperty(this, "config", {
+          get() {
+            return gameConfig;
+          },
+          set(config: Game["config"]) {
+            gameConfig = config;
 
-data.molestGame = function (module: typeof Game) {
-  // console.log("trace");
-  return hookGame(module);
-};
+            let realThirdPerson = config.thirdPerson;
+
+            Object.defineProperty(config, "thirdPerson", {
+              get() {
+                return sketchConfig.get("thirdPerson") || realThirdPerson;
+              },
+              set(value) {
+                realThirdPerson = value;
+              },
+            });
+          },
+        });
+      } else {
+        Object.defineProperty(this, "controls", {
+          value,
+          writable: true,
+          enumerable: true,
+          configurable: true,
+        });
+      }
+    },
+  });
+
+  return () => delete Object.prototype.controls;
+});
 
 let game: Game | undefined;
 
@@ -252,114 +290,14 @@ export function getLocalPlayer() {
   return localPlayer;
 }
 
+export const onGameHooks: (() => void)[] = [];
+
 function doGameHooks() {
-  const { add, generateMeshes } = getGame().players;
-  // console.log("penis");
-
-  const vvv = [
-    "dyeIndex",
-    "bodyIndex",
-    "backIndex",
-    "waistIndex",
-    "hatIndex",
-    "headIndex",
-    "faceIndex",
-    "shoeIndex",
-    "petIndex",
-    "wristIndex",
-    "skinCol",
-    "skinColIndex",
-    "shirtCol",
-    "sleeveCol",
-    "pantsCol",
-    "waistCol",
-    "shoeCol",
-    "hairCol",
-    "meleeIndex",
-    "skins",
-    "charms",
-  ];
-
   const game = getGame();
 
-  game.players.generateMeshes = function (player, ...args) {
-    if (player.isYou) {
-      const s: Record<any, any> = {};
-      for (const vanity of vvv) {
-        s[vanity] = (player as any)[vanity];
-        let val = (menuPlayer as any)[vanity];
-        (player as any)[vanity] = val;
-      }
-      const classCfg = game.classConfig[player.classIndex];
-      const c = classCfg.loadout;
-      // console.log("fuck", c, classCfg, player.classIndex, game.classConfig);
-      const savedSkins = getSavedVal("skins");
-      const oa: Record<string, number | null> = savedSkins
-        ? JSON.parse(savedSkins)
-        : [];
-      const w = oa[c[0]];
-      const secondaryInd = getSavedVal("secondaryInd") || 2;
-      const skins = [
-        typeof w === "number" ? w : -1,
-        oa[secondaryInd] != null && classCfg.secondary ? oa[secondaryInd] : -1,
-      ];
-      const savedCharms = getSavedVal("charms");
-      const vn = savedCharms ? JSON.parse(savedCharms) : [];
+  const { add } = getGame().players;
 
-      let favList: number[] = [];
-
-      const Tr = getSavedVal("krk_favList") || "[]";
-      try {
-        favList = JSON.parse(Tr);
-      } catch {}
-
-      function va<T>(e: T[]) {
-        return e[dt(0, e.length - 1)];
-      }
-      function dt(e: number, a: number) {
-        return Math.floor(Math.random() * (a - e + 1)) + e;
-      }
-      function Nn(e?: number, a?: number, t?: number) {
-        var n = game.store.skins
-            .map((_, i) => ({ ind: i, cnt: 1 }))
-            .filter((lol) => {
-              const s = game.store.skins[lol.ind];
-              return (
-                s &&
-                (a !== undefined ? s.type == a : !s.type && s.weapon === e) &&
-                (s.classIndex === undefined ||
-                  s.classIndex == player.classIndex) &&
-                t === undefined
-              );
-            }),
-          r = n.filter(function (s) {
-            return favList.indexOf(s.ind) >= 0;
-          });
-        return r.length ? va(r).ind || -1 : (n.length && va(n).ind) || -1;
-      }
-
-      const charms = [
-        vn[0] == -2 ? Nn(undefined, 12) : parseInt(vn[0]),
-        vn[1] != null && classCfg.secondary
-          ? vn[1] == -2
-            ? Nn(undefined, 12)
-            : parseInt(vn[1])
-          : -1,
-      ];
-
-      // console.log(player.skins);
-      player.skins = skins;
-      player.charms = charms;
-      if (game.config.thirdPerson) player.wristIndex = -1;
-      generateMeshes.call(this, player, ...args);
-
-      for (const vanity of vvv) (player as any)[vanity] = s[vanity];
-    } else {
-      generateMeshes.call(this, player, ...args);
-    }
-
-    return player.objInstances;
-  };
+  for (const hook of onGameHooks) hook();
 
   getGame().players.add = function (...args) {
     const player = add.call(this, ...args);
@@ -381,7 +319,7 @@ function doGameHooks() {
     return player;
   };
 
-  const { push } = getGame().controls.tmpInpts;
+  const tmpInptsPush = game.controls.tmpInpts.push;
 
   /*
   Order of calls:
@@ -391,7 +329,7 @@ function doGameHooks() {
   io.send('q')
   */
 
-  getGame().controls.tmpInpts.push = function (inputs) {
+  game.controls.tmpInpts.push = function (inputs) {
     if (localPlayer)
       for (const hook of inputHooks)
         if (hook(inputs) === false) {
@@ -399,7 +337,7 @@ function doGameHooks() {
           return 0;
         }
 
-    return push.call(this, inputs);
+    return tmpInptsPush.call(this, inputs);
   };
 
   ioSendHooks.push((packet) => {
@@ -408,6 +346,23 @@ function doGameHooks() {
       return false;
     }
   });
+
+  const mapObjectsPush = game.map.objects.push;
+
+  game.map.objects.push = function (obj) {
+    let trans = obj.transparent;
+    Object.defineProperty(obj, "transparent", {
+      get(this: MapObject) {
+        if (sketchConfig.get("wallbangs")) return this.penetrable ? 1 : 0;
+        return trans;
+      },
+      set(this: MapObject, value) {
+        trans = value;
+      },
+    });
+
+    return mapObjectsPush.call(this, obj);
+  };
 }
 
 let gameConfig: Game["config"] | undefined;
@@ -417,96 +372,33 @@ export function getGameConfig() {
   return gameConfig;
 }
 
-function hookGame(value: typeof Game) {
-  const Game = value;
+beforeGame.push(() => {
+  Object.defineProperty(Object.prototype, "bundleMedalFilters", {
+    enumerable: false,
+    configurable: true,
+    set(value) {
+      if (!("tmp" in this))
+        return Object.defineProperty(this, "bundleMedalFilters", {
+          configurable: true,
+          enumerable: true,
+          value,
+        });
+      delete Object.prototype.bundleMedalFilters;
+      this.bundleMedalFilters = value;
 
-  // @ts-ignore
-  return function (this: Game, ...args: ConstructorParameters<typeof Game>) {
-    // console.trace("Fuck", args, this);
-    const result = Game.call(this, ...args);
-
-    // new Game()
-    // game.controls = ...
-    // game.ui = ...
-
-    // can be determined by comparing the arguments to new Game();
-    // on sandbox, the game is created twice...
-    // args[1] is actually 0. this might be a host ID?
-    const isMainGame = typeof args[1] === "number";
-
-    if (isMainGame) {
-      // need to hook config IMMEDIATELY (for sandbox)
-      gameConfig = this.config;
-
-      Object.defineProperty(this, "config", {
-        get() {
-          return gameConfig;
-        },
-        set(config: Game["config"]) {
-          gameConfig = config;
-
-          let realThirdPerson = config.thirdPerson;
-
-          Object.defineProperty(config, "thirdPerson", {
-            get() {
-              return sketchConfig.get("thirdPerson") || realThirdPerson;
-            },
-            set(value) {
-              realThirdPerson = value;
-            },
-          });
+      // force the game to calculate FPS if the watermark is enabled
+      // this works because the game hides the FPS element even if this code is ran
+      let { showFPS } = this.tmp;
+      Object.defineProperty(this.tmp, "showFPS", {
+        get: () => sketchConfig.get("watermark") || showFPS,
+        set: (v) => {
+          showFPS = v;
         },
       });
-
-      // we have to wait for the properties to be assigned for other hooks
-      setTimeout(() => {
-        game = this;
-        doGameHooks();
-      });
-    }
-
-    return result;
-  };
-}
-
-patches.GetMapObject = [
-  /function (\w+)\(\w+,\w+=null\)\{.*?this\.penetrable=/,
-  (match, MapObject) => `${dataArg}.MapObject(${MapObject});${match}`,
-];
-data.MapObject = function (map: any) {
-  MapObject = map;
-  doMapObjectHooks();
-  return module;
-};
-
-let MapObject: typeof MapObjectModule | undefined;
-
-export function getMapObject() {
-  if (!MapObject) throw new Error("Too early");
-  return MapObject;
-}
-
-function doMapObjectHooks() {
-  const transparentMap = new WeakMap<MapObjectModule, number | undefined>();
-  Object.defineProperty(getMapObject().prototype, "transparent", {
-    get(this: MapObjectModule) {
-      if (sketchConfig.get("wallbangs")) return this.penetrable ? 1 : 0;
-      return transparentMap.get(this);
-    },
-    set(this: MapObjectModule, value) {
-      transparentMap.set(this, value);
     },
   });
-}
 
-// force the game to calculate FPS if the watermark is enabled
-// this works because the game hides the FPS element even if this code is ran
-patches.WatermarkFPS = [
-  /if\((\w+)\.tmp\.showFPS\)\{for\(/,
-  (match, settings) => `if(${dataArg}.watermark||${settings}.tmp.showFPS){for(`,
-];
-Object.defineProperty(data, "watermark", {
-  get: () => sketchConfig.get("watermark"),
+  return () => delete Object.prototype.bundleMedalFilters;
 });
 
 // *r.adsFov[r.getPlayerWeaponId(t)]
@@ -575,19 +467,19 @@ patches.UISkins = [
 // before .init()
 // game.players.add()
 // before skin/hat properties are set
-patches.HookPlayer = [
-  /(\(\w+=new \w+\(\w+,this,\w+\)\))(\.sid=\w+)/,
-  (match, newGamePlayer, shit) =>
-    `${dataArg}.molestNewGamePlayer(${newGamePlayer})` + shit,
-];
+// patches.HookPlayer = [
+//   /(\(\w+=new \w+\(\w+,this,\w+\)\))(\.sid=\w+)/,
+//   (match, newGamePlayer, shit) =>
+//     `${dataArg}.molestNewGamePlayer(${newGamePlayer})` + shit,
+// ];
 
-export const newGamePlayerHooks: ((player: Player) => void)[] = [];
+// export const newGamePlayerHooks: ((player: Player) => void)[] = [];
 
-data.molestNewGamePlayer = function (player: any) {
-  for (const hook of newGamePlayerHooks) hook(player);
+// data.molestNewGamePlayer = function (player: any) {
+//   for (const hook of newGamePlayerHooks) hook(player);
 
-  return player;
-};
+//   return player;
+// };
 
 // force the loadout menu to render "owned" skins, even logged out
 // so schizo..
@@ -651,32 +543,8 @@ patches["🦁𝓣𝓱𝓮 𝓛𝓲𝓸𝓷 𝓡𝓪𝓹𝓮𝓼 𝓽𝓱𝓮 �
     `if(${dataArg}.skinHack||${gameVar}.isSandbox||${accVar}.account&&${accVar}.account.premiumT>0){var ${skinFreeVar}=${dataArg}.skinHack||`,
 ];
 
-/*let schizoServer = false;
-export function setSchizoServer(value: boolean) {
-  console.warn("🦁𝓣𝓱𝓮 𝓛𝓲𝓸𝓷 𝓡𝓪𝓹𝓮𝓼 𝓽𝓱𝓮 𝓢𝓶𝓪𝓵𝓵 𝓓𝓸𝓰 𝓦𝓱𝓮𝓷 𝓘𝓽 𝓑𝓪𝓻𝓴𝓼");
-  schizoServer = value;
-}*/
-
-// data.rapeProperty = (cunt: any, t: string, o: any) => {
-//   console.log(cunt, t, o);
-//   let finalDesc = { ...o };
-//   // not the player list, is the game
-//   if (t === "isServer") {
-//     // !("list" in cunt)
-//     console.log("rape rape rape rape rape rape rape raoe", o.get(), cunt, o, t);
-
-//     // finalDesc.get = () => schizoServer || o.get();
-//   }
-
-//   return Object.defineProperty(cunt, t, finalDesc);
-// };
-
-// patches.TheLionRapesTheLittleDog = [
-//   /Object\.defineProperty/g,
-//   (match) => `${dataArg}.rapeProperty`,
-// ];
-
 /* javascript-obfuscator:enable */
+
 export const hook = (ebox: KrunkBox, src: string) => {
   box = ebox;
   data.fent = box.slop.bind(box);
@@ -715,6 +583,6 @@ if (isDevelopment) {
     getMenuPlayer,
     getOverlay,
     getConfig,
-    //getIO,
+    // getIO,
   });
 }

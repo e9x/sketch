@@ -16,7 +16,7 @@ import {
   sketchVersion,
   supportedGame,
 } from "./consts";
-import { hook } from "./filters";
+import { afterGame, beforeGame, hook } from "./filters";
 import { getInit, gameLoad, fetchWASM } from "./inject";
 import { sketchButton } from "./menu/createUI";
 import sketchConfig from "./sketchConfig";
@@ -135,7 +135,9 @@ async function main() {
     await gameLoad;
     sketchButton();
 
+    for (const bg of beforeGame) bg();
     game.init();
+    for (const ag of afterGame) ag();
 
     break;
   }

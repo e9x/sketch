@@ -89,6 +89,16 @@ const sketchMain = await context({
         namedExports: ["createRoot"],
       },
     }),
+    {
+      name: "heyyy",
+      setup: (build) => {
+        build.onEnd(() => {
+          console.log("built sketch", pkg.version, "GG!!");
+          console.log(new Date());
+          console.log("i love you");
+        });
+      },
+    },
   ],
   platform: "browser",
   banner: {

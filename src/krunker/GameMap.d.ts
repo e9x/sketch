@@ -27,6 +27,7 @@ export interface GameMode {
 }
 
 declare class GameMap {
+  objects: MapObject[];
   terrain: Terrain | null;
   manager: {
     objects: MapObject[];
