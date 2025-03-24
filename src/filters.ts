@@ -91,13 +91,35 @@ beforeGame.push(() => {
       delete Object.prototype.render;
       this.render = value;
       console.log("we render c:", this);
-      render = this;
-      doRenderHooks();
+      overlay = this;
+      doOverlayHooks();
     },
   });
 
   afterGame.push(() => delete Object.prototype.render);
 });
+
+function doOverlayHooks() {
+  const overlay = getOverlay();
+  const renderFn = overlay.render;
+
+  overlay.render = function (...args) {
+    if (localPlayer) for (const hook of preOverlayRenderHooks) hook();
+    const result = renderFn.call(this, ...args);
+    if (localPlayer) for (const hook of overlayRenderHooks) hook();
+    return result;
+  };
+}
+
+// patches.GetOverlay = [
+//   /,(\w+)\.medalsList=\[/,
+//   (match, module) => `,${dataArg}.overlay(${module}).medalsList=[`,
+// ];
+// data.overlay = function (module: any) {
+//   overlay = module;
+//   doOverlayHooks();
+//   return module;
+// };
 
 // hook routine to define class getters/setters on constructor
 
@@ -148,6 +170,12 @@ beforeGame.push(() => {
 //   };
 // }
 
+patches.GetRender = [
+  /=(\w+)\.THREE,(\w+=window\.SOUND=)/,
+  (match, RenderManager, crap) =>
+    `=(${dataArg}.molestRender(${RenderManager})).THREE,` + crap,
+];
+
 data.molestRender = function (module: RenderManager) {
   render = module;
   doRenderHooks();
@@ -177,22 +205,23 @@ export function getRealClearColor() {
 }
 
 function doRenderHooks() {
-  const { render } = getRender();
+  const render = getRender();
+  const renderFn = render.render;
 
-  getRender().render = function (...args) {
+  render.render = function (...args) {
     if (localPlayer) for (const hook of preRenderHooks) hook();
-    const result = render.call(this, ...args);
+    const result = renderFn.call(this, ...args);
     if (localPlayer) for (const hook of renderHooks) hook();
     return result;
   };
 
-  const renderer = getRender().renderer;
+  const renderer = render.renderer;
 
-  Object.defineProperty(getRender(), "skyDome", {
+  Object.defineProperty(render, "skyDome", {
     set(value: THREE.Object3D) {
       // remove descriptor
-      delete (getRender() as any).skyDome;
-      getRender().skyDome = value;
+      delete (render as any).skyDome;
+      render.skyDome = value;
 
       let { visible } = value;
 
@@ -202,6 +231,26 @@ function doRenderHooks() {
       });
     },
     configurable: true,
+  });
+
+  const genericAdsArray = [...Array(64)].fill(0);
+  let ogAds = render.adsFov;
+  Object.defineProperty(render, "adsFov", {
+    get: () => {
+      if (!sketchConfig.get("noAdsFovMlt")) return ogAds;
+      try {
+        const ads: number[] = [];
+
+        ads[render.getPlayerWeaponId(getLocalPlayer())] = 0;
+
+        return ads;
+      } catch {
+        return genericAdsArray;
+      }
+    },
+    set: (value) => {
+      ogAds = value;
+    },
   });
 
   if (renderer) {
@@ -254,6 +303,7 @@ beforeGame.push(() => {
             });
           },
         });
+        doGameHooks();
       } else {
         Object.defineProperty(this, "controls", {
           value,
@@ -297,9 +347,10 @@ function doGameHooks() {
 
   const { add } = getGame().players;
 
+  console.trace("hooker");
   for (const hook of onGameHooks) hook();
 
-  getGame().players.add = function (...args) {
+  game.players.add = function (...args) {
     const player = add.call(this, ...args);
 
     if (player.isYou) {
@@ -330,26 +381,25 @@ function doGameHooks() {
   */
 
   game.controls.tmpInpts.push = function (inputs) {
-    if (localPlayer)
-      for (const hook of inputHooks)
-        if (hook(inputs) === false) {
-          blockedInputs = true;
-          return 0;
-        }
+    if (localPlayer) for (const hook of inputHooks) hook(inputs);
+    // if (hook(inputs) === false) {
+    //   blockedInputs = true;
+    //   return 0;
+    // }
 
     return tmpInptsPush.call(this, inputs);
   };
 
-  ioSendHooks.push((packet) => {
-    if (packet === "q" && blockedInputs) {
-      blockedInputs = false;
-      return false;
-    }
-  });
+  // ioSendHooks.push((packet) => {
+  //   if (packet === "q" && blockedInputs) {
+  //     blockedInputs = false;
+  //     return false;
+  //   }
+  // });
 
-  const mapObjectsPush = game.map.objects.push;
+  const mapObjectsPush = game.map.manager.objects.push;
 
-  game.map.objects.push = function (obj) {
+  game.map.manager.objects.push = function (obj) {
     let trans = obj.transparent;
     Object.defineProperty(obj, "transparent", {
       get(this: MapObject) {
@@ -399,31 +449,6 @@ beforeGame.push(() => {
   });
 
   return () => delete Object.prototype.bundleMedalFilters;
-});
-
-// *r.adsFov[r.getPlayerWeaponId(t)]
-patches.FuckAdsFov = [
-  /\*(\w+)\.adsFov/g,
-  (match, render) => `*(${dataArg}.noAdsFov?${dataArg}:${render}).adsFov`,
-];
-
-Object.defineProperty(data, "noAdsFov", {
-  get: () => sketchConfig.get("noAdsFovMlt"),
-});
-
-const genericAdsArray = [...Array(64)].fill(0);
-Object.defineProperty(data, "adsFov", {
-  get: () => {
-    try {
-      const ads: number[] = [];
-
-      ads[getRender().getPlayerWeaponId(getLocalPlayer())] = 0;
-
-      return ads;
-    } catch {
-      return genericAdsArray;
-    }
-  },
 });
 
 patches.GetMenuPlayer = [
