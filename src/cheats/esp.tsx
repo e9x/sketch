@@ -196,20 +196,12 @@ function initMaterials() {
     teamWall: genericMesh(),
   };
 
-  const genericLine = () => {
-    const xo = new game.THREE.LineBasicMaterial({
+  const genericLine = () =>
+    new game.THREE.LineBasicMaterial({
       transparent: true,
       fog: false,
       depthTest: false,
-      vertexColors: true,
     });
-    xo.onBeforeCompile = (shader) => {
-      shader.vertexShader = `
-      ${shader.vertexShader}
-    `.replace(`uniform float linewidth;`, `attribute float linewidth;`);
-    };
-    return xo;
-  };
 
   const line: Materials<THREE.LineBasicMaterial> = {
     enemy: genericLine(),
@@ -269,6 +261,9 @@ const getMaterials = () => {
   // preserve the variable in this scope for nested functions
   return materials;
 };
+
+//@ts-ignore
+//Object.assign(getExposedWindow(), { getMaterials });
 
 const tracerMap = new Map<Player, Line>();
 

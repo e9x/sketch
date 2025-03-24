@@ -457,13 +457,7 @@ patches.GetMenuPlayer = [
 ];
 
 data.molestMenuPlayer = function (player: any) {
-  // console.log("👅👅");
   menuPlayer = player;
-  /*setTimeout(() => {
-    if (localPlayer) {
-      console.log(localPlayer, localPlayer.hasAnims);
-    }
-  });*/
   return menuPlayer;
 };
 
