@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "preact/hooks";
 import { iInputs } from "../consts";
 import {
   getConfig,
@@ -8,7 +9,6 @@ import {
   inputHooks,
   overlayRenderHooks,
 } from "../filters";
-import type { Player } from "../krunker/Player";
 import {
   entityAlive,
   isEnemy,
@@ -23,23 +23,27 @@ import {
   lerp,
   getOverlaySizeScaled,
 } from "../krunkerUtil";
-import type { AimbotTarget, SketchConfig } from "../sketchConfig";
-import sketchConfig, { useSketchConfig } from "../sketchConfig";
+import type { Player } from "../krunker/Player";
+import sketchConfig, {
+  useSketchConfig,
+  type AimbotTarget,
+  type SketchConfig,
+} from "../sketchConfig";
 import { random } from "../util";
 import { ForceAutoMenu } from "./forceAuto";
 import { RecoilControlMenu } from "./recoilControl";
 import { TriggerbotMenu } from "./triggerbot";
-import { BindHolder, Bind } from "krunker-ui/components/Bind";
-import { Control } from "krunker-ui/components/Control";
-import { Select } from "krunker-ui/components/Select";
-import { HeadlessSet, Set } from "krunker-ui/components/Set";
-import { Slider } from "krunker-ui/components/Slider";
-import { Switch } from "krunker-ui/components/Switch";
-import type { AI } from "krunker/AI";
-import { useEffect, useRef, useState } from "react";
+import { BindHolder, Bind } from "../krunker-ui/components/Bind";
+import { Control } from "../krunker-ui/components/Control";
+import { Select } from "../krunker-ui/components/Select";
+import { HeadlessSet, Set } from "../krunker-ui/components/Set";
+import { Slider } from "../krunker-ui/components/Slider";
+import { Switch } from "../krunker-ui/components/Switch";
+import type { AI } from "../krunker/AI";
 import type * as THREE from "three";
 
 // optimize call (tampermonkey is slow)
+// ^-- don't listen to him
 const { Math } = window;
 
 // Function to check if a 2D point is inside a circle

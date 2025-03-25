@@ -4,7 +4,7 @@ import { getAimTime, canShoot, getReload } from "../krunkerUtil";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { random } from "../util";
 import { getTriggerbotWantsShoot } from "./triggerbot";
-import { Switch } from "krunker-ui/components/Switch";
+import { Switch } from "../krunker-ui/components/Switch";
 
 export function forceAutoHook() {
   let shootTimer = 0;

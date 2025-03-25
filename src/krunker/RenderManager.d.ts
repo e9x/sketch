@@ -27,6 +27,7 @@ declare class RenderManager {
     // new functon:
     containPoint: (point: THREE.Vector3) => boolean;
   };
+  adsFov: number[];
   adsFovMlt: number[];
   getPlayerWeaponId(player: Player): number;
   updateFrustum(): void;

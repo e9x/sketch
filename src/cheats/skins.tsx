@@ -7,7 +7,7 @@ import {
 } from "../filters";
 import type { Player, Skin } from "../krunker/Player";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
-import { Switch } from "krunker-ui/components/Switch";
+import { Switch } from "../krunker-ui/components/Switch";
 import type * as ioModule from "../krunker/io";
 
 function gameHook() {

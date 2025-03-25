@@ -1,5 +1,5 @@
 import type { JSONStorage } from "./values";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "preact/hooks";
 
 export default class Config<Data extends object> {
   defaultConfig: Data;
@@ -48,7 +48,7 @@ export default class Config<Data extends object> {
 
 export type DataHook<Data extends object, K extends keyof Data> = [
   Data[K],
-  (...args: [Data[K]] | []) => void
+  (...args: [Data[K]] | []) => void,
 ];
 
 export function useConfig<Data extends object, K extends keyof Data>(

@@ -1,5 +1,4 @@
 import { obfuscate } from "./obfuscate.js";
-import { globalExternals } from "@fal-works/esbuild-plugin-global-externals";
 import cors from "cors";
 import { expand } from "dotenv-expand";
 import { config } from "dotenv-flow";
@@ -53,10 +52,6 @@ const envReplacements = {
 
 console.log(envReplacements);
 
-const sketchNodeLoader = `typeof require==="function"&&${JSON.stringify(
-  sketchMeta.require
-)}.map(u=>{const h=new XMLHttpRequest;h.open("GET",u,!1);h.send();new Function("e","eval(e)")(h.responseText+\`\n//# sourceURL=\${u}\`)});`;
-
 const mainOut = fileURLToPath(new URL("dist/sketch.user.js", import.meta.url));
 
 const sketchMain = await context({
@@ -68,7 +63,7 @@ const sketchMain = await context({
   external: ["os", "fs", "path", "http", "https"],
   bundle: true,
   minify: !isDevelopment,
-  jsx: "transform",
+  jsx: "automatic",
   supported: {
     "nullish-coalescing": false,
     "optional-catch-binding": false,
@@ -76,19 +71,6 @@ const sketchMain = await context({
   },
   plugins: [
     ...(isDevelopment ? [] : [obfuscate()]),
-    globalExternals({
-      react: {
-        type: "esm",
-        namedExports: ["useEffect", "useState", "useRef", "Fragment"],
-        defaultExport: true,
-        varName: "React",
-      },
-      "react-dom": "ReactDOM",
-      "react-dom/client": {
-        varName: "ReactDOM",
-        namedExports: ["createRoot"],
-      },
-    }),
     {
       name: "heyyy",
       setup: (build) => {
@@ -107,9 +89,7 @@ const sketchMain = await context({
         ...sketchMeta,
         version: pkg.version,
         // connect: [new URL(process.env.SKETCH_API_URL).hostname],
-      }) +
-      "\n/*eslint-disable*/" +
-      sketchNodeLoader,
+      }) + "\n/*eslint-disable*/",
   },
 });
 

@@ -7,9 +7,9 @@ import {
 } from "../filters";
 import { lerp } from "../krunkerUtil";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
-import { BindHolder, Bind } from "krunker-ui/components/Bind";
-import { Slider } from "krunker-ui/components/Slider";
-import { Switch } from "krunker-ui/components/Switch";
+import { BindHolder, Bind } from "../krunker-ui/components/Bind";
+import { Slider } from "../krunker-ui/components/Slider";
+import { Switch } from "../krunker-ui/components/Switch";
 
 export function recoilControlHook() {
   let lastRecoilAnimY = 0;

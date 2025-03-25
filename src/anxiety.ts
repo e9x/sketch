@@ -1,7 +1,7 @@
-import { discordURL, isDevelopment } from "consts";
+import { discordURL, isDevelopment } from "./consts";
 import sketchConfig from "./sketchConfig";
 import { waitFor } from "./util";
-import KrunkBox, { SketchVersion } from "KrunkBox";
+import KrunkBox, { SketchVersion } from "./KrunkBox";
 
 export function panic(msg: string) {
   if (sketchConfig.get("silentFail")) return;
@@ -128,7 +128,7 @@ export function begToken() {
             submit.disabled = false;
           }
         })
-        .catch((err) => {
+        .catch((err: any) => {
           overlay.remove();
           panic(err.stack);
         });

@@ -1,15 +1,5 @@
-import tokenConfig from "tokenConfig";
+import tokenConfig from "./tokenConfig";
 import KrunkBox from "./KrunkBox";
-import { adblockHook } from "./cheats/adblock";
-import { aimbotHook } from "./cheats/aimbot";
-import { bhopHook } from "./cheats/bhop";
-import { espHook } from "./cheats/esp";
-import { forceAutoHook } from "./cheats/forceAuto";
-import { keybindOverlayHook } from "./cheats/keybindOverlay";
-import { recoilControlHook } from "./cheats/recoilControl";
-import { skinHackHook } from "./cheats/skins";
-import { triggerbotHook } from "./cheats/triggerbot";
-import { watermarkHook } from "./cheats/watermark";
 import {
   isDevelopment,
   isKrunker,
@@ -18,30 +8,14 @@ import {
 } from "./consts";
 import { afterGame, beforeGame, hook } from "./filters";
 import { getInit, gameLoad, fetchWASM } from "./inject";
-import { sketchButton } from "./menu/createUI";
 import sketchConfig from "./sketchConfig";
-import { analyticsHook } from "./cheats/analytics";
-import { panic, begToken, showUpdated, showFutile } from "./anxiety";
-
-triggerbotHook();
-bhopHook();
-// aimbot spinbot messes with crouch and bhop
-aimbotHook();
-espHook();
-recoilControlHook();
-forceAutoHook();
-skinHackHook();
-keybindOverlayHook();
-adblockHook();
-watermarkHook();
-analyticsHook();
+import { begToken, showUpdated, showFutile } from "./anxiety";
+import { sketchButton } from "./menu/createUI";
+import "./cheats";
 
 if (isKrunker) {
   checkHash();
-  main().catch((err) => {
-    console.error(err);
-    panic(err.stack);
-  });
+  main();
 }
 // else if (location.origin === new URL(apiURL).origin) {
 else {

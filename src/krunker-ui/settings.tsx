@@ -1,0 +1,54 @@
+import { type ComponentType, type ComponentChild } from "preact";
+import { useState } from "preact/hooks";
+
+export interface Tab {
+  name: string;
+  body: ComponentType;
+}
+
+export function Settings({
+  header,
+  tabs,
+  defaultTabID = 0,
+  onTabChange,
+}: {
+  defaultTabID?: number;
+  /**
+   * Allow saving the last tab ID
+   */
+  onTabChange?: (tabID: number) => void;
+  header?: ComponentChild;
+  tabs: Tab[];
+}) {
+  const [tabID, setTabID] = useState<number>(defaultTabID);
+  const tab = tabs[tabID];
+  if (!tab) throw new TypeError("Bad tab");
+  const { body: Body } = tab;
+
+  return (
+    <>
+      <div className="settingsHeader">
+        {header}
+        <div id="settingsTabLayout">
+          {tabs.map((tab, i) => (
+            <div
+              className={`settingTab ${tabID === i ? "tabANew" : ""}`}
+              onMouseEnter={() => playTick()}
+              onClick={() => {
+                playSelect(0.1);
+                setTabID(i);
+                if (onTabChange) onTabChange(i);
+              }}
+              key={i}
+            >
+              {tab.name}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div id="settHolder">
+        <Body />
+      </div>
+    </>
+  );
+}

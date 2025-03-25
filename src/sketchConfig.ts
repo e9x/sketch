@@ -1,7 +1,7 @@
 import type { DataHook } from "./Config";
 import Config, { useConfig } from "./Config";
 import { getStorage, isChromeOS } from "./consts";
-import { keyboardMap } from "krunker-ui/keys";
+import { keyboardMap } from "./krunker-ui/keys";
 
 export type AimbotTarget = [name: string, id: string];
 

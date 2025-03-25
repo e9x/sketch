@@ -11,8 +11,8 @@
     "moduleResolution": "bundler",
     "esModuleInterop": true,
     "experimentalDecorators": true,
-    "jsx": "react",
-    "allowUmdGlobalAccess": true
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
   },
   "include": ["src/**/*"]
 }

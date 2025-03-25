@@ -1,12 +1,11 @@
 import { getOverlay, overlayRenderHooks } from "../filters";
 import { getFPS, getPing, isInMenus } from "../krunkerUtil";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
-import { Switch } from "krunker-ui/components/Switch";
+import { Switch } from "../krunker-ui/components/Switch";
 
 const userPreference = ["en-US", "en-GB", "my"].includes(navigator.language)
   ? "12"
   : "24";
-
 function formatDate(date: Date) {
   let hours = date.getHours();
   const minutes = date.getMinutes();
@@ -15,15 +14,16 @@ function formatDate(date: Date) {
   if (userPreference === "12") {
     const period = hours >= 12 ? "PM" : "AM";
     hours = hours % 12;
-    hours = hours ? hours : 12;
-    const adjustedMinutes = minutes < 10 ? "0" + minutes : minutes;
-    const adjustedSeconds = seconds < 10 ? "0" + seconds : seconds;
-    return `${hours}:${adjustedMinutes}:${adjustedSeconds} ${period}`;
+    hours = hours ? hours : 12; // Converts 0 hours to 12
+    const adjustedHours = hours.toString().padStart(2, "0");
+    const adjustedMinutes = minutes.toString().padStart(2, "0");
+    const adjustedSeconds = seconds.toString().padStart(2, "0");
+    return `${adjustedHours}:${adjustedMinutes}:${adjustedSeconds} ${period}`;
   } else {
-    const adjustedHours = hours < 10 ? "0" + hours : hours;
-    10 ? "0" + minutes : minutes;
-    const adjustedSeconds = seconds < 10 ? "0" + seconds : seconds;
-    return `${adjustedHours}:${minutes}:${adjustedSeconds}`;
+    const adjustedHours = hours.toString().padStart(2, "0");
+    const adjustedMinutes = minutes.toString().padStart(2, "0");
+    const adjustedSeconds = seconds.toString().padStart(2, "0");
+    return `${adjustedHours}:${adjustedMinutes}:${adjustedSeconds}`;
   }
 }
 

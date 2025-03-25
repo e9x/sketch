@@ -1,4 +1,4 @@
-import { getKeyCode } from "krunker-ui/keys";
+import { getKeyCode } from "./krunker-ui/keys";
 
 export const keyListeners: ((
   event: MouseEvent | KeyboardEvent,

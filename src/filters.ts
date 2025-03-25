@@ -11,6 +11,7 @@ import sketchConfig from "./sketchConfig";
 import type * as THREE from "three";
 import { console, defineProperty } from "./crashout";
 import { mirrorAttributes } from "./hook";
+import type KrunkBox from "./KrunkBox";
 
 const { freeze } = Object;
 

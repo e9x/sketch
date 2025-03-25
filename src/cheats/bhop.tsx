@@ -2,7 +2,7 @@ import { iInputs } from "../consts";
 import { getGame, getLocalPlayer, inputHooks } from "../filters";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { random } from "../util";
-import { Switch } from "krunker-ui/components/Switch";
+import { Switch } from "../krunker-ui/components/Switch";
 
 function pickZeroSome() {
   return random(-0.015, 0.005, true);

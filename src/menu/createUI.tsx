@@ -1,12 +1,12 @@
 import { keyListeners } from "../keys";
 import sketchConfig from "../sketchConfig";
 import Menu from "./Menu";
-import { createRenderContainer } from "krunker-ui/container";
+import { createRenderContainer } from "../krunker-ui/container";
 
 function sketchWindow() {
   const html = createRenderContainer(() => <Menu />);
 
-  const window: GameWindowRender = {
+  const win: GameWindowRender = {
     header: "✏️",
     label: "sketch",
     width: 1100,
@@ -19,7 +19,7 @@ function sketchWindow() {
 
   // abuse of windows
   const old0 = windows[0];
-  windows[0] = window;
+  windows[0] = win;
   showWindow(1);
   windows[0] = old0;
 }

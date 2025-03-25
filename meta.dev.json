@@ -1,7 +1,3 @@
 {
-  "name": "Sketch DEV",
-  "require": [
-    "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.min.js",
-    "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.min.js"
-  ]
+  "name": "Sketch DEV"
 }

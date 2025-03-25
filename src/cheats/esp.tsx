@@ -1,4 +1,4 @@
-import { ColorPicker } from "krunker-ui/components/ColorPicker";
+import { ColorPicker } from "../krunker-ui/components/ColorPicker";
 import { getExposedWindow } from "../consts";
 import {
   getConfig,
@@ -23,7 +23,7 @@ import {
   pos2D,
 } from "../krunkerUtil";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
-import { Switch } from "krunker-ui/components/Switch";
+import { Switch } from "../krunker-ui/components/Switch";
 import type * as THREE from "three";
 
 // nametags is handled in index.ts
