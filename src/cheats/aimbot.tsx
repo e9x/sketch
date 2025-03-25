@@ -70,8 +70,8 @@ function drawAimbotCircle(
 
 function playerHitbox(player: Player, hitbox: string) {
   const config = getConfig();
-  const localPlayer = getLocalPlayer();
-  const game = getGame();
+  // const localPlayer = getLocalPlayer();
+  // const game = getGame();
   // if (sketchConfig.get("multiPoint")) {
   //   const mpScale = sketchConfig.get("multiPointScale");
 
@@ -122,6 +122,18 @@ function playerHitbox(player: Player, hitbox: string) {
  * Get the position that will be aimed at (eg the head)
  */
 function playerAimPoint(player: Player) {
+  const bot = sketchConfig.get("bot");
+  if (bot) {
+    const config = getConfig();
+    const { THREE } = getGame();
+
+    return new THREE.Vector3(
+      player.x,
+      player.y + player.height - player.crouchVal * config.crouchDst,
+      player.z
+    );
+  }
+
   const hitbox = sketchConfig.get("hitbox");
 
   if (hitbox === "auto") {

@@ -18,6 +18,9 @@ export function obfuscate() {
         async (args) => {
           let { code } = await transform(await readFile(args.path), {
             loader: "tsx",
+            jsx: "automatic",
+            jsxFragment: "Fragment",
+            jsxImportSource: "preact",
           });
 
           const obf = obfuscator.obfuscate(code, {
@@ -25,15 +28,18 @@ export function obfuscate() {
             deadCodeInjection: true,
             selfDefending: false,
             splitStrings: true,
-            stringArrayEncoding: ["base64"],
-            stringArrayThreshold: 1,
+            // splitStrings: false,
             transformObjectKeys: true,
+            // transformObjectKeys: false,
             renameProperties: false,
             renameGlobals: false,
             numbersToExpressions: false,
             controlFlowFlattening: true,
             stringArray: true,
+            stringArrayEncoding: ["base64"],
+            stringArrayThreshold: 1,
             stringArrayCallsTransformThreshold: 1,
+            // stringArray: false,
             simplify: true,
             compact: false,
           });

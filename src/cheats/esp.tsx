@@ -25,6 +25,7 @@ import {
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "../krunker-ui/components/Switch";
 import type * as THREE from "three";
+import { Slider } from "../krunker-ui/components/Slider";
 
 // nametags is handled in index.ts
 // see get nametags() { ... }
@@ -229,6 +230,7 @@ function initMaterials() {
 
       const enemyHex = parseInt(sketchConfig.get("badColor").slice(1), 16);
       const teamHex = parseInt(sketchConfig.get("goodColor").slice(1), 16);
+      const espOpacity = sketchConfig.get("espOpacity");
 
       colors.enemy.set(enemyHex);
       colors.team.set(teamHex);
@@ -248,6 +250,11 @@ function initMaterials() {
       mesh.enemyWall.color.set(colors.enemyWall);
       mesh.team.color.set(colors.team);
       mesh.teamWall.color.set(colors.teamWall);
+
+      line.enemy.opacity = espOpacity;
+      line.enemyWall.opacity = espOpacity;
+      line.team.opacity = espOpacity;
+      line.teamWall.opacity = espOpacity;
     },
   };
 
@@ -470,6 +477,8 @@ export function ESPMenu() {
   const [nametags, setNametags] = useSketchConfig("nametags");
   const [boxes, setBoxes] = useSketchConfig("boxes");
   const [chams, setChams] = useSketchConfig("chams");
+  // make it also apply to all the other esp crap
+  const [espOpacity, setEspOpacity] = useSketchConfig("espOpacity");
   const [tracers, setTracers] = useSketchConfig("tracers");
   const [healthBars, setHealthBars] = useSketchConfig("healthBars");
   const [badColor, setBadColor] = useSketchConfig("badColor");
@@ -488,6 +497,14 @@ export function ESPMenu() {
         description="Makes players a bright color and visible through walls"
         defaultChecked={chams}
         onChange={(event) => setChams(event.currentTarget.checked)}
+      />
+      <Slider
+        title="ESP Opacity"
+        defaultValue={espOpacity}
+        onChange={(event) => setEspOpacity(event.currentTarget.valueAsNumber)}
+        min={0}
+        max={1}
+        step={0.05}
       />
       <Switch
         title="Boxes"

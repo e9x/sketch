@@ -63,7 +63,7 @@ const sketchMain = await context({
   external: ["os", "fs", "path", "http", "https"],
   bundle: true,
   minify: !isDevelopment,
-  jsx: "automatic",
+  jsx: "transform",
   supported: {
     "nullish-coalescing": false,
     "optional-catch-binding": false,

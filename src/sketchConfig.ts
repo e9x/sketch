@@ -23,6 +23,7 @@ export interface SketchConfig {
   nametags: boolean;
   boxes: boolean;
   chams: boolean;
+  espOpacity: number;
   tracers: boolean;
   forceAuto: boolean;
   recoilControl: boolean;
@@ -75,6 +76,7 @@ const defaultConfig: SketchConfig = {
   nametags: false,
   boxes: false,
   chams: false,
+  espOpacity: 0.7,
   tracers: false,
   forceAuto: false,
   recoilControl: false,
