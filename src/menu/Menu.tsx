@@ -255,6 +255,9 @@ export default function Menu() {
           body: () => {
             return (
               <>
+                <Set title="ESP">
+                  <ESPMenu />
+                </Set>
                 <HeadlessSet>
                   <SkinHackMenu />
                   <Switch
@@ -311,9 +314,6 @@ export default function Menu() {
                       redrawSky();
                     }}
                   />
-                </Set>
-                <Set title="ESP">
-                  <ESPMenu />
                 </Set>
               </>
             );
