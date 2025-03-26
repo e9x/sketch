@@ -8,11 +8,16 @@ declare class RenderManager {
   THREE: typeof THREE;
   scene: THREE.Scene;
   skyDome: THREE.Object3D;
+  lastEnvId: number | any;
+  updateGameEnvironment(id: number, newData?: any): void;
+  skyDomeInit(config: any): THREE.Object3D;
+  // init(game: any, config: any, idk: any, idk2: any): void;
+  clearSkyDome(): void;
   init(
     map: MapData,
     mode: GameMode,
-    noRender: undefined,
-    eventIndex: number
+    noRender?: boolean,
+    eventIndex?: number
   ): void;
   isMobile: boolean;
   invisMat: THREE.MeshBasicMaterial;

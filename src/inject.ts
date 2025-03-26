@@ -24,7 +24,12 @@ export async function getInit<Data>(
 > {
   let token = "";
 
-  if (new URLSearchParams(location.search).has("sandbox")) {
+  const fromEditor =
+    opener &&
+    opener.location.origin === location.origin &&
+    opener.location.pathname === "/editor.html";
+
+  if (fromEditor || new URLSearchParams(location.search).has("sandbox")) {
     tokenConfig.delete("diyToken");
   } else {
     const diyToken = tokenConfig.get("diyToken");

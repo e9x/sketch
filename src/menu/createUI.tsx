@@ -20,7 +20,11 @@ function sketchWindow() {
   // abuse of windows
   const old0 = windows[0];
   windows[0] = win;
-  showWindow(1);
+  try {
+    showWindow(1);
+  } catch (err) {
+    console.error("show win", err);
+  }
   windows[0] = old0;
 }
 

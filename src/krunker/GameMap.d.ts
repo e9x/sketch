@@ -18,7 +18,8 @@ export interface SpawnPoint {
 }
 
 export interface MapData {
-  skyCol: string;
+  skyCol?: string;
+  [key: string]: any;
 }
 
 export interface GameMode {

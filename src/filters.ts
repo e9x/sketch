@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { getExposedWindow, isDevelopment } from "./consts";
 import type Game from "./krunker/Game";
 import type MapObject from "./krunker/Object";
@@ -12,6 +11,7 @@ import type * as THREE from "three";
 import { console, defineProperty } from "./crashout";
 import { mirrorAttributes } from "./hook";
 import type KrunkBox from "./KrunkBox";
+import { MapData } from "./krunker/GameMap";
 
 const { freeze } = Object;
 
@@ -171,6 +171,7 @@ function doOverlayHooks() {
 //   };
 // }
 
+/*
 patches.GetRender = [
   /=(\w+)\.THREE,(\w+=window\.SOUND=)/,
   (match, RenderManager, crap) =>
@@ -182,6 +183,7 @@ data.molestRender = function (module: RenderManager) {
   doRenderHooks();
   return render;
 };
+*/
 
 let render: RenderManager | undefined;
 
@@ -198,11 +200,29 @@ export function getRender() {
 export const renderHooks: (() => void)[] = [];
 export const preRenderHooks: (() => void)[] = [];
 
-let realClearColor: THREE.ColorRepresentation | undefined;
+const rgbSky = () =>
+  ({
+    skyDome: false,
+    ambient: "#97a0a8",
+    light: "#f2f8fc",
+    sky: parseInt(sketchConfig.get("skyColorHex").slice(1), 16),
+    fog: "#8d9aa0",
+    fogD: 2000,
+  }) as MapData;
 
-export function getRealClearColor() {
-  if (!realClearColor) throw new Error("Too early");
-  return realClearColor;
+export function redrawSky() {
+  try {
+    // trigger an update
+
+    // getRender().renderer.setClearColor(getRealClearColor());
+    const render = getRender();
+    const id = render.lastEnvId;
+    render.lastEnvId = undefined;
+    getRender().updateGameEnvironment(-1, id);
+  } catch (e) {
+    //
+    console.error(e);
+  }
 }
 
 function doRenderHooks() {
@@ -216,23 +236,42 @@ function doRenderHooks() {
     return result;
   };
 
-  const renderer = render.renderer;
+  const { init } = render;
+  // <patched, og>
+  const maps = new WeakMap<any, any>();
+  render.init = function (config, mode, idk1, idk2) {
+    console.trace("lol init ez", [config, mode, idk1, idk2]);
 
-  Object.defineProperty(render, "skyDome", {
-    set(value: THREE.Object3D) {
-      // remove descriptor
-      delete (render as any).skyDome;
-      render.skyDome = value;
+    if (maps.has(config)) config = maps.get(config);
 
-      let { visible } = value;
+    let nConfig = config;
 
-      Object.defineProperty(value, "visible", {
-        get: () => (sketchConfig.get("skyColor") ? false : visible),
-        set: (v) => (visible = v),
-      });
-    },
-    configurable: true,
-  });
+    // stargaze
+    const newConf = rgbSky();
+    nConfig = { ...config, ...newConf };
+    if (sketchConfig.get("mapOverrides"))
+      Object.assign(nConfig, sketchConfig.get("mapOverridesCode"));
+    if (sketchConfig.get("skyColor")) Object.assign(nConfig, rgbSky());
+    maps.set(nConfig, config);
+
+    init.call(this, nConfig, mode, idk1, idk2);
+  };
+
+  // Object.defineProperty(render, "skyDome", {
+  //   set(value: THREE.Object3D) {
+  //     // remove descriptor
+  //     delete (render as any).skyDome;
+  //     render.skyDome = value;
+
+  //     let { visible } = value;
+
+  //     Object.defineProperty(value, "visible", {
+  //       get: () => (sketchConfig.get("skyColor") ? false : visible),
+  //       set: (v) => (visible = v),
+  //     });
+  //   },
+  //   configurable: true,
+  // });
 
   const genericAdsArray = [...Array(64)].fill(0);
   let ogAds = render.adsFov;
@@ -253,21 +292,29 @@ function doRenderHooks() {
       ogAds = value;
     },
   });
-
-  if (renderer) {
-    const { setClearColor } = renderer;
-
-    renderer.setClearColor = (color: any) => {
-      realClearColor = color;
-      setClearColor.call(
-        renderer,
-        sketchConfig.get("skyColor") ? sketchConfig.get("skyColorHex") : color
-      );
-    };
-  }
 }
 
 beforeGame.push(() => {
+  defineProperty(Object.prototype, "skyDomeInit", {
+    configurable: true,
+    enumerable: false,
+    set(this: RenderManager, value) {
+      if (!("clearSkyDome" in this))
+        return Object.defineProperty(this, "skyDomeInit", {
+          configurable: true,
+          enumerable: true,
+          value,
+        });
+
+      console.log("thy render is", this);
+      delete Object.prototype.skyDomeInit;
+      this.skyDomeInit = value;
+      render = this;
+      doRenderHooks();
+      // now hoook it
+    },
+  });
+
   defineProperty(Object.prototype, "controls", {
     configurable: true,
     enumerable: false,
@@ -316,7 +363,10 @@ beforeGame.push(() => {
     },
   });
 
-  return () => delete Object.prototype.controls;
+  return () => {
+    delete Object.prototype.controls;
+    delete Object.prototype.skyDomeInit;
+  };
 });
 
 let game: Game | undefined;
@@ -603,6 +653,7 @@ if (isDevelopment) {
     getMenuPlayer,
     getOverlay,
     getConfig,
+    getGameConfig,
     // getIO,
   });
 }

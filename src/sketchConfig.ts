@@ -1,3 +1,4 @@
+import { MapData } from "./krunker/GameMap";
 import type { DataHook } from "./Config";
 import Config, { useConfig } from "./Config";
 import { getStorage, isChromeOS } from "./consts";
@@ -46,6 +47,8 @@ export interface SketchConfig {
   thirdPerson: boolean;
   skyColor: boolean;
   skyColorHex: string;
+  mapOverrides: boolean;
+  mapOverridesCode: MapData;
   watermark: boolean;
   spinbot: boolean;
   triggerbotDistance: number;
@@ -54,6 +57,25 @@ export interface SketchConfig {
   badColor: string;
   goodColor: string;
 }
+
+// random test map with the sexy colorz
+const stargaze: MapData = {
+  skyDome: true,
+  skyDomeCol0: "#000000",
+  skyDomeCol1: "#111E23",
+  skyDomeCol2: "#DCE8ED",
+  skyDomeEmis: "#FF0000",
+  skyDomeEmisTex: "43028",
+  skyDomeTex: true,
+  skyDomeTexA: 43028,
+  skyDomeMovD: "0",
+  skyDomeMovT: -8,
+  ambient: "#97a0a8",
+  light: "#f2f8fc",
+  sky: "#dce8ed",
+  fog: "#8d9aa0",
+  fogD: 2000,
+};
 
 /**
  * Default config. Also serves as a source of all the config keys (you can't iterate over an interface so this is the next best thing)
@@ -99,6 +121,8 @@ const defaultConfig: SketchConfig = {
   thirdPerson: false,
   skyColor: false,
   skyColorHex: "#000",
+  mapOverrides: false,
+  mapOverridesCode: stargaze,
   watermark: false,
   spinbot: false,
   triggerbotDistance: 0.5,

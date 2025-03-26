@@ -6,12 +6,7 @@ import { KeybindOverlayMenu } from "../cheats/keybindOverlay";
 import { SkinHackMenu } from "../cheats/skins";
 import { WatermarkMenu } from "../cheats/watermark";
 import { discordURL, docsURL, sketchVersion } from "../consts";
-import {
-  getGame,
-  getLocalPlayer,
-  getRealClearColor,
-  getRender,
-} from "../filters";
+import { getGame, getLocalPlayer, redrawSky } from "../filters";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { updateSketchMenuButton } from "./createUI";
 import { BindHolder, Bind } from "../krunker-ui/components/Bind";
@@ -21,6 +16,7 @@ import { Link } from "../krunker-ui/components/Link";
 import { HeadlessSet, Set } from "../krunker-ui/components/Set";
 import { Switch } from "../krunker-ui/components/Switch";
 import { Settings } from "../krunker-ui/settings";
+import { Text } from "../krunker-ui/components/Text";
 
 function downloadFile(fileName: string, fileData: string) {
   const downloadLink = document.createElement("a");
@@ -90,6 +86,9 @@ export default function Menu() {
   const [thirdPerson, setThirdPerson] = useSketchConfig("thirdPerson");
   const [skyColor, setSkyColor] = useSketchConfig("skyColor");
   const [skyColorHex, setSkyColorHex] = useSketchConfig("skyColorHex");
+  const [mapOverrides, setMapOverrides] = useSketchConfig("mapOverrides");
+  const [mapOverridesCode, setMapOverridesCode] =
+    useSketchConfig("mapOverridesCode");
 
   return (
     <Settings
@@ -266,22 +265,41 @@ export default function Menu() {
                     }
                   />
                 </HeadlessSet>
-                <Set title="Sky Color">
+                <Set title="Custom Map">
+                  <Text
+                    title="Map Overrides"
+                    description="If the overrides should take effect"
+                    defaultValue={JSON.stringify(mapOverridesCode)}
+                    onChange={(event) => {
+                      let p;
+                      try {
+                        p = JSON.parse(event.currentTarget.value);
+                      } catch (err) {
+                        alert(
+                          "Bad map overrides:\n" + (err as SyntaxError).stack
+                        );
+                        return;
+                      }
+                      setMapOverridesCode(p);
+                      redrawSky();
+                    }}
+                  />
+                  <Switch
+                    title="Use Map Overrides"
+                    description="JSON data to always merge with the current map. Use for sky color etc etc"
+                    defaultChecked={mapOverrides}
+                    onChange={(event) => {
+                      setMapOverrides(event.currentTarget.checked);
+                      redrawSky();
+                    }}
+                  />
                   <ColorPicker
                     title="Sky Color"
                     description="Changes the sky's color"
                     defaultValue={skyColorHex}
                     onChange={(event) => {
                       setSkyColorHex(event.currentTarget.value);
-                      if (sketchConfig.get("skyColor"))
-                        try {
-                          // trigger an update
-                          getRender().renderer.setClearColor(
-                            getRealClearColor()
-                          );
-                        } catch {
-                          //
-                        }
+                      if (sketchConfig.get("skyColor")) redrawSky();
                     }}
                   />
                   <Switch
@@ -290,12 +308,7 @@ export default function Menu() {
                     defaultChecked={skyColor}
                     onChange={(event) => {
                       setSkyColor(event.currentTarget.checked);
-                      try {
-                        // trigger an update
-                        getRender().renderer.setClearColor(getRealClearColor());
-                      } catch {
-                        //
-                      }
+                      redrawSky();
                     }}
                   />
                 </Set>

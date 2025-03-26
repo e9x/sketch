@@ -6,6 +6,7 @@ export interface ColorPickerProps extends BaseControlProps {
   value?: string;
   defaultValue?: string;
   onChange?: h.JSX.GenericEventHandler<HTMLInputElement>;
+  onInput?: h.JSX.GenericEventHandler<HTMLInputElement>;
 }
 
 export function ColorPicker({
@@ -15,6 +16,7 @@ export function ColorPicker({
   value,
   defaultValue,
   onChange,
+  onInput,
 }: ColorPickerProps) {
   return (
     <Control title={title} attention={attention} description={description}>
@@ -25,6 +27,7 @@ export function ColorPicker({
         value={value}
         defaultValue={defaultValue}
         onChange={onChange}
+        onInput={onInput}
       />
     </Control>
   );
