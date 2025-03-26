@@ -240,15 +240,14 @@ function doRenderHooks() {
   // <patched, og>
   const maps = new WeakMap<any, any>();
   render.init = function (config, mode, idk1, idk2) {
-    console.trace("lol init ez", [config, mode, idk1, idk2]);
+    // console.trace("lol init ez", [config, mode, idk1, idk2]);
 
     if (maps.has(config)) config = maps.get(config);
 
     let nConfig = config;
 
     // stargaze
-    const newConf = rgbSky();
-    nConfig = { ...config, ...newConf };
+    nConfig = { ...config };
     if (sketchConfig.get("mapOverrides"))
       Object.assign(nConfig, sketchConfig.get("mapOverridesCode"));
     if (sketchConfig.get("skyColor")) Object.assign(nConfig, rgbSky());

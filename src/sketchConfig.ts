@@ -22,6 +22,7 @@ export interface SketchConfig {
   slidehop: boolean;
   wallJump: boolean;
   nametags: boolean;
+  newNametags: boolean;
   boxes: boolean;
   chams: boolean;
   espOpacity: number;
@@ -96,6 +97,7 @@ const defaultConfig: SketchConfig = {
   slidehop: false,
   wallJump: true,
   nametags: false,
+  newNametags: false,
   boxes: false,
   chams: false,
   espOpacity: 0.7,
