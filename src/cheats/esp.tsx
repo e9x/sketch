@@ -323,7 +323,6 @@ export function espHook() {
     const tracers = sketchConfig.get("tracers");
 
     // const { globalAlpha } = overlay.ctx;
-    overlay.ctx.globalAlpha = sketchConfig.get("espOpacity");
     const willRender = tracers || newNametags || boxes || healthBars;
 
     if (willRender && !isInMenus()) {
