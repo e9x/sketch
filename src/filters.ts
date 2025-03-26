@@ -82,7 +82,7 @@ beforeGame.push(() => {
     set(value) {
       // console.log({ value });
       if (!("medalsList" in this))
-        return Object.defineProperty(this, "render", {
+        return defineProperty(this, "render", {
           value,
           writable: true,
           enumerable: true,
@@ -223,14 +223,6 @@ export function redrawSky() {
 
 function doRenderHooks() {
   const render = getRender();
-  const renderFn = render.render;
-
-  render.render = function (...args) {
-    if (localPlayer) for (const hook of preRenderHooks) hook();
-    const result = renderFn.call(this, ...args);
-    if (localPlayer) for (const hook of renderHooks) hook();
-    return result;
-  };
 
   const { init } = render;
   // <patched, og>
@@ -252,25 +244,25 @@ function doRenderHooks() {
     init.call(this, nConfig, mode, idk1, idk2);
   };
 
-  // Object.defineProperty(render, "skyDome", {
-  //   set(value: THREE.Object3D) {
-  //     // remove descriptor
-  //     delete (render as any).skyDome;
-  //     render.skyDome = value;
-
-  //     let { visible } = value;
-
-  //     Object.defineProperty(value, "visible", {
-  //       get: () => (sketchConfig.get("skyColor") ? false : visible),
-  //       set: (v) => (visible = v),
-  //     });
-  //   },
-  //   configurable: true,
-  // });
+  // we hook the render way too early
+  defineProperty(render, "render", {
+    set(value: RenderManager["render"]) {
+      // remove descriptor
+      delete render.render;
+      console.log("lol", render.render, value);
+      render.render = function (...args) {
+        if (localPlayer) for (const hook of preRenderHooks) hook();
+        const result = value.call(this, ...args);
+        if (localPlayer) for (const hook of renderHooks) hook();
+        return result;
+      };
+    },
+    configurable: true,
+  });
 
   const genericAdsArray = [...Array(64)].fill(0);
   let ogAds = render.adsFov;
-  Object.defineProperty(render, "adsFov", {
+  defineProperty(render, "adsFov", {
     get: () => {
       if (!sketchConfig.get("noAdsFovMlt")) return ogAds;
       try {
@@ -294,11 +286,12 @@ beforeGame.push(() => {
     configurable: true,
     enumerable: false,
     set(this: RenderManager, value) {
-      if (!("clearSkyDome" in this))
-        return Object.defineProperty(this, "skyDomeInit", {
-          configurable: true,
-          enumerable: true,
+      if (!("skyDomeInit" in this))
+        return defineProperty(this, "skyDomeInit", {
           value,
+          writable: true,
+          enumerable: true,
+          configurable: true,
         });
 
       console.log("thy render is", this);
@@ -327,7 +320,7 @@ beforeGame.push(() => {
         game = this;
         // need to hook config IMMEDIATELY (for sandbox)
         gameConfig = this.config;
-        Object.defineProperty(this, "config", {
+        defineProperty(this, "config", {
           get() {
             return gameConfig;
           },
@@ -336,7 +329,7 @@ beforeGame.push(() => {
 
             let realThirdPerson = config.thirdPerson;
 
-            Object.defineProperty(config, "thirdPerson", {
+            defineProperty(config, "thirdPerson", {
               get() {
                 return sketchConfig.get("thirdPerson") || realThirdPerson;
               },
@@ -348,7 +341,7 @@ beforeGame.push(() => {
         });
         doGameHooks();
       } else {
-        Object.defineProperty(this, "controls", {
+        defineProperty(this, "controls", {
           value,
           writable: true,
           enumerable: true,
@@ -360,7 +353,7 @@ beforeGame.push(() => {
 
   return () => {
     delete Object.prototype.controls;
-    delete Object.prototype.skyDomeInit;
+    delete Object.prototype.render;
   };
 });
 
@@ -447,7 +440,7 @@ function doGameHooks() {
 
   game.map.manager.objects.push = function (obj) {
     let trans = obj.transparent;
-    Object.defineProperty(obj, "transparent", {
+    defineProperty(obj, "transparent", {
       get(this: MapObject) {
         if (sketchConfig.get("wallbangs")) return this.penetrable ? 1 : 0;
         return trans;
@@ -469,15 +462,16 @@ export function getGameConfig() {
 }
 
 beforeGame.push(() => {
-  Object.defineProperty(Object.prototype, "bundleMedalFilters", {
+  defineProperty(Object.prototype, "bundleMedalFilters", {
     enumerable: false,
     configurable: true,
     set(value) {
       if (!("tmp" in this))
-        return Object.defineProperty(this, "bundleMedalFilters", {
-          configurable: true,
-          enumerable: true,
+        return defineProperty(this, "bundleMedalFilters", {
           value,
+          writable: true,
+          enumerable: true,
+          configurable: true,
         });
       delete Object.prototype.bundleMedalFilters;
       this.bundleMedalFilters = value;
@@ -485,7 +479,7 @@ beforeGame.push(() => {
       // force the game to calculate FPS if the watermark is enabled
       // this works because the game hides the FPS element even if this code is ran
       let { showFPS } = this.tmp;
-      Object.defineProperty(this.tmp, "showFPS", {
+      defineProperty(this.tmp, "showFPS", {
         get: () => sketchConfig.get("watermark") || showFPS,
         set: (v) => {
           showFPS = v;
