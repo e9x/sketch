@@ -1,11 +1,12 @@
+import http from "node:http";
 import { obfuscate } from "./obfuscate.js";
-import cors from "cors";
 import { expand } from "dotenv-expand";
 import { config } from "dotenv-flow";
 import { build, context } from "esbuild";
-import express from "express";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import send from "@fastify/send";
+import parseUrl from "parseurl";
 import { userscriptMetadataGenerator } from "userscript-metadata-generator";
 
 const isDevelopment = process.argv.includes("--dev");
@@ -120,11 +121,31 @@ if (process.argv.includes("--watch")) {
 
   console.log("produced", devOut);
 
-  const app = express();
-  app.use(cors());
-  app.use(express.static("dist"));
-  app.listen(8080, () => {
+  const server = http.createServer();
+  server.on("request", (req, res) =>
+    send(req, parseUrl(req).pathname, {
+      root: "dist",
+    }).then(({ statusCode, headers, stream }) => {
+      headers["access-control-request-method"] = "GET, POST, OPTIONS";
+      headers["access-control-allow-origin"] = "https://krunker.io";
+      headers["access-control-allow-headers"] =
+        "cache-control, content-type, accept";
+      headers["cache-control"] = "no-cache";
+
+      // normalize the url
+      if ("Location" in headers) headers.Location = "/cdn" + headers.Location;
+      stream.pipe(res);
+      res.writeHead(statusCode, headers);
+    })
+  );
+
+  server.on("listening", () => {
     console.log("dev server started on http://127.0.0.1:8080/");
+  });
+
+  server.listen({
+    host: "127.0.0.1",
+    port: 8080,
   });
 
   await sketchMain.watch();
