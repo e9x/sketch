@@ -15,6 +15,7 @@ import type { AI } from "../krunker/AI";
 import type { Player } from "../krunker/Player";
 import {
   entityAlive,
+  getOffScreenDir,
   getOverlaySizeScaled,
   getPlayerMeshes,
   isEnemy,
@@ -26,6 +27,7 @@ import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "../krunker-ui/components/Switch";
 import type * as THREE from "three";
 import { Slider } from "../krunker-ui/components/Slider";
+import { ctx } from "krunker/overlay";
 
 // nametags is handled in index.ts
 // see get nametags() { ... }
@@ -286,86 +288,86 @@ export function espHook() {
   const hookedMeshes = new WeakSet<THREE.Mesh>();
   const hookedObjects = new WeakSet<THREE.Object3D>();
 
-  const generateLine = (points: number) => {
-    const game = getGame();
-    const render = getRender();
-    const materials = getMaterials();
+  // const generateLine = (points: number) => {
+  //   const game = getGame();
+  //   const render = getRender();
+  //   const materials = getMaterials();
 
-    // geometry
-    const geometry = new game.THREE.BufferGeometry();
+  //   // geometry
+  //   const geometry = new game.THREE.BufferGeometry();
 
-    // attributes
-    const positions = new Float32Array(points * 3); // 3 vertices per point
-    const buffer = new game.THREE.BufferAttribute(positions, 3);
-    geometry.setAttribute("position", buffer);
+  //   // attributes
+  //   const positions = new Float32Array(points * 3); // 3 vertices per point
+  //   const buffer = new game.THREE.BufferAttribute(positions, 3);
+  //   geometry.setAttribute("position", buffer);
 
-    // drawcalls
-    geometry.setDrawRange(0, points);
+  //   // drawcalls
+  //   geometry.setDrawRange(0, points);
 
-    // line
-    const line = new game.THREE.Line(geometry, materials.line.enemy);
+  //   // line
+  //   const line = new game.THREE.Line(geometry, materials.line.enemy);
 
-    render.scene.add(line);
+  //   render.scene.add(line);
 
-    line.frustumCulled = false;
+  //   line.frustumCulled = false;
 
-    return { line, buffer } as Line;
-  };
+  //   return { line, buffer } as Line;
+  // };
 
-  preRenderHooks.push(() => {
-    const game = getGame();
-    const render = getRender();
-    const materials = getMaterials();
+  // preRenderHooks.push(() => {
+  //   const game = getGame();
+  //   const render = getRender();
+  //   const materials = getMaterials();
 
-    // only call .update() in the render hooks when it's the very first time we need materials
-    if (!materials.updated) materials.update();
+  //   // only call .update() in the render hooks when it's the very first time we need materials
+  //   if (!materials.updated) materials.update();
 
-    const menus = isInMenus();
-    const tracers = sketchConfig.get("tracers");
+  //   const menus = isInMenus();
+  //   const tracers = sketchConfig.get("tracers");
 
-    for (const [entity, data] of tracerMap) {
-      if (!tracers || menus || !canESP(entity)) {
-        render.scene.remove(data.line);
-        tracerMap.delete(entity);
-      }
-    }
+  //   for (const [entity, data] of tracerMap) {
+  //     if (!tracers || menus || !canESP(entity)) {
+  //       render.scene.remove(data.line);
+  //       tracerMap.delete(entity);
+  //     }
+  //   }
 
-    if (tracers && !menus) {
-      const direction = new render.THREE.Vector3();
-      const position = game.controls.object.position;
+  //   if (tracers && !menus) {
+  //     const direction = new render.THREE.Vector3();
+  //     const position = game.controls.object.position;
 
-      render.camera.getWorldDirection(direction);
+  //     render.camera.getWorldDirection(direction);
 
-      // Move the starting point slightly forward from the camera's position
-      const startPoint = position.clone().add(direction);
+  //     // Move the starting point slightly forward from the camera's position
+  //     const startPoint = position.clone().add(direction);
 
-      for (const entity of game.players.list) {
-        if (canESP(entity) && entity.objInstances) {
-          if (!entityAlive(entity)) continue;
+  //     for (const entity of game.players.list) {
+  //       if (canESP(entity) && entity.objInstances) {
+  //         if (!entityAlive(entity)) continue;
 
-          if (!tracerMap.has(entity)) tracerMap.set(entity, generateLine(3));
+  //         if (!tracerMap.has(entity)) tracerMap.set(entity, generateLine(3));
 
-          const { line, buffer } = tracerMap.get(entity) as Line;
+  //         const { line, buffer } = tracerMap.get(entity) as Line;
 
-          const eP = entity.objInstances.position;
+  //         const eP = entity.objInstances.position;
 
-          line.material = getEntityMaterial(entity, materials.line);
-          buffer.setXYZ(0, startPoint.x, startPoint.y, startPoint.z);
-          buffer.setXYZ(1, eP.x, eP.y, eP.z);
-          buffer.setXYZ(
-            2,
-            eP.x,
-            eP.y +
-              entity.height -
-              getConfig().headScale / 2 -
-              entity.crouchVal * getConfig().crouchDst,
-            eP.z
-          );
-          buffer.needsUpdate = true;
-        }
-      }
-    }
-  });
+  //         line.material = getEntityMaterial(entity, materials.line);
+  //         buffer.setXYZ(0, startPoint.x, startPoint.y, startPoint.z);
+  //         buffer.setXYZ(1, eP.x, eP.y, eP.z);
+  //         buffer.setXYZ(
+  //           2,
+  //           eP.x,
+  //           eP.y +
+  //             entity.height -
+  //             getConfig().headScale / 2 -
+  //             entity.crouchVal * getConfig().crouchDst,
+  //           eP.z
+  //         );
+  //         buffer.needsUpdate = true;
+  //       }
+  //     }
+  //   }
+  // });
 
   patches.Nametags = [
     /!(\w+)\.isYou&&\1\.objInstances\){if\(\1\.canBSeen\){/,
@@ -383,10 +385,13 @@ export function espHook() {
     const overlay = getOverlay();
     const game = getGame();
     const materials = getMaterials();
+    const render = getRender();
 
     materials.update();
 
-    if (sketchConfig.get("chams"))
+    const chams = sketchConfig.get("chams");
+
+    if (chams)
       for (const entity of game.players.list) {
         if (entity.objInstances && canESP(entity)) {
           if (!hookedObjects.has(entity.objInstances)) {
@@ -430,7 +435,11 @@ export function espHook() {
     const boxes = sketchConfig.get("boxes");
     const healthBars = sketchConfig.get("healthBars");
     const newNametags = sketchConfig.get("newNametags");
-    const willRender = newNametags || boxes || healthBars;
+    const tracers = sketchConfig.get("tracers");
+
+    const { globalAlpha } = overlay.ctx;
+    overlay.ctx.globalAlpha = sketchConfig.get("espOpacity");
+    const willRender = tracers || newNametags || boxes || healthBars;
 
     if (willRender && !isInMenus()) {
       overlay.ctx.save();
@@ -479,6 +488,35 @@ export function espHook() {
           overlay.ctx.globalAlpha = 1;
         }
 
+        overlay.ctx.globalAlpha = sketchConfig.get("espOpacity");
+
+        if (tracers) {
+          let tracerPoint: THREE.Vector2;
+          const bottom = playerPos(entity);
+
+          if (render.frustum.containPoint(bottom)) {
+            tracerPoint = pos2D(bottom);
+          } else {
+            const dir = getOffScreenDir(render.camera, bottom);
+            tracerPoint = new game.THREE.Vector2(
+              0.5 + Math.cos(dir),
+              0.5 - Math.cos(dir)
+            );
+          }
+
+          overlay.ctx.beginPath();
+          overlay.ctx.moveTo(
+            overlay.canvas.width / 2,
+            overlay.canvas.height / 2
+          );
+          overlay.ctx.lineTo(
+            tracerPoint.x * overlay.canvas.width,
+            tracerPoint.y * overlay.canvas.height
+          );
+          overlay.ctx.stroke();
+          overlay.ctx.closePath();
+        }
+
         if (boxes) {
           overlay.ctx.strokeStyle =
             "#" + getEntityMaterial(entity, materials.colors).getHexString();
@@ -508,6 +546,7 @@ export function espHook() {
         }
       }
 
+      // overlay.ctx.globalAlpha = globalAlpha;
       overlay.ctx.restore();
     }
   });

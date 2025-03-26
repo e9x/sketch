@@ -10,7 +10,7 @@ import {
 } from "./filters";
 import type { AI } from "./krunker/AI";
 import type { Player } from "./krunker/Player";
-import type * as THREE from "three";
+import * as THREE from "three";
 
 // optimize call (tampermonkey is slow)
 const { Math, document } = window;
@@ -56,6 +56,21 @@ export function playerPos(player: Player | AI) {
   const game = getGame();
 
   return new game.THREE.Vector3(player.x, player.y, player.z);
+}
+
+export function getOffScreenDir(
+  camera: THREE.PerspectiveCamera,
+  vector: THREE.Vector3
+) {
+  const cameraSpace = vector.clone();
+  cameraSpace.applyMatrix4(camera.matrixWorldInverse);
+  const projectedVector = vector.clone();
+  projectedVector.project(camera);
+  if (cameraSpace.z > 0) {
+    projectedVector.x *= -1;
+    projectedVector.y *= -1;
+  }
+  return Math.atan2(projectedVector.y, projectedVector.x);
 }
 
 export function pos2D(input: THREE.Vector3, offsetY = 0) {
