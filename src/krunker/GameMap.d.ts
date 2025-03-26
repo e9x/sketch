@@ -18,7 +18,21 @@ export interface SpawnPoint {
 }
 
 export interface MapData {
-  skyCol?: string;
+  skyDome?: boolean;
+  skyDomeCol0?: string;
+  skyDomeCol1?: string;
+  skyDomeCol2?: string;
+  skyDomeEmis?: string;
+  skyDomeEmisTex?: string;
+  skyDomeTex?: boolean;
+  skyDomeTexA?: number;
+  skyDomeMovD?: string;
+  skyDomeMovT?: number;
+  ambient?: string;
+  light?: string;
+  sky?: number;
+  fog?: string;
+  fogD?: number;
   [key: string]: any;
 }
 

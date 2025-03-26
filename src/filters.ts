@@ -4,16 +4,12 @@ import type MapObject from "./krunker/Object";
 import { Player } from "./krunker/Player";
 import type RenderManager from "./krunker/RenderManager";
 import type configModule from "./krunker/config";
-import type * as ioModule from "./krunker/io";
 import type * as Overlay from "./krunker/overlay";
 import sketchConfig from "./sketchConfig";
-import type * as THREE from "three";
 import { console, defineProperty } from "./crashout";
 import { mirrorAttributes } from "./hook";
 import type KrunkBox from "./KrunkBox";
 import { MapData } from "./krunker/GameMap";
-
-const { freeze } = Object;
 
 // export const data: any[] & Record<string, any> = [];
 export const data: Record<string, any> = {};
@@ -30,14 +26,58 @@ export const dataArg = "_" + Math.random().toString(36).slice(2);
 
 patches.UseStrict = [/"use strict";/, () => ""];
 
-patches["👀"] = [/getSavedVal\("conUID_"\)/g, () => "null"];
-
 /* javascript-obfuscator:disable */
 
 // called before game init: get ya hooks in
 export const beforeGame: (() => void)[] = [];
 // called after game init: pull out!
 export const afterGame: (() => void)[] = [];
+
+beforeGame.push(() => {
+  const { getItem, setItem } = Storage.prototype;
+  Storage.prototype.getItem = mirrorAttributes(function (
+    this: Storage,
+    key: string
+  ) {
+    // catch fingerprinting crap
+    let value = getItem.call(this, key);
+    if (key === "conUID_") {
+      console.trace("conUID blocked 👀");
+      value = null;
+    }
+    return value;
+  }, getItem);
+
+  // analytics: collect account name + id
+  /*          (ee = new HI(a, t, null)),
+          saveVal("krunker_id", a),
+          saveVal("krunker_username", t),*/
+  let loginFrame: string | undefined;
+  Storage.prototype.setItem = mirrorAttributes(function (
+    this: Storage,
+    key: string,
+    value: string
+  ) {
+    if (key === "krunker_id") {
+      // for some reason is passed as an integer
+      loginFrame = String(value);
+      setTimeout(() => (loginFrame = undefined));
+    }
+
+    if (key === "krunker_username" && typeof loginFrame === "string") {
+      getBox().slop(loginFrame, value);
+      loginFrame = undefined;
+    }
+
+    // catch fingerprinting crap
+    if (key === "conUID_") {
+      console.log("conUID blocked 👀");
+      return;
+    }
+
+    setItem.call(this, key, value);
+  }, setItem);
+});
 
 let config: typeof configModule | undefined;
 
@@ -52,7 +92,7 @@ beforeGame.push(() => {
   Object.freeze = mirrorAttributes(function (obj: any) {
     if ("gameVersion" in obj) {
       config = obj;
-      console.log("game config:", config);
+      // console.log("game config:", config);
     }
     return freeze(obj);
   }, freeze);
@@ -75,6 +115,15 @@ export function getOverlay() {
   return overlay;
 }
 
+declare global {
+  interface Object {
+    render: any;
+    controls: any;
+    skyDomeInit: any;
+    bundleMedalFilters: any;
+  }
+}
+
 beforeGame.push(() => {
   defineProperty(Object.prototype, "render", {
     configurable: true,
@@ -91,7 +140,6 @@ beforeGame.push(() => {
 
       delete Object.prototype.render;
       this.render = value;
-      console.log("we render c:", this);
       overlay = this;
       doOverlayHooks();
     },
@@ -111,79 +159,6 @@ function doOverlayHooks() {
     return result;
   };
 }
-
-// patches.GetOverlay = [
-//   /,(\w+)\.medalsList=\[/,
-//   (match, module) => `,${dataArg}.overlay(${module}).medalsList=[`,
-// ];
-// data.overlay = function (module: any) {
-//   overlay = module;
-//   doOverlayHooks();
-//   return module;
-// };
-
-// hook routine to define class getters/setters on constructor
-
-// easier to patch like this:
-// patches.GetIO = [
-//   /(\w+)={ahNum:0,.*?this\.captchaHolder=null\)\}\};/,
-//   (match, ioVar) => `${match}${dataArg}.molestIO(${ioVar});`,
-// ];
-
-// data.molestIO = function (lol: any) {
-//   io = lol;
-//   doIOHooks();
-// };
-
-/**
- * When the result of the hook is false, the packet won't be sent
- */
-// export const ioSendHooks: ((packet: string, data: any) => boolean | void)[] =
-//   [];
-
-/**
- * When the result of the hook is false, the packet won't be propagated to the game
- */
-// export const ioDispatchHooks: ((
-//   packet: string,
-//   data: any
-// ) => boolean | void)[] = [];
-
-// let io: typeof ioModule | undefined;
-
-// export function getIO() {
-//   if (!io) throw new Error("Too early");
-//   return io;
-// }
-
-// function doIOHooks() {
-//   const { send, _dispatchEvent } = getIO();
-
-//   getIO().send = function (packet, ...data) {
-//     for (const hook of ioSendHooks) if (hook(packet, data) === false) return;
-//     return send.call(this, packet, ...data);
-//   };
-
-//   getIO()._dispatchEvent = function (packet, ...data) {
-//     for (const hook of ioDispatchHooks)
-//       if (hook(packet, data) === false) return;
-//     return _dispatchEvent.call(this, packet, ...data);
-//   };
-// }
-
-/*
-patches.GetRender = [
-  /=(\w+)\.THREE,(\w+=window\.SOUND=)/,
-  (match, RenderManager, crap) =>
-    `=(${dataArg}.molestRender(${RenderManager})).THREE,` + crap,
-];
-
-data.molestRender = function (module: RenderManager) {
-  render = module;
-  doRenderHooks();
-  return render;
-};
-*/
 
 let render: RenderManager | undefined;
 
@@ -248,8 +223,7 @@ function doRenderHooks() {
   defineProperty(render, "render", {
     set(value: RenderManager["render"]) {
       // remove descriptor
-      delete render.render;
-      console.log("lol", render.render, value);
+      delete (render as any).render;
       render.render = function (...args) {
         if (localPlayer) for (const hook of preRenderHooks) hook();
         const result = value.call(this, ...args);
@@ -294,7 +268,7 @@ beforeGame.push(() => {
           configurable: true,
         });
 
-      console.log("thy render is", this);
+      // console.log("thy render is", this);
       delete Object.prototype.skyDomeInit;
       this.skyDomeInit = value;
       render = this;
@@ -523,23 +497,6 @@ patches.UISkins = [
   (match, crap, player, skinArray) => crap + `${dataArg}.uiSkins(${skinArray})`,
 ];
 
-// before .init()
-// game.players.add()
-// before skin/hat properties are set
-// patches.HookPlayer = [
-//   /(\(\w+=new \w+\(\w+,this,\w+\)\))(\.sid=\w+)/,
-//   (match, newGamePlayer, shit) =>
-//     `${dataArg}.molestNewGamePlayer(${newGamePlayer})` + shit,
-// ];
-
-// export const newGamePlayerHooks: ((player: Player) => void)[] = [];
-
-// data.molestNewGamePlayer = function (player: any) {
-//   for (const hook of newGamePlayerHooks) hook(player);
-
-//   return player;
-// };
-
 // force the loadout menu to render "owned" skins, even logged out
 // so schizo..
 patches.ForceLoadout = [
@@ -606,13 +563,6 @@ patches["🦁𝓣𝓱𝓮 𝓛𝓲𝓸𝓷 𝓡𝓪𝓹𝓮𝓼 𝓽𝓱𝓮 �
 
 export const hook = (ebox: KrunkBox, src: string) => {
   box = ebox;
-  data.fent = box.slop.bind(box);
-
-  // ssssh
-  src = src.replace(
-    /\w+=new \w+\((\w+),(\w+),null\),saveVal\("krunker_id",\1\),/,
-    (match, username, id) => match + `${dataArg}.fent(${username},${id}),`
-  );
 
   for (const name in patches) {
     const patch = patches[name];
