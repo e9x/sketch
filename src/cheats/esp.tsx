@@ -199,20 +199,6 @@ function initMaterials() {
     teamWall: genericMesh(),
   };
 
-  const genericLine = () =>
-    new game.THREE.LineBasicMaterial({
-      transparent: true,
-      fog: false,
-      depthTest: false,
-    });
-
-  const line: Materials<THREE.LineBasicMaterial> = {
-    enemy: genericLine(),
-    enemyWall: genericLine(),
-    team: genericLine(),
-    teamWall: genericLine(),
-  };
-
   const genericColor = () => new game.THREE.Color();
 
   const colors: Materials<THREE.Color> = {
@@ -224,7 +210,6 @@ function initMaterials() {
 
   const materials = {
     mesh,
-    line,
     colors,
     updated: false,
     update: () => {
@@ -232,7 +217,6 @@ function initMaterials() {
 
       const enemyHex = parseInt(sketchConfig.get("badColor").slice(1), 16);
       const teamHex = parseInt(sketchConfig.get("goodColor").slice(1), 16);
-      const espOpacity = sketchConfig.get("espOpacity");
 
       colors.enemy.set(enemyHex);
       colors.team.set(teamHex);
@@ -243,20 +227,10 @@ function initMaterials() {
       colors.enemyWall.addScalar(-0.3);
       colors.teamWall.addScalar(-0.3);
 
-      line.enemy.color.set(colors.enemy);
-      line.enemyWall.color.set(colors.enemyWall);
-      line.team.color.set(colors.team);
-      line.teamWall.color.set(colors.teamWall);
-
       mesh.enemy.color.set(colors.enemy);
       mesh.enemyWall.color.set(colors.enemyWall);
       mesh.team.color.set(colors.team);
       mesh.teamWall.color.set(colors.teamWall);
-
-      line.enemy.opacity = espOpacity;
-      line.enemyWall.opacity = espOpacity;
-      line.team.opacity = espOpacity;
-      line.teamWall.opacity = espOpacity;
     },
   };
 
@@ -274,109 +248,20 @@ const getMaterials = () => {
 //@ts-ignore
 //Object.assign(getExposedWindow(), { getMaterials });
 
-const tracerMap = new Map<Player, Line>();
-
-interface Line {
-  line: THREE.Line<
-    THREE.BufferGeometry<THREE.NormalBufferAttributes>,
-    THREE.Material | THREE.Material[]
-  >;
-  buffer: THREE.BufferAttribute;
-}
-
 export function espHook() {
   const hookedMeshes = new WeakSet<THREE.Mesh>();
   const hookedObjects = new WeakSet<THREE.Object3D>();
-
-  // const generateLine = (points: number) => {
-  //   const game = getGame();
-  //   const render = getRender();
-  //   const materials = getMaterials();
-
-  //   // geometry
-  //   const geometry = new game.THREE.BufferGeometry();
-
-  //   // attributes
-  //   const positions = new Float32Array(points * 3); // 3 vertices per point
-  //   const buffer = new game.THREE.BufferAttribute(positions, 3);
-  //   geometry.setAttribute("position", buffer);
-
-  //   // drawcalls
-  //   geometry.setDrawRange(0, points);
-
-  //   // line
-  //   const line = new game.THREE.Line(geometry, materials.line.enemy);
-
-  //   render.scene.add(line);
-
-  //   line.frustumCulled = false;
-
-  //   return { line, buffer } as Line;
-  // };
-
-  // preRenderHooks.push(() => {
-  //   const game = getGame();
-  //   const render = getRender();
-  //   const materials = getMaterials();
-
-  //   // only call .update() in the render hooks when it's the very first time we need materials
-  //   if (!materials.updated) materials.update();
-
-  //   const menus = isInMenus();
-  //   const tracers = sketchConfig.get("tracers");
-
-  //   for (const [entity, data] of tracerMap) {
-  //     if (!tracers || menus || !canESP(entity)) {
-  //       render.scene.remove(data.line);
-  //       tracerMap.delete(entity);
-  //     }
-  //   }
-
-  //   if (tracers && !menus) {
-  //     const direction = new render.THREE.Vector3();
-  //     const position = game.controls.object.position;
-
-  //     render.camera.getWorldDirection(direction);
-
-  //     // Move the starting point slightly forward from the camera's position
-  //     const startPoint = position.clone().add(direction);
-
-  //     for (const entity of game.players.list) {
-  //       if (canESP(entity) && entity.objInstances) {
-  //         if (!entityAlive(entity)) continue;
-
-  //         if (!tracerMap.has(entity)) tracerMap.set(entity, generateLine(3));
-
-  //         const { line, buffer } = tracerMap.get(entity) as Line;
-
-  //         const eP = entity.objInstances.position;
-
-  //         line.material = getEntityMaterial(entity, materials.line);
-  //         buffer.setXYZ(0, startPoint.x, startPoint.y, startPoint.z);
-  //         buffer.setXYZ(1, eP.x, eP.y, eP.z);
-  //         buffer.setXYZ(
-  //           2,
-  //           eP.x,
-  //           eP.y +
-  //             entity.height -
-  //             getConfig().headScale / 2 -
-  //             entity.crouchVal * getConfig().crouchDst,
-  //           eP.z
-  //         );
-  //         buffer.needsUpdate = true;
-  //       }
-  //     }
-  //   }
-  // });
 
   patches.Nametags = [
     /!(\w+)\.isYou&&\1\.objInstances\){if\(\1\.canBSeen\){/,
     (match, player) =>
       `!${player}.isYou&&${player}.objInstances){if(!${dataArg}.newNames&&(${player}.canBSeen||${dataArg}.nametags)){`,
   ];
+
   Object.defineProperty(data, "nametags", {
     get: () => sketchConfig.get("nametags"),
   });
+
   Object.defineProperty(data, "newNames", {
     get: () => sketchConfig.get("newNametags"),
   });
@@ -437,16 +322,46 @@ export function espHook() {
     const newNametags = sketchConfig.get("newNametags");
     const tracers = sketchConfig.get("tracers");
 
-    const { globalAlpha } = overlay.ctx;
+    // const { globalAlpha } = overlay.ctx;
     overlay.ctx.globalAlpha = sketchConfig.get("espOpacity");
     const willRender = tracers || newNametags || boxes || healthBars;
 
     if (willRender && !isInMenus()) {
       overlay.ctx.save();
       overlay.ctx.scale(overlay.scale, overlay.scale);
+      overlay.ctx.globalAlpha = sketchConfig.get("espOpacity");
 
       for (const entity of [...game.players.list, ...game.AI.ais]) {
         if (!canESP(entity)) continue;
+
+        if (tracers) {
+          let tracerPoint: THREE.Vector2;
+          const bottom = playerPos(entity);
+
+          if (render.frustum.containPoint(bottom)) {
+            tracerPoint = pos2D(bottom);
+          } else {
+            const dir = getOffScreenDir(render.camera, bottom);
+            // console.log(dir);
+            tracerPoint = new game.THREE.Vector2(
+              0.5 + Math.cos(dir),
+              0.5 - Math.sin(dir)
+            );
+            tracerPoint.x *= innerWidth / overlay.scale;
+            tracerPoint.y *= innerHeight / overlay.scale;
+          }
+
+          overlay.ctx.strokeStyle =
+            "#" + getEntityMaterial(entity, materials.colors).getHexString();
+          overlay.ctx.lineWidth = 2;
+
+          overlay.ctx.beginPath();
+          const overlaySize = getOverlaySizeScaled();
+          overlay.ctx.moveTo(overlaySize.width / 2, overlaySize.height / 2);
+          overlay.ctx.lineTo(tracerPoint.x, tracerPoint.y);
+          overlay.ctx.stroke();
+          overlay.ctx.closePath();
+        }
 
         const box = playerBox(entity);
 
@@ -486,35 +401,6 @@ export function espHook() {
           overlay.ctx.fillText(text, tx, ty);
 
           overlay.ctx.globalAlpha = 1;
-        }
-
-        overlay.ctx.globalAlpha = sketchConfig.get("espOpacity");
-
-        if (tracers) {
-          let tracerPoint: THREE.Vector2;
-          const bottom = playerPos(entity);
-
-          if (render.frustum.containPoint(bottom)) {
-            tracerPoint = pos2D(bottom);
-          } else {
-            const dir = getOffScreenDir(render.camera, bottom);
-            tracerPoint = new game.THREE.Vector2(
-              0.5 + Math.cos(dir),
-              0.5 - Math.cos(dir)
-            );
-          }
-
-          overlay.ctx.beginPath();
-          overlay.ctx.moveTo(
-            overlay.canvas.width / 2,
-            overlay.canvas.height / 2
-          );
-          overlay.ctx.lineTo(
-            tracerPoint.x * overlay.canvas.width,
-            tracerPoint.y * overlay.canvas.height
-          );
-          overlay.ctx.stroke();
-          overlay.ctx.closePath();
         }
 
         if (boxes) {
