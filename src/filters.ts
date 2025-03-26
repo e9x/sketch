@@ -203,11 +203,7 @@ export const preRenderHooks: (() => void)[] = [];
 const rgbSky = () =>
   ({
     skyDome: false,
-    ambient: "#97a0a8",
-    light: "#f2f8fc",
     sky: parseInt(sketchConfig.get("skyColorHex").slice(1), 16),
-    fog: "#8d9aa0",
-    fogD: 2000,
   }) as MapData;
 
 export function redrawSky() {
