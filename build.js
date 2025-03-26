@@ -60,7 +60,7 @@ const sketchMain = await context({
   sourcemap: "external",
   define: envReplacements,
   outfile: mainOut,
-  external: ["os", "fs", "path", "http", "https"],
+  external: ["os", "fs", "path", "http", "https", "electron"],
   bundle: true,
   minify: !isDevelopment,
   jsx: "transform",

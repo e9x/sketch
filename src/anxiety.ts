@@ -1,4 +1,4 @@
-import { discordURL, isDevelopment } from "./consts";
+import { discordURL, isDevelopment, isNode } from "./consts";
 import sketchConfig from "./sketchConfig";
 import { waitFor } from "./util";
 import KrunkBox, { SketchVersion } from "./KrunkBox";
@@ -138,20 +138,40 @@ export function begToken() {
 
 export function showUpdated(version: SketchVersion) {
   const overlay = newOverlay();
-  overlay.innerHTML =
-    `<h1>Update Sketch.</h1>` +
-    `<p>Your version of Sketch is outdated. Click <a>this link here</a> to download the latest verison. (<span id="ver"></span>)</p>` +
-    `<p><button>Refresh</button></p>`;
-  const ver = overlay.querySelector("#ver")!;
-  ver.textContent = version.latestVersion;
-  ver.id = "";
-  overlay.querySelector("a")!.href = version.updateURL;
+  if (isNode) {
+    overlay.innerHTML =
+      `<h1>Update Sketch.</h1>` +
+      `<p>Your version of Sketch is outdated. You will need to either reopen your client or re-patch the app.asar with <a>the new version from here</a>. (<span id="ver"></span>)</p>` +
+      `<p><button>Relaunch</button></p>`;
+    const ver = overlay.querySelector("#ver")!;
+    ver.textContent = version.latestVersion;
+    ver.id = "";
+    overlay.querySelector("a")!.href = version.updateURL;
 
-  overlay
-    .querySelector<HTMLInputElement>("button")!
-    .addEventListener("click", () => {
-      location.reload();
-    });
+    overlay
+      .querySelector<HTMLInputElement>("button")!
+      .addEventListener("click", () => {
+        // @ts-ignore
+        const app = require("electron");
+        app.relaunch();
+        app.exit();
+      });
+  } else {
+    overlay.innerHTML =
+      `<h1>Update Sketch.</h1>` +
+      `<p>Your version of Sketch is outdated. Click <a>this link here</a> to download the latest verison. (<span id="ver"></span>)</p>` +
+      `<p><button>Refresh</button></p>`;
+    const ver = overlay.querySelector("#ver")!;
+    ver.textContent = version.latestVersion;
+    ver.id = "";
+    overlay.querySelector("a")!.href = version.updateURL;
+
+    overlay
+      .querySelector<HTMLInputElement>("button")!
+      .addEventListener("click", () => {
+        location.reload();
+      });
+  }
 }
 
 export function showFutile(version: SketchVersion) {
