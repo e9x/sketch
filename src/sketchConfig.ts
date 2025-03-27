@@ -72,8 +72,12 @@ const stargaze: MapData = {
   skyDomeMovD: "0",
   skyDomeMovT: -8,
   ambient: "#97a0a8",
-  light: "#f2f8fc",
+  light: "#203dbe",
+  lightD: 2145,
+  lightI: 0.5,
   sky: "#dce8ed",
+  sunAngX: null,
+  sunAngY: null,
   fog: "#8d9aa0",
   fogD: 2000,
 };

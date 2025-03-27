@@ -274,16 +274,23 @@ export default function Menu() {
                     description="If the overrides should take effect"
                     defaultValue={JSON.stringify(mapOverridesCode)}
                     onChange={(event) => {
-                      let p;
-                      try {
-                        p = JSON.parse(event.currentTarget.value);
-                      } catch (err) {
-                        alert(
-                          "Bad map overrides:\n" + (err as SyntaxError).stack
-                        );
-                        return;
+                      // blank = reset
+                      const value = event.currentTarget.value.trim();
+                      if (value === "") setMapOverridesCode();
+                      else {
+                        let p;
+                        try {
+                          p = JSON.parse(value);
+                        } catch (err) {
+                          alert(
+                            "Bad map overrides:\n" + (err as SyntaxError).stack
+                          );
+                          return;
+                        }
+                        setMapOverridesCode(p);
+                        event.currentTarget.value = JSON.stringify(p);
                       }
-                      setMapOverridesCode(p);
+
                       redrawSky();
                     }}
                   />

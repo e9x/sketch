@@ -175,12 +175,6 @@ export function getRender() {
 export const renderHooks: (() => void)[] = [];
 export const preRenderHooks: (() => void)[] = [];
 
-const rgbSky = () =>
-  ({
-    skyDome: false,
-    sky: parseInt(sketchConfig.get("skyColorHex").slice(1), 16),
-  }) as MapData;
-
 export function redrawSky() {
   try {
     // trigger an update
@@ -204,7 +198,6 @@ function doRenderHooks() {
   const maps = new WeakMap<any, any>();
   render.init = function (config, mode, idk1, idk2) {
     // console.trace("lol init ez", [config, mode, idk1, idk2]);
-
     if (maps.has(config)) config = maps.get(config);
 
     let nConfig = config;
@@ -213,8 +206,14 @@ function doRenderHooks() {
     nConfig = { ...config };
     if (sketchConfig.get("mapOverrides"))
       Object.assign(nConfig, sketchConfig.get("mapOverridesCode"));
-    if (sketchConfig.get("skyColor")) Object.assign(nConfig, rgbSky());
+    if (sketchConfig.get("skyColor"))
+      Object.assign(nConfig, {
+        skyDome: false,
+        sky: sketchConfig.get("skyColorHex"),
+      });
     maps.set(nConfig, config);
+
+    console.log("map config:", nConfig);
 
     init.call(this, nConfig, mode, idk1, idk2);
   };

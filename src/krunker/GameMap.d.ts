@@ -30,7 +30,7 @@ export interface MapData {
   skyDomeMovT?: number;
   ambient?: string;
   light?: string;
-  sky?: number;
+  sky?: string;
   fog?: string;
   fogD?: number;
   [key: string]: any;
