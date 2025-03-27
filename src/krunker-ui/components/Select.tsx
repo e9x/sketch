@@ -22,7 +22,7 @@ export function Select({
   const sel = useRef<HTMLSelectElement>(null);
 
   useEffect(() => {
-    if (sel.current)
+    if (typeof value !== "undefined" && sel.current)
       sel.current.value = typeof value === "undefined" ? "" : value;
   }, [sel, value]);
 
@@ -30,8 +30,8 @@ export function Select({
     <Control title={title} attention={attention} description={description}>
       <select
         className="inputGrey2"
-        value={defaultValue}
         ref={sel}
+        value={defaultValue}
         onChange={onChange}
       >
         {children}

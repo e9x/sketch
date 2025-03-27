@@ -358,7 +358,7 @@ export function espHook() {
 
           overlay.ctx.strokeStyle =
             "#" + getEntityMaterial(entity, materials.colors).getHexString();
-          overlay.ctx.lineWidth = 2;
+          overlay.ctx.lineWidth = 3;
 
           overlay.ctx.beginPath();
           const overlaySize = getOverlaySizeScaled();

@@ -7,7 +7,11 @@ import { SkinHackMenu } from "../cheats/skins";
 import { WatermarkMenu } from "../cheats/watermark";
 import { discordURL, docsURL, sketchVersion } from "../consts";
 import { getGame, getLocalPlayer, redrawSky } from "../filters";
-import sketchConfig, { useSketchConfig } from "../sketchConfig";
+import sketchConfig, {
+  SketchConfig,
+  skyboxes,
+  useSketchConfig,
+} from "../sketchConfig";
 import { updateSketchMenuButton } from "./createUI";
 import { BindHolder, Bind } from "../krunker-ui/components/Bind";
 import { ColorPicker } from "../krunker-ui/components/ColorPicker";
@@ -17,6 +21,7 @@ import { HeadlessSet, Set } from "../krunker-ui/components/Set";
 import { Switch } from "../krunker-ui/components/Switch";
 import { Settings } from "../krunker-ui/settings";
 import { Text } from "../krunker-ui/components/Text";
+import { Select } from "krunker-ui/components/Select";
 
 function downloadFile(fileName: string, fileData: string) {
   const downloadLink = document.createElement("a");
@@ -89,6 +94,7 @@ export default function Menu() {
   const [mapOverrides, setMapOverrides] = useSketchConfig("mapOverrides");
   const [mapOverridesCode, setMapOverridesCode] =
     useSketchConfig("mapOverridesCode");
+  const [skybox, setSkybox] = useSketchConfig("skybox");
 
   return (
     <Settings
@@ -269,6 +275,21 @@ export default function Menu() {
                   />
                 </HeadlessSet>
                 <Set title="Custom Map">
+                  <Select
+                    title="Skybox"
+                    defaultValue={skybox}
+                    onChange={(event) => {
+                      const value = event.currentTarget.value;
+                      setSkybox(value as SketchConfig["skybox"]);
+                    }}
+                  >
+                    <option value="off">Default</option>
+                    {Object.entries(skyboxes).map(([name, sky], i) => (
+                      <option value={name} key={name}>
+                        {sky.name}
+                      </option>
+                    ))}
+                  </Select>
                   <Text
                     title="Map Overrides"
                     description="If the overrides should take effect"

@@ -5,11 +5,11 @@ import { Player } from "./krunker/Player";
 import type RenderManager from "./krunker/RenderManager";
 import type configModule from "./krunker/config";
 import type * as Overlay from "./krunker/overlay";
-import sketchConfig from "./sketchConfig";
+import sketchConfig, { skyboxes } from "./sketchConfig";
 import { console, defineProperty } from "./crashout";
 import { mirrorAttributes } from "./hook";
 import type KrunkBox from "./KrunkBox";
-import { MapData } from "./krunker/GameMap";
+import type * as THREE from "three";
 
 // export const data: any[] & Record<string, any> = [];
 export const data: Record<string, any> = {};
@@ -42,7 +42,7 @@ beforeGame.push(() => {
     // catch fingerprinting crap
     let value = getItem.call(this, key);
     if (key === "conUID_") {
-      console.trace("conUID blocked 👀");
+      console.log("conUID blocked 👀");
       value = null;
     }
     return value;
@@ -129,19 +129,22 @@ beforeGame.push(() => {
     configurable: true,
     enumerable: false,
     set(value) {
-      // console.log({ value });
-      if (!("medalsList" in this))
-        return defineProperty(this, "render", {
-          value,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
+      defineProperty(this, "render", {
+        value,
+        writable: true,
+        enumerable: true,
+        configurable: true,
+      });
 
-      delete Object.prototype.render;
-      this.render = value;
-      overlay = this;
-      doOverlayHooks();
+      if ("skyDomeInit" in this) {
+        console.log("RENDER: render");
+        render = this;
+        doRenderHooks();
+      }
+      if ("medalsList" in this) {
+        overlay = this;
+        doOverlayHooks();
+      }
     },
   });
 
@@ -167,12 +170,15 @@ export function getRender() {
   return render;
 }
 
+// this exists for hooking some rendering methods for stuff like skyboxes
+export const renderObjHooks: (() => void)[] = [];
+
 /**
  * After the 3D game is rendered
  * 2x faster than overlayRenderHooks
  * Used for THREE.js
  */
-export const renderHooks: (() => void)[] = [];
+// export const gameRenderHooks: (() => void)[] = [];
 export const preRenderHooks: (() => void)[] = [];
 
 export function redrawSky() {
@@ -190,19 +196,38 @@ export function redrawSky() {
   }
 }
 
+const loadedSkyboxes: Record<string, THREE.Texture> = {};
+function getTech() {
+  const skybox = sketchConfig.get("skybox");
+  if (skybox === "off") return null;
+  const s = skyboxes[skybox];
+  if (!s) return null;
+  let tech = loadedSkyboxes[skybox];
+  if (!tech) {
+    // 'posx.jpg', 'negx.jpg', 'posy.jpg', 'negy.jpg', 'posz.jpg', 'negz.jpg'
+    const render = getRender();
+    const THREE = render.THREE;
+    const textureLoader = new THREE.CubeTextureLoader();
+    tech = textureLoader.load(s.faces);
+    loadedSkyboxes[skybox] = tech;
+  }
+  return tech;
+}
+
 function doRenderHooks() {
   const render = getRender();
-
   const { init } = render;
+
   // <patched, og>
   const maps = new WeakMap<any, any>();
+
   render.init = function (config, mode, idk1, idk2) {
+    console.log("RENDER: init");
     // console.trace("lol init ez", [config, mode, idk1, idk2]);
     if (maps.has(config)) config = maps.get(config);
 
     let nConfig = config;
 
-    // stargaze
     nConfig = { ...config };
     if (sketchConfig.get("mapOverrides"))
       Object.assign(nConfig, sketchConfig.get("mapOverridesCode"));
@@ -213,25 +238,30 @@ function doRenderHooks() {
       });
     maps.set(nConfig, config);
 
-    console.log("map config:", nConfig);
+    console.log("map config:", [nConfig]);
 
     init.call(this, nConfig, mode, idk1, idk2);
   };
 
+  const renderFn = render.render;
   // we hook the render way too early
-  defineProperty(render, "render", {
-    set(value: RenderManager["render"]) {
-      // remove descriptor
-      delete (render as any).render;
-      render.render = function (...args) {
-        if (localPlayer) for (const hook of preRenderHooks) hook();
-        const result = value.call(this, ...args);
-        if (localPlayer) for (const hook of renderHooks) hook();
-        return result;
-      };
-    },
-    configurable: true,
-  });
+  render.render = function (...args) {
+    if (localPlayer) for (const hook of preRenderHooks) hook();
+    const result = renderFn.call(this, ...args);
+    // if (localPlayer) for (const hook of gameRenderHooks) hook();
+    return result;
+  };
+
+  const threeRenderFn = render.renderer.render;
+  render.renderer.render = function (scene, camera) {
+    if (camera === render.camera) {
+      render.scene.background = getTech();
+      let ret = threeRenderFn.call(this, scene, camera);
+      render.scene.background = null;
+      return ret;
+    }
+    return threeRenderFn.call(this, scene, camera);
+  };
 
   const genericAdsArray = [...Array(64)].fill(0);
   let ogAds = render.adsFov;
@@ -255,32 +285,10 @@ function doRenderHooks() {
 }
 
 beforeGame.push(() => {
-  defineProperty(Object.prototype, "skyDomeInit", {
-    configurable: true,
-    enumerable: false,
-    set(this: RenderManager, value) {
-      if (!("skyDomeInit" in this))
-        return defineProperty(this, "skyDomeInit", {
-          value,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-
-      // console.log("thy render is", this);
-      delete Object.prototype.skyDomeInit;
-      this.skyDomeInit = value;
-      render = this;
-      doRenderHooks();
-      // now hoook it
-    },
-  });
-
   defineProperty(Object.prototype, "controls", {
     configurable: true,
     enumerable: false,
     get() {
-      // console.log("retard", this);
       return null;
     },
     set(value) {
@@ -324,10 +332,7 @@ beforeGame.push(() => {
     },
   });
 
-  return () => {
-    delete Object.prototype.controls;
-    delete Object.prototype.render;
-  };
+  return () => delete Object.prototype.controls;
 });
 
 let game: Game | undefined;
@@ -359,7 +364,6 @@ function doGameHooks() {
 
   const { add } = getGame().players;
 
-  console.trace("hooker");
   for (const hook of onGameHooks) hook();
 
   game.players.add = function (...args) {

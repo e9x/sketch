@@ -6,6 +6,51 @@ import { keyboardMap } from "./krunker-ui/keys";
 
 export type AimbotTarget = [name: string, id: string];
 
+// random test map with the sexy colorz
+const stargaze: MapData = {
+  skyDome: true,
+  skyDomeCol0: "#000000",
+  skyDomeCol1: "#111E23",
+  skyDomeCol2: "#DCE8ED",
+  skyDomeEmis: "#FF0000",
+  skyDomeEmisTex: "43028",
+  skyDomeTex: true,
+  skyDomeTexA: 43028,
+  skyDomeMovD: "0",
+  skyDomeMovT: -8,
+  ambient: "#97a0a8",
+  light: "#203dbe",
+  lightD: 2145,
+  lightI: 0.5,
+  sky: "#dce8ed",
+  sunAngX: null,
+  sunAngY: null,
+  fog: "#8d9aa0",
+  fogD: 2000,
+};
+
+export interface SketchSkybox {
+  name: string;
+  faces: string[];
+}
+
+export const skyboxes: Record<string, SketchSkybox> = Object.fromEntries(
+  ["galaxy", "lean", "night", "sunset"].map((e) => [
+    e,
+    {
+      name: e[0].toUpperCase() + e.slice(1),
+      faces: [
+        `https://pedophile.pics/skybox/${e}/SkyboxFt.png`,
+        `https://pedophile.pics/skybox/${e}/SkyboxBk.png`,
+        `https://pedophile.pics/skybox/${e}/SkyboxUp.png`,
+        `https://pedophile.pics/skybox/${e}/SkyboxDn.png`,
+        `https://pedophile.pics/skybox/${e}/SkyboxRt.png`,
+        `https://pedophile.pics/skybox/${e}/SkyboxLf.png`,
+      ],
+    },
+  ])
+);
+
 export interface SketchConfig {
   aimbot: "off" | "smooth" | "silent";
   hitbox: "head" | "chest" | "auto";
@@ -50,6 +95,7 @@ export interface SketchConfig {
   skyColorHex: string;
   mapOverrides: boolean;
   mapOverridesCode: MapData;
+  skybox: string;
   watermark: boolean;
   spinbot: boolean;
   triggerbotDistance: number;
@@ -58,29 +104,6 @@ export interface SketchConfig {
   badColor: string;
   goodColor: string;
 }
-
-// random test map with the sexy colorz
-const stargaze: MapData = {
-  skyDome: true,
-  skyDomeCol0: "#000000",
-  skyDomeCol1: "#111E23",
-  skyDomeCol2: "#DCE8ED",
-  skyDomeEmis: "#FF0000",
-  skyDomeEmisTex: "43028",
-  skyDomeTex: true,
-  skyDomeTexA: 43028,
-  skyDomeMovD: "0",
-  skyDomeMovT: -8,
-  ambient: "#97a0a8",
-  light: "#203dbe",
-  lightD: 2145,
-  lightI: 0.5,
-  sky: "#dce8ed",
-  sunAngX: null,
-  sunAngY: null,
-  fog: "#8d9aa0",
-  fogD: 2000,
-};
 
 /**
  * Default config. Also serves as a source of all the config keys (you can't iterate over an interface so this is the next best thing)
@@ -129,6 +152,7 @@ const defaultConfig: SketchConfig = {
   skyColorHex: "#000",
   mapOverrides: false,
   mapOverridesCode: stargaze,
+  skybox: "off",
   watermark: false,
   spinbot: false,
   triggerbotDistance: 0.5,
