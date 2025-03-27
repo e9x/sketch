@@ -347,8 +347,6 @@ export function getGame() {
  */
 export const inputHooks: ((inputs: number[]) => boolean | void)[] = [];
 
-let blockedInputs = false;
-
 // in-game player, not menu player
 let localPlayer: Player | undefined;
 
@@ -369,19 +367,7 @@ function doGameHooks() {
   game.players.add = function (...args) {
     const player = add.call(this, ...args);
 
-    if (player.isYou) {
-      localPlayer = player;
-    }
-
-    const { procInputs } = player;
-
-    player.procInputs = function (...args) {
-      if (blockedInputs) {
-        if (getGame().isSandbox) blockedInputs = false;
-        return;
-      }
-      return procInputs.call(this, ...args);
-    };
+    if (player.isYou) localPlayer = player;
 
     return player;
   };
@@ -398,20 +384,9 @@ function doGameHooks() {
 
   game.controls.tmpInpts.push = function (inputs) {
     if (localPlayer) for (const hook of inputHooks) hook(inputs);
-    // if (hook(inputs) === false) {
-    //   blockedInputs = true;
-    //   return 0;
-    // }
 
     return tmpInptsPush.call(this, inputs);
   };
-
-  // ioSendHooks.push((packet) => {
-  //   if (packet === "q" && blockedInputs) {
-  //     blockedInputs = false;
-  //     return false;
-  //   }
-  // });
 
   const mapObjectsPush = game.map.manager.objects.push;
 
