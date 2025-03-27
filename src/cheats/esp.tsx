@@ -231,6 +231,12 @@ function initMaterials() {
       mesh.enemyWall.color.set(colors.enemyWall);
       mesh.team.color.set(colors.team);
       mesh.teamWall.color.set(colors.teamWall);
+
+      const espOpacity = sketchConfig.get("espOpacity");
+      mesh.enemy.opacity = espOpacity;
+      mesh.enemyWall.opacity = espOpacity;
+      mesh.team.opacity = espOpacity;
+      mesh.teamWall.opacity = espOpacity;
     },
   };
 
