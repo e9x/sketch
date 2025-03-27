@@ -31,11 +31,12 @@ const stargaze: MapData = {
 
 export interface SketchSkybox {
   name: string;
+  // 'posx.jpg', 'negx.jpg', 'posy.jpg', 'negy.jpg', 'posz.jpg', 'negz.jpg'
   faces: string[];
 }
 
 export const skyboxes: Record<string, SketchSkybox> = Object.fromEntries(
-  ["galaxy", "lean", "night", "sunset"].map((e) => [
+  ["galaxy", "lean", "night", "sunset", "jew"].map((e) => [
     e,
     {
       name: e[0].toUpperCase() + e.slice(1),
