@@ -327,23 +327,11 @@ export function espHook() {
             mesh.parent!.add(twin);
             twin[hook] = true;
 
-            Object.defineProperty(twin, "position", {
-              get: () => mesh.position,
-            });
-
             twin.matrixAutoUpdate = false;
             twin.matrixWorldAutoUpdate = false;
 
             Object.defineProperty(twin, "matrixWorld", {
               get: () => mesh.matrixWorld,
-            });
-
-            Object.defineProperty(twin, "matrixWorldNeedsUpdate", {
-              get: () => mesh.matrixWorldNeedsUpdate,
-            });
-
-            Object.defineProperty(twin, "rotation", {
-              get: () => mesh.rotation,
             });
 
             Object.defineProperty(twin, "matrix", {
