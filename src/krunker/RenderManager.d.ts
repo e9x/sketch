@@ -8,8 +8,10 @@ declare class RenderManager {
   THREE: typeof THREE;
   scene: THREE.Scene;
   skyDome: THREE.Object3D;
-  lastEnvId: number | any;
+  lastEnvId: number | null;
   updateGameEnvironment(id: number, newData?: any): void;
+  updateLightMap(data: MapData): void;
+  updateShadowMap(): void;
   skyDomeInit(config: any): THREE.Object3D;
   // init(game: any, config: any, idk: any, idk2: any): void;
   clearSkyDome(): void;

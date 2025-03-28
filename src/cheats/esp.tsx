@@ -5,7 +5,6 @@ import {
   getGame,
   getOverlay,
   getRender,
-  preRenderHooks,
   overlayRenderHooks,
   patches,
   data,
@@ -27,7 +26,7 @@ import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "../krunker-ui/components/Switch";
 import type * as THREE from "three";
 import { Slider } from "../krunker-ui/components/Slider";
-import { ctx } from "krunker/overlay";
+import { console } from "../crashout";
 
 // nametags is handled in index.ts
 // see get nametags() { ... }
@@ -254,10 +253,26 @@ const getMaterials = () => {
 //@ts-ignore
 //Object.assign(getExposedWindow(), { getMaterials });
 
-export function espHook() {
-  const hookedMeshes = new WeakSet<THREE.Mesh>();
-  const hookedObjects = new WeakSet<THREE.Object3D>();
+const espMat = Symbol();
+const hook = Symbol();
 
+declare module "three" {
+  interface Mesh {
+    [hook]?: boolean;
+  }
+
+  interface Object3D {
+    [hook]?: boolean;
+  }
+}
+
+declare module "../krunker/Player" {
+  interface Player {
+    [espMat]?: THREE.Material;
+  }
+}
+
+export function espHook() {
   patches.Nametags = [
     /!(\w+)\.isYou&&\1\.objInstances\){if\(\1\.canBSeen\){/,
     (match, player) =>
@@ -284,39 +299,63 @@ export function espHook() {
 
     if (chams)
       for (const entity of game.players.list) {
-        if (entity.objInstances && canESP(entity)) {
-          if (!hookedObjects.has(entity.objInstances)) {
-            hookedObjects.add(entity.objInstances);
+        if (entity.objInstances) {
+          const can =
+            sketchConfig.get("chams") && !isInMenus() && canESP(entity);
+
+          if (can) entity[espMat] = getEntityMaterial(entity, materials.mesh);
+          else delete entity[espMat];
+
+          if (!(hook in entity.objInstances)) {
+            entity.objInstances[hook] = true;
 
             let { visible } = entity.objInstances;
 
             Object.defineProperty(entity.objInstances, "visible", {
-              get: () =>
-                sketchConfig.get("chams") && !isInMenus() && canESP(entity)
-                  ? true
-                  : visible,
-              set: (newVisible) => {
-                visible = newVisible;
-              },
+              get: () => espMat in entity || visible,
+              set: (newVisible) => (visible = newVisible),
             });
           }
 
           // Just manually select the meshes to hook
           // Much faster than calling traverse()
           for (const mesh of getPlayerMeshes(entity)) {
-            if (hookedMeshes.has(mesh)) continue;
-            hookedMeshes.add(mesh);
+            if (hook in mesh) continue;
+            mesh[hook] = true;
 
-            let { material } = mesh;
+            const twin = mesh.clone(false);
+            mesh.parent!.add(twin);
+            twin[hook] = true;
 
-            Object.defineProperty(mesh, "material", {
-              get: () =>
-                sketchConfig.get("chams") && !isInMenus() && canESP(entity)
-                  ? getEntityMaterial(entity, materials.mesh)
-                  : material,
-              set: (newMaterial) => {
-                material = newMaterial;
-              },
+            Object.defineProperty(twin, "position", {
+              get: () => mesh.position,
+            });
+
+            twin.matrixAutoUpdate = false;
+            twin.matrixWorldAutoUpdate = false;
+
+            Object.defineProperty(twin, "matrixWorld", {
+              get: () => mesh.matrixWorld,
+            });
+
+            Object.defineProperty(twin, "matrixWorldNeedsUpdate", {
+              get: () => mesh.matrixWorldNeedsUpdate,
+            });
+
+            Object.defineProperty(twin, "rotation", {
+              get: () => mesh.rotation,
+            });
+
+            Object.defineProperty(twin, "matrix", {
+              get: () => mesh.matrix,
+            });
+
+            Object.defineProperty(twin, "visible", {
+              get: () => espMat in entity && mesh.visible,
+            });
+
+            Object.defineProperty(twin, "material", {
+              get: () => entity[espMat],
             });
           }
         }
@@ -331,115 +370,142 @@ export function espHook() {
     // const { globalAlpha } = overlay.ctx;
     const willRender = tracers || newNametags || boxes || healthBars;
 
-    if (willRender && !isInMenus()) {
-      overlay.ctx.save();
-      overlay.ctx.scale(overlay.scale, overlay.scale);
-      overlay.ctx.globalAlpha = sketchConfig.get("espOpacity");
+    if (!willRender || isInMenus()) return;
 
-      for (const entity of [...game.players.list, ...game.AI.ais]) {
-        if (!canESP(entity)) continue;
+    // initial values
+    const ogTrans = overlay.ctx.getTransform();
 
-        if (tracers) {
-          let tracerPoint: THREE.Vector2;
-          const bottom = playerPos(entity);
+    const {
+      globalAlpha,
+      strokeStyle,
+      lineWidth,
+      fillStyle,
+      textAlign,
+      textBaseline,
+      imageSmoothingEnabled,
+      font,
+    } = overlay.ctx;
 
-          if (render.frustum.containPoint(bottom)) {
-            tracerPoint = pos2D(bottom);
-          } else {
-            const dir = getOffScreenDir(render.camera, bottom);
-            // console.log(dir);
-            tracerPoint = new game.THREE.Vector2(
-              0.5 + Math.cos(dir),
-              0.5 - Math.sin(dir)
-            );
-            tracerPoint.x *= innerWidth / overlay.scale;
-            tracerPoint.y *= innerHeight / overlay.scale;
-          }
+    const espOpacity = sketchConfig.get("espOpacity");
 
-          overlay.ctx.strokeStyle =
-            "#" + getEntityMaterial(entity, materials.colors).getHexString();
-          overlay.ctx.lineWidth = 3;
+    overlay.ctx.scale(overlay.scale, overlay.scale);
 
-          overlay.ctx.beginPath();
-          const overlaySize = getOverlaySizeScaled();
-          overlay.ctx.moveTo(overlaySize.width / 2, overlaySize.height / 2);
-          overlay.ctx.lineTo(tracerPoint.x, tracerPoint.y);
-          overlay.ctx.stroke();
-          overlay.ctx.closePath();
-        }
+    for (const entity of [...game.players.list, ...game.AI.ais]) {
+      if (!canESP(entity)) continue;
 
-        const box = playerBox(entity);
+      if (tracers) {
+        let tracerPoint: THREE.Vector2;
+        const bottom = playerPos(entity);
 
-        if (!box) continue;
-
-        if (newNametags) {
-          overlay.ctx.fillStyle = "#000"; // Set fill style to black for the square
-          overlay.ctx.lineWidth = 4;
-          overlay.ctx.imageSmoothingEnabled = false;
-
-          overlay.ctx.globalAlpha = 0.9;
-
-          // Calculate text dimensions
-          overlay.ctx.font = "16px monospace"; // Make sure the font is set before measuring
-          const text = entity.name;
-          const textMetrics = overlay.ctx.measureText(text);
-          const textWidth = textMetrics.width;
-          const textHeight = 16; // The font size is 16px
-
-          const tx = box.left + box.width / 2;
-          const ty = box.top - 20;
-
-          // Draw the black square behind the text
-          overlay.ctx.fillRect(
-            tx - textWidth / 2 - 5,
-            ty - 2,
-            textWidth + 10,
-            textHeight + 4
-          ); // Adjust padding as necessary
-
-          // Set fill style back to white for the text
-          overlay.ctx.fillStyle = "#fff";
-
-          // Draw the text on top of the black square
-          overlay.ctx.textAlign = "center";
-          overlay.ctx.textBaseline = "top";
-          overlay.ctx.fillText(text, tx, ty);
-
-          overlay.ctx.globalAlpha = 1;
-        }
-
-        if (boxes) {
-          overlay.ctx.strokeStyle =
-            "#" + getEntityMaterial(entity, materials.colors).getHexString();
-          overlay.ctx.lineWidth = 1.5;
-          overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
-        }
-
-        if (healthBars) {
-          const barMargin = box.width * 0.05;
-          const barWidth = box.width * 0.1;
-          overlay.ctx.fillStyle = "#F00";
-          overlay.ctx.fillRect(
-            box.right + barMargin,
-            box.top,
-            barWidth,
-            box.height
+        if (render.frustum.containPoint(bottom)) {
+          tracerPoint = pos2D(bottom);
+        } else {
+          const dir = getOffScreenDir(render.camera, bottom);
+          // console.log(dir);
+          tracerPoint = new game.THREE.Vector2(
+            0.5 + Math.cos(dir),
+            0.5 - Math.sin(dir)
           );
-
-          overlay.ctx.fillStyle = "#0F0";
-          const remaining = box.height * (entity.health / entity.maxHealth);
-          overlay.ctx.fillRect(
-            box.right + barMargin,
-            box.top + (box.height - remaining),
-            barWidth,
-            remaining
-          );
+          tracerPoint.x *= innerWidth / overlay.scale;
+          tracerPoint.y *= innerHeight / overlay.scale;
         }
+
+        overlay.ctx.strokeStyle =
+          "#" + getEntityMaterial(entity, materials.colors).getHexString();
+        overlay.ctx.lineWidth = 1.5;
+
+        overlay.ctx.globalAlpha = espOpacity;
+        overlay.ctx.beginPath();
+        const overlaySize = getOverlaySizeScaled();
+        overlay.ctx.moveTo(overlaySize.width / 2, overlaySize.height / 2);
+        overlay.ctx.lineTo(tracerPoint.x, tracerPoint.y);
+        overlay.ctx.stroke();
+        overlay.ctx.closePath();
+        overlay.ctx.globalAlpha = 1;
       }
 
-      // overlay.ctx.globalAlpha = globalAlpha;
-      overlay.ctx.restore();
+      const box = playerBox(entity);
+
+      if (!box) continue;
+
+      if (newNametags) {
+        overlay.ctx.fillStyle = "#000"; // Set fill style to black for the square
+        overlay.ctx.lineWidth = 4;
+        overlay.ctx.imageSmoothingEnabled = false;
+
+        overlay.ctx.globalAlpha = 0.9;
+
+        // Calculate text dimensions
+        overlay.ctx.font = "16px monospace"; // Make sure the font is set before measuring
+        const text = entity.name;
+        const textMetrics = overlay.ctx.measureText(text);
+        const textWidth = textMetrics.width;
+        const textHeight = 16; // The font size is 16px
+
+        const tx = box.left + box.width / 2;
+        const ty = box.top - 20;
+
+        // Draw the black square behind the text
+        overlay.ctx.fillRect(
+          tx - textWidth / 2 - 5,
+          ty - 2,
+          textWidth + 10,
+          textHeight + 4
+        ); // Adjust padding as necessary
+
+        // Set fill style back to white for the text
+        overlay.ctx.fillStyle = "#fff";
+
+        // Draw the text on top of the black square
+        overlay.ctx.textAlign = "center";
+        overlay.ctx.textBaseline = "top";
+        overlay.ctx.fillText(text, tx, ty);
+      }
+
+      if (boxes) {
+        overlay.ctx.globalAlpha = espOpacity;
+        overlay.ctx.strokeStyle =
+          "#" + getEntityMaterial(entity, materials.colors).getHexString();
+        overlay.ctx.lineWidth = 1.5;
+        overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
+        overlay.ctx.globalAlpha = 1;
+      }
+
+      if (healthBars) {
+        const barMargin = box.width * 0.05;
+        const barWidth = box.width * 0.1;
+        overlay.ctx.globalAlpha = espOpacity;
+        overlay.ctx.fillStyle = "#F00";
+        overlay.ctx.fillRect(
+          box.right + barMargin,
+          box.top,
+          barWidth,
+          box.height
+        );
+
+        overlay.ctx.fillStyle = "#0F0";
+        const remaining = box.height * (entity.health / entity.maxHealth);
+        overlay.ctx.fillRect(
+          box.right + barMargin,
+          box.top + (box.height - remaining),
+          barWidth,
+          remaining
+        );
+        overlay.ctx.globalAlpha = 1;
+      }
     }
+
+    overlay.ctx.setTransform(ogTrans);
+    Object.assign(overlay.ctx, {
+      globalAlpha,
+      strokeStyle,
+      lineWidth,
+      fillStyle,
+      textAlign,
+      textBaseline,
+      imageSmoothingEnabled,
+      font,
+    });
   });
 }
 

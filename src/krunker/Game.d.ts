@@ -2,7 +2,7 @@ import type AIManager from "./AI";
 import type { AI } from "./AI";
 import type Controls from "./Controls";
 import type MapManager from "./GameMap";
-import type { SpawnPoint } from "./GameMap";
+import type { GameMode, SpawnPoint } from "./GameMap";
 import type { Player, manager } from "./Player";
 import type classes from "./classes";
 import type * as THREE from "three";
@@ -11,14 +11,7 @@ declare class Game {
   constructor(...args: unknown[]);
   AI: AIManager;
   classConfig: typeof classes;
-  mode: {
-    noHPbars?: boolean;
-    fakeNames?: boolean;
-    bonuses: {
-      firerate: 0;
-    };
-    forceCharge: boolean;
-  };
+  mode: GameMode;
   map: MapManager;
   latestData: boolean;
   isComp: boolean;

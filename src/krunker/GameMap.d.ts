@@ -33,12 +33,21 @@ export interface MapData {
   sky?: string;
   fog?: string;
   fogD?: number;
+  ambInd?: number;
+  ambIndC?: number;
   [key: string]: any;
 }
 
 export interface GameMode {
   id: string;
   name: string;
+  noHPbars?: boolean;
+  fakeNames?: boolean;
+  ambInd?: number;
+  bonuses: {
+    firerate: 0;
+  };
+  forceCharge: boolean;
 }
 
 declare class GameMap {

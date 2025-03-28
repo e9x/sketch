@@ -10,6 +10,7 @@ import { console, defineProperty } from "./crashout";
 import { mirrorAttributes } from "./hook";
 import type KrunkBox from "./KrunkBox";
 import type * as THREE from "three";
+import type { GameMode, MapData } from "./krunker/GameMap";
 
 // export const data: any[] & Record<string, any> = [];
 export const data: Record<string, any> = {};
@@ -181,15 +182,24 @@ export const renderObjHooks: (() => void)[] = [];
 // export const gameRenderHooks: (() => void)[] = [];
 export const preRenderHooks: (() => void)[] = [];
 
+let conf: MapData | undefined;
+
 export function redrawSky() {
   try {
     // trigger an update
 
     // getRender().renderer.setClearColor(getRealClearColor());
     const render = getRender();
+    const game = getGame();
+    if (!conf) return console.warn("FUCK");
     const id = render.lastEnvId;
-    render.lastEnvId = undefined;
-    getRender().updateGameEnvironment(-1, id);
+    render.lastEnvId = null;
+    render.init(conf, game.mode, true);
+    render.updateShadowMap();
+    //render.updateGameEnvironment(-1, id);
+    //render.updateGameEnvironment(-2, conf[0]);
+    render.lastEnvId = id;
+    render.updateLightMap(conf);
   } catch (e) {
     //
     console.error(e);
@@ -228,6 +238,8 @@ function doRenderHooks() {
 
     let nConfig = config;
 
+    console.trace("ss");
+    conf = config;
     nConfig = { ...config };
     if (sketchConfig.get("mapOverrides"))
       Object.assign(nConfig, sketchConfig.get("mapOverridesCode"));
