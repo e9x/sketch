@@ -225,8 +225,11 @@ function validTarget(target: Player | AI) {
 
   return true;
 }
+
 function onTargetList(target: Player) {
   const targetListMode = sketchConfig.get("targetListMode");
+
+  if (targetListMode === "guestOnly") return target.name.startsWith("Guest_");
 
   // If targetListMode is off, immediately allow the target
   if (targetListMode === "off") return true;
@@ -240,12 +243,12 @@ function onTargetList(target: Player) {
     if (e[1] === "" && target.name === e[0]) {
       // Assuming e[0] holds the player name
       console.log("Identified target", e, target.name, target.id);
-      e[1] = target.id;
+      e[1] = target.id.toString();
       sketchConfig.set("targetList", targetList);
     }
 
     // Check if the target's ID is in the target list
-    if (e[1] === target.id) {
+    if (e[1] === target.id.toString()) {
       found = true;
       break; // Exit loop early if target ID is found
     }
@@ -356,9 +359,10 @@ export function aimbotHook() {
     const localPlayer = getLocalPlayer();
 
     const bot = sketchConfig.get("bot");
+    const botAim = sketchConfig.get("botAim");
 
     if (bot) {
-      if (localPlayer.weapon.noAim === false) {
+      if (botAim && localPlayer.weapon.noAim === false) {
         inputs[iInputs.scope] = 1;
 
         // not fully aimed
@@ -384,20 +388,6 @@ export function aimbotHook() {
 
         if (Date.now() - aimReaction < aimReactionTime) return;
       }
-    }
-
-    // if the weapon can't shoot
-    // maybe use cantShootTimer?
-    if (aimbot === "silent") {
-      const aimTime = getAimTime(inputs);
-
-      // 295.js: if (this.reloads[this.loadoutIndex] <= 0 && this.swapTime <= 0 && this.reloadTimer <= 0) {
-      if (
-        getCurrentReload(aimTime) > 0 ||
-        getCurrentSwapTime(aimTime) > 0 ||
-        getCurrentReloadTimer(aimTime) > 0
-      )
-        return;
     }
 
     if (
@@ -472,8 +462,31 @@ export function aimbotHook() {
       }
     }
 
+    if (target && aimbot === "silent") {
+      // not fully aimed
+      inputs[iInputs.scope] = 1;
+      if (localPlayer.weapon.noAim === false && localPlayer.aimVal) {
+        return;
+      }
+    }
+
+    // if the weapon can't shoot
+    // maybe use cantShootTimer?
+    const aimTime = getAimTime(inputs);
+    if (aimbot === "silent") {
+      // 295.js: if (this.reloads[this.loadoutIndex] <= 0 && this.swapTime <= 0 && this.reloadTimer <= 0) {
+      if (
+        getCurrentReload(aimTime) > 0 ||
+        getCurrentSwapTime(aimTime) > 0 ||
+        getCurrentReloadTimer(aimTime) > 0
+      )
+        return;
+    }
+
     if (target) {
-      if (bot && aimbot === "silent") inputs[iInputs.shoot] = 1;
+      if (bot && aimbot === "silent") {
+        inputs[iInputs.shoot] = 1;
+      }
 
       const rotation = new THREE.Vector2(
         inputs[iInputs.xDir] / 1000,
@@ -525,6 +538,7 @@ export function aimbotHook() {
 export function AimbotMenu() {
   const [aimbot, setAimbot] = useSketchConfig("aimbot");
   const [bot, setBot] = useSketchConfig("bot");
+  const [botAim, setBotAim] = useSketchConfig("botAim");
   const [fovCheck, setfovCheck] = useSketchConfig("fovCheck");
   const [wallbangs, setWallbangs] = useSketchConfig("wallbangs");
   const [hitbox, setHitbox] = useSketchConfig("hitbox");
@@ -552,9 +566,9 @@ export function AimbotMenu() {
             .filter(
               (player) =>
                 !player.isYou &&
-                targetList.every((target) => target[1] !== player.id)
+                targetList.every((target) => target[1] !== player.id.toString())
             )
-            .map((player) => [player.name, player.id])
+            .map((player) => [player.name, player.id.toString()])
         );
       } catch (err) {
         console.error(err);
@@ -648,6 +662,7 @@ export function AimbotMenu() {
           }
         >
           <option value="off">Off</option>
+          <option value="guestOnly">Guests only</option>
           <option value="whitelist">Whitelist</option>
           <option value="blacklist">Blacklist</option>
         </Select>
@@ -755,9 +770,15 @@ export function AimbotMenu() {
       <Set title="Rage">
         <Switch
           title="Turret"
-          description="Automatically aim and fire at players"
+          description="Automatically fires at players"
           defaultChecked={bot}
           onChange={(event) => setBot(event.currentTarget.checked)}
+        />
+        <Switch
+          title="Turret Always Aim"
+          description="Automatically aims when in turret mode"
+          defaultChecked={botAim}
+          onChange={(event) => setBotAim(event.currentTarget.checked)}
         />
         <Switch
           title="Wallbangs"

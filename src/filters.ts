@@ -10,7 +10,8 @@ import { console, defineProperty } from "./crashout";
 import { mirrorAttributes } from "./hook";
 import type KrunkBox from "./KrunkBox";
 import type * as THREE from "three";
-import type { GameMode, MapData } from "./krunker/GameMap";
+import type { MapData } from "./krunker/GameMap";
+import type { Hook } from "./inject";
 
 // export const data: any[] & Record<string, any> = [];
 export const data: Record<string, any> = {};
@@ -86,20 +87,6 @@ export function getConfig() {
   if (!config) throw new Error("Too early");
   return config;
 }
-
-beforeGame.push(() => {
-  const { freeze } = Object;
-
-  Object.freeze = mirrorAttributes(function (obj: any) {
-    if ("gameVersion" in obj) {
-      config = obj;
-      // console.log("game config:", config);
-    }
-    return freeze(obj);
-  }, freeze);
-
-  afterGame.push(() => (Object.freeze = freeze));
-});
 
 /**
  * After the overlay is rendered
@@ -238,7 +225,6 @@ function doRenderHooks() {
 
     let nConfig = config;
 
-    console.trace("ss");
     conf = config;
     nConfig = { ...config };
     if (sketchConfig.get("mapOverrides"))
@@ -312,26 +298,6 @@ beforeGame.push(() => {
         this.controls = value;
         game = this;
         // need to hook config IMMEDIATELY (for sandbox)
-        gameConfig = this.config;
-        defineProperty(this, "config", {
-          get() {
-            return gameConfig;
-          },
-          set(config: Game["config"]) {
-            gameConfig = config;
-
-            let realThirdPerson = config.thirdPerson;
-
-            defineProperty(config, "thirdPerson", {
-              get() {
-                return sketchConfig.get("thirdPerson") || realThirdPerson;
-              },
-              set(value) {
-                realThirdPerson = value;
-              },
-            });
-          },
-        });
         doGameHooks();
       } else {
         defineProperty(this, "controls", {
@@ -369,8 +335,50 @@ export function getLocalPlayer() {
 
 export const onGameHooks: (() => void)[] = [];
 
+let sprayingFakeServer = false;
+
 function doGameHooks() {
   const game = getGame();
+
+  console.log("game playerz", game.players);
+
+  const { sprayPosition } = game.players;
+
+  const { broadcast } = game;
+
+  game.broadcast = function (packet, ...data) {
+    if (packet === "sp" && sprayingFakeServer && sketchConfig.get("skinHack"))
+      game.addSpray(...data);
+    else broadcast.call(this, packet, ...data);
+  };
+
+  game.players.sprayPosition = function (...args) {
+    sprayingFakeServer = true;
+    sprayPosition.call(this, ...args);
+    sprayingFakeServer = false;
+  };
+
+  let gameConfig = game.config;
+
+  defineProperty(game, "config", {
+    get() {
+      return gameConfig;
+    },
+    set(config: Game["config"]) {
+      gameConfig = config;
+
+      let realThirdPerson = config.thirdPerson;
+
+      defineProperty(config, "thirdPerson", {
+        get() {
+          return sketchConfig.get("thirdPerson") || realThirdPerson;
+        },
+        set(value) {
+          realThirdPerson = value;
+        },
+      });
+    },
+  });
 
   const { add } = getGame().players;
 
@@ -455,16 +463,6 @@ beforeGame.push(() => {
   return () => delete Object.prototype.bundleMedalFilters;
 });
 
-patches.GetMenuPlayer = [
-  /(\w+)\.init\(0,0,0,"preview",!1\),/,
-  (match, menuPlayer) => match + `${dataArg}.molestMenuPlayer(${menuPlayer}),`,
-];
-
-data.molestMenuPlayer = function (player: any) {
-  menuPlayer = player;
-  return menuPlayer;
-};
-
 /**
  * player created while in the menu
  * basically local player but it never spawns
@@ -527,12 +525,6 @@ patches["skin picker wheel"] = [
   (match) => match + `${dataArg}.skinHack||`,
 ];
 
-patches.ChangeGender = [
-  /this.isServer&&\((\w+)\.broadcast\("sp",/,
-  (match, ioVar) =>
-    `(${dataArg}.BroadcastTheFuckingShitLikeAGoodBoy(this.isServer,${ioVar},`,
-];
-
 let box: KrunkBox | undefined;
 
 export function getBox() {
@@ -549,10 +541,67 @@ patches["🦁𝓣𝓱𝓮 𝓛𝓲𝓸𝓷 𝓡𝓪𝓹𝓮𝓼 𝓽𝓱𝓮 �
     `if(${dataArg}.skinHack||${gameVar}.isSandbox||${accVar}.account&&${accVar}.account.premiumT>0){var ${skinFreeVar}=${dataArg}.skinHack||`,
 ];
 
+const fakeObj = function (this: any, a: any) {
+  return Object.call(this, a);
+};
+
+const descs = Object.getOwnPropertyDescriptors(Object);
+
+descs.defineProperty.value = ((o: Player, k: string, a: PropertyDescriptor) => {
+  // console.log(o, k, a);
+  if (k === "isServer") {
+    const { get } = a;
+    a.get = function () {
+      return sprayingFakeServer || get!.call(this);
+    };
+  }
+
+  if (k === "inventory" && typeof o === "object" && o !== null && o.id === -1) {
+    defineProperty(o, "init", {
+      configurable: true,
+      set: (init) => {
+        // console.trace("set init", init);
+        delete (o as any).init;
+        o.init = function (...args) {
+          const menuSig = [0, 0, 0, "preview", false];
+          if (menuSig.every((v, i) => args[i] === v)) {
+            // console.trace("IM THE MENU PLAYER");
+            menuPlayer = o;
+          }
+          return init.call(this, ...args);
+        };
+      },
+    });
+  }
+
+  return defineProperty(o, k, a);
+}) as any;
+
+// console.log(descs);
+
+const freeze = descs.freeze.value!;
+
+descs.freeze.value = (o: any) => {
+  if ("gameVersion" in o) {
+    config = o;
+    // console.log("game config:", config);
+  }
+
+  return freeze(o);
+};
+
+Object.defineProperties(fakeObj, descs);
+
 /* javascript-obfuscator:enable */
 
-export const hook = (ebox: KrunkBox, src: string) => {
+export const hook: Hook = (
+  src: string,
+  ebox: KrunkBox,
+  args: Record<string, any>
+) => {
   box = ebox;
+
+  args.Object = fakeObj;
 
   for (const name in patches) {
     const patch = patches[name];
@@ -565,11 +614,9 @@ export const hook = (ebox: KrunkBox, src: string) => {
     console.log("patching", name, "worked:", ran);
   }
 
-  return {
-    dataArg,
-    data,
-    src,
-  };
+  args[dataArg] = data;
+
+  return src;
 };
 
 if (isDevelopment) {

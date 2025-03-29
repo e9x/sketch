@@ -28,6 +28,7 @@ declare class Game {
   ui: {
     loading: boolean;
   };
+  broadcast(packet: string, ...data: any[]): void;
   addSpray(...args: unknown[]): unknown;
   roundId: string;
   sessionId: string;

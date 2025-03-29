@@ -3,20 +3,20 @@ import { getExposedWindow, isDevelopment } from "./consts";
 import { hookContext, mirrorAttributes } from "./hook";
 import tokenConfig from "./tokenConfig";
 
-type Hook<Data> = (
+/**
+ * @returns modified src
+ */
+export type Hook = (
+  src: string,
   krunkbox: KrunkBox,
-  src: string
-) => {
-  dataArg: string;
-  data: Data;
-  src: string;
-};
+  args: Record<string, any>
+) => string;
 
 let needsToken = false;
 
-export async function getInit<Data>(
+export async function getInit(
   krunkbox: KrunkBox,
-  hook: Hook<Data>
+  hook: Hook
 ): Promise<
   | { success: false; error: [code: string, ...flags: any[]] }
   | { success: true; init: () => void }
@@ -62,15 +62,18 @@ export async function getInit<Data>(
   // just a really long version of `any`
   (window as unknown as { skinfx: string }).skinfx = gameData.skins;
 
-  const { src, data, dataArg } = hook(krunkbox, gameData.source);
+  const args: Record<string, any> = {};
+  args.WP_MMToken = token;
+
+  gameData.source = hook(gameData.source, krunkbox, args);
 
   const game = new Function(
-    "WP_MMToken",
-    dataArg,
-    src + (isDevelopment ? "//# sourceURL=https://krunker.io/js/game.js" : "")
-  ) as (WP_MMToken: string, dataArg: Data) => void;
+    ...Object.keys(args),
+    gameData.source +
+      (isDevelopment ? "//# sourceURL=https://krunker.io/js/game.js" : "")
+  ) as (...args: any[]) => void;
 
-  return { success: true, init: () => game(token, data) };
+  return { success: true, init: () => game(...Object.values(args)) };
 }
 
 let doFetchWASM: (() => void) | undefined;

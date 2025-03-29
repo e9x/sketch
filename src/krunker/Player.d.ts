@@ -1,5 +1,6 @@
 import type Game from "./Game";
 import type * as THREE from "three";
+import MapObject from "./Object";
 
 interface Weapon {
   /**
@@ -51,8 +52,8 @@ export declare class Player {
   isAI: undefined;
   isYou: boolean;
   accid: number;
-  id: string;
-  sid: string;
+  id: number;
+  sid: number;
   premiumT?: number;
   alias: string;
   name: string;
@@ -128,6 +129,14 @@ export declare class Player {
     recon: boolean,
     moveLock?: boolean
   ): void;
+  init(
+    z: number,
+    x: number,
+    y: number,
+    name?: string,
+    isYou?: boolean,
+    isHacker?: boolean
+  ): void;
 }
 
 export declare class manager {
@@ -141,4 +150,13 @@ export declare class manager {
   regenMeshes(player: Player): void;
   disposeMesh(player: Player): void;
   swapWeapon(player: Player, ...args: any[]): void;
+  sprayPosition(
+    player: Player,
+    obj: MapObject | undefined,
+    skin: number,
+    atX: number,
+    atY: number,
+    atZ: number,
+    sound: number
+  ): void;
 }

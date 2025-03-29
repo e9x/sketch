@@ -56,6 +56,7 @@ export interface SketchConfig {
   aimbot: "off" | "smooth" | "silent";
   hitbox: "head" | "chest" | "auto";
   bot: boolean;
+  botAim: boolean;
   wallbangs: boolean;
   fovCheck: boolean;
   aimKey: number;
@@ -101,7 +102,7 @@ export interface SketchConfig {
   spinbot: boolean;
   triggerbotDistance: number;
   targetList: AimbotTarget[];
-  targetListMode: "off" | "whitelist" | "blacklist";
+  targetListMode: "off" | "guestOnly" | "whitelist" | "blacklist";
   badColor: string;
   goodColor: string;
 }
@@ -113,6 +114,7 @@ const defaultConfig: SketchConfig = {
   aimbot: "off",
   hitbox: "auto",
   bot: false,
+  botAim: true,
   wallbangs: false,
   fovCheck: true,
   aimKey: -1,
