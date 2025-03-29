@@ -6,9 +6,7 @@ import {
   getOverlay,
   getRender,
   overlayRenderHooks,
-  patches,
-  data,
-  dataArg,
+  canISeeEnt,
 } from "../filters";
 import type { AI } from "../krunker/AI";
 import type { Player } from "../krunker/Player";
@@ -26,7 +24,6 @@ import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "../krunker-ui/components/Switch";
 import type * as THREE from "three";
 import { Slider } from "../krunker-ui/components/Slider";
-import { console } from "../crashout";
 
 // nametags is handled in index.ts
 // see get nametags() { ... }
@@ -173,10 +170,10 @@ function getEntityMaterial<T extends MaterialType>(
   materials: Materials<T>
 ) {
   return isEnemy(entity)
-    ? entity.canBSeen
+    ? canISeeEnt(entity)
       ? materials.enemy
       : materials.enemyWall
-    : entity.canBSeen
+    : canISeeEnt(entity)
       ? materials.team
       : materials.teamWall;
 }
@@ -231,11 +228,11 @@ function initMaterials() {
       mesh.team.color.set(colors.team);
       mesh.teamWall.color.set(colors.teamWall);
 
-      const espOpacity = sketchConfig.get("espOpacity");
-      mesh.enemy.opacity = espOpacity;
-      mesh.enemyWall.opacity = espOpacity;
-      mesh.team.opacity = espOpacity;
-      mesh.teamWall.opacity = espOpacity;
+      const chamsOpacity = sketchConfig.get("chamsOpacity");
+      mesh.enemy.opacity = chamsOpacity;
+      mesh.enemyWall.opacity = chamsOpacity;
+      mesh.team.opacity = chamsOpacity;
+      mesh.teamWall.opacity = chamsOpacity;
     },
   };
 
@@ -273,20 +270,6 @@ declare module "../krunker/Player" {
 }
 
 export function espHook() {
-  patches.Nametags = [
-    /!(\w+)\.isYou&&\1\.objInstances\){if\(\1\.canBSeen\){/,
-    (match, player) =>
-      `!${player}.isYou&&${player}.objInstances){if(!${dataArg}.newNames&&(${player}.canBSeen||${dataArg}.nametags)){`,
-  ];
-
-  Object.defineProperty(data, "nametags", {
-    get: () => sketchConfig.get("nametags"),
-  });
-
-  Object.defineProperty(data, "newNames", {
-    get: () => sketchConfig.get("newNametags"),
-  });
-
   overlayRenderHooks.push(() => {
     const overlay = getOverlay();
     const game = getGame();
@@ -297,57 +280,55 @@ export function espHook() {
 
     const chams = sketchConfig.get("chams");
 
-    if (chams)
-      for (const entity of game.players.list) {
-        if (entity.objInstances) {
-          const can =
-            sketchConfig.get("chams") && !isInMenus() && canESP(entity);
+    for (const entity of game.players.list) {
+      if (entity.objInstances) {
+        const can = chams && !isInMenus() && canESP(entity);
 
-          if (can) entity[espMat] = getEntityMaterial(entity, materials.mesh);
-          else delete entity[espMat];
+        if (can) entity[espMat] = getEntityMaterial(entity, materials.mesh);
+        else delete entity[espMat];
 
-          if (!(hook in entity.objInstances)) {
-            entity.objInstances[hook] = true;
+        if (!(hook in entity.objInstances)) {
+          entity.objInstances[hook] = true;
 
-            let { visible } = entity.objInstances;
+          let { visible } = entity.objInstances;
 
-            Object.defineProperty(entity.objInstances, "visible", {
-              get: () => espMat in entity || visible,
-              set: (newVisible) => (visible = newVisible),
-            });
-          }
+          Object.defineProperty(entity.objInstances, "visible", {
+            get: () => espMat in entity || visible,
+            set: (newVisible) => (visible = newVisible),
+          });
+        }
 
-          // Just manually select the meshes to hook
-          // Much faster than calling traverse()
-          for (const mesh of getPlayerMeshes(entity)) {
-            if (hook in mesh) continue;
-            mesh[hook] = true;
+        // Just manually select the meshes to hook
+        // Much faster than calling traverse()
+        for (const mesh of getPlayerMeshes(entity)) {
+          if (hook in mesh) continue;
+          mesh[hook] = true;
 
-            const twin = mesh.clone(false);
-            mesh.parent!.add(twin);
-            twin[hook] = true;
+          const twin = mesh.clone(false);
+          mesh.parent!.add(twin);
+          twin[hook] = true;
 
-            twin.matrixAutoUpdate = false;
-            twin.matrixWorldAutoUpdate = false;
+          twin.matrixAutoUpdate = false;
+          twin.matrixWorldAutoUpdate = false;
 
-            Object.defineProperty(twin, "matrixWorld", {
-              get: () => mesh.matrixWorld,
-            });
+          Object.defineProperty(twin, "matrixWorld", {
+            get: () => mesh.matrixWorld,
+          });
 
-            Object.defineProperty(twin, "matrix", {
-              get: () => mesh.matrix,
-            });
+          Object.defineProperty(twin, "matrix", {
+            get: () => mesh.matrix,
+          });
 
-            Object.defineProperty(twin, "visible", {
-              get: () => espMat in entity && mesh.visible,
-            });
+          Object.defineProperty(twin, "visible", {
+            get: () => espMat in entity && mesh.visible,
+          });
 
-            Object.defineProperty(twin, "material", {
-              get: () => entity[espMat],
-            });
-          }
+          Object.defineProperty(twin, "material", {
+            get: () => entity[espMat],
+          });
         }
       }
+    }
 
     // closely related logic
     const boxes = sketchConfig.get("boxes");
@@ -374,7 +355,7 @@ export function espHook() {
       font,
     } = overlay.ctx;
 
-    const espOpacity = sketchConfig.get("espOpacity");
+    const overlayOpacity = sketchConfig.get("overlayOpacity");
 
     overlay.ctx.scale(overlay.scale, overlay.scale);
 
@@ -402,7 +383,7 @@ export function espHook() {
           "#" + getEntityMaterial(entity, materials.colors).getHexString();
         overlay.ctx.lineWidth = 1.5;
 
-        overlay.ctx.globalAlpha = espOpacity;
+        overlay.ctx.globalAlpha = overlayOpacity;
         overlay.ctx.beginPath();
         const overlaySize = getOverlaySizeScaled();
         overlay.ctx.moveTo(overlaySize.width / 2, overlaySize.height / 2);
@@ -451,7 +432,7 @@ export function espHook() {
       }
 
       if (boxes) {
-        overlay.ctx.globalAlpha = espOpacity;
+        overlay.ctx.globalAlpha = overlayOpacity;
         overlay.ctx.strokeStyle =
           "#" + getEntityMaterial(entity, materials.colors).getHexString();
         overlay.ctx.lineWidth = 1.5;
@@ -462,7 +443,7 @@ export function espHook() {
       if (healthBars) {
         const barMargin = box.width * 0.05;
         const barWidth = box.width * 0.1;
-        overlay.ctx.globalAlpha = espOpacity;
+        overlay.ctx.globalAlpha = overlayOpacity;
         overlay.ctx.fillStyle = "#F00";
         overlay.ctx.fillRect(
           box.right + barMargin,
@@ -502,7 +483,8 @@ export function ESPMenu() {
   const [boxes, setBoxes] = useSketchConfig("boxes");
   const [chams, setChams] = useSketchConfig("chams");
   // make it also apply to all the other esp crap
-  const [espOpacity, setEspOpacity] = useSketchConfig("espOpacity");
+  const [overlayOpacity, setOverlayOpacity] = useSketchConfig("overlayOpacity");
+  const [chamsOpacity, setChamsOpacity] = useSketchConfig("chamsOpacity");
   const [tracers, setTracers] = useSketchConfig("tracers");
   const [healthBars, setHealthBars] = useSketchConfig("healthBars");
   const [badColor, setBadColor] = useSketchConfig("badColor");
@@ -530,9 +512,9 @@ export function ESPMenu() {
         onChange={(event) => setChams(event.currentTarget.checked)}
       />
       <Slider
-        title="ESP Opacity"
-        defaultValue={espOpacity}
-        onChange={(event) => setEspOpacity(event.currentTarget.valueAsNumber)}
+        title="Chams Opacity"
+        defaultValue={chamsOpacity}
+        onChange={(event) => setChamsOpacity(event.currentTarget.valueAsNumber)}
         min={0}
         max={1}
         step={0.05}
@@ -554,6 +536,17 @@ export function ESPMenu() {
         description="Shows a health bar next to a player"
         defaultChecked={healthBars}
         onChange={(event) => setHealthBars(event.currentTarget.checked)}
+      />
+      <Slider
+        title="Overlay Opacity"
+        description="tracer lines & box esp"
+        defaultValue={overlayOpacity}
+        onChange={(event) =>
+          setOverlayOpacity(event.currentTarget.valueAsNumber)
+        }
+        min={0}
+        max={1}
+        step={0.05}
       />
       <ColorPicker
         title="Hostile player color"

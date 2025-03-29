@@ -109,7 +109,6 @@ export declare class Player {
   onGround: boolean;
   airTime: number;
   crouchVal: number;
-  canBSeen: boolean;
   x: number;
   y: number;
   z: number;

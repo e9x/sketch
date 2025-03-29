@@ -6,7 +6,7 @@ import { KeybindOverlayMenu } from "../cheats/keybindOverlay";
 import { SkinHackMenu } from "../cheats/skins";
 import { WatermarkMenu } from "../cheats/watermark";
 import { discordURL, docsURL, sketchVersion } from "../consts";
-import { getGame, getLocalPlayer, redrawSky } from "../filters";
+import { getActiveMap, getGame, getLocalPlayer, redrawSky } from "../filters";
 import sketchConfig, {
   SketchConfig,
   skyboxes,
@@ -21,7 +21,8 @@ import { HeadlessSet, Set } from "../krunker-ui/components/Set";
 import { Switch } from "../krunker-ui/components/Switch";
 import { Settings } from "../krunker-ui/settings";
 import { Text } from "../krunker-ui/components/Text";
-import { Select } from "krunker-ui/components/Select";
+import { Select } from "../krunker-ui/components/Select";
+import { Button } from "../krunker-ui/components/Button";
 
 function downloadFile(fileName: string, fileData: string) {
   const downloadLink = document.createElement("a");
@@ -95,6 +96,7 @@ export default function Menu() {
   const [mapOverridesCode, setMapOverridesCode] =
     useSketchConfig("mapOverridesCode");
   const [skybox, setSkybox] = useSketchConfig("skybox");
+  const [hideClouds, setHideClouds] = useSketchConfig("hideClouds");
 
   return (
     <Settings
@@ -316,6 +318,14 @@ export default function Menu() {
                     }}
                   />
                   <Switch
+                    title="Hide clouds"
+                    description="whether to not rendedr clouds"
+                    defaultChecked={hideClouds}
+                    onChange={(event) =>
+                      setHideClouds(event.currentTarget.checked)
+                    }
+                  />
+                  <Switch
                     title="Use Map Overrides"
                     description="JSON data to always merge with the current map. Use for sky color etc etc"
                     defaultChecked={mapOverrides}
@@ -340,6 +350,21 @@ export default function Menu() {
                     onChange={(event) => {
                       setSkyColor(event.currentTarget.checked);
                       redrawSky();
+                    }}
+                  />
+                  <Button
+                    title={"Export Map: " + getActiveMap().name || "some map"}
+                    description="exports the current map in JSON format"
+                    text="Steal"
+                    onClick={() => {
+                      const a = document.createElement("a");
+                      const active = getActiveMap();
+                      a.href =
+                        "data:application/json;base64," +
+                        btoa(JSON.stringify(active));
+                      a.download = (getActiveMap().name || "someMap") + ".json";
+                      a.click();
+                      console.log("FUCK");
                     }}
                   />
                 </Set>

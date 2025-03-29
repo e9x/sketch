@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { iInputs } from "../consts";
 import {
+  canISeeEnt,
   getConfig,
   getGame,
   getLocalPlayer,
@@ -221,7 +222,7 @@ function validTarget(target: Player | AI) {
 
   if (!isEnemy(target)) return false;
 
-  if (!target.canBSeen) return false;
+  if (!canISeeEnt(target)) return false;
 
   return true;
 }

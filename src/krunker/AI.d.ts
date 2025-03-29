@@ -22,7 +22,6 @@ export declare class AI {
   health: number;
   maxHealth: number;
   team: number;
-  canBSeen: boolean;
   mesh: THREE.Object3D;
   meshRef: THREE.Object3D;
 }

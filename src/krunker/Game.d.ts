@@ -43,7 +43,7 @@ declare class Game {
     skipTran?: boolean | undefined,
     getShort?: boolean | undefined,
     doRamps?: boolean | undefined
-  ): false | number | null;
+  ): boolean | number | null;
   getSpawnPoint(
     team?: number,
     player?: Player,

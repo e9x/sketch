@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { MapData, GameMode } from "./GameMap";
+import type { MapData, GameMode, MeshData } from "./GameMap";
 import type { Player } from "./Player";
 import type * as THREE from "three";
 
@@ -15,6 +15,23 @@ declare class RenderManager {
   skyDomeInit(config: any): THREE.Object3D;
   // init(game: any, config: any, idk: any, idk2: any): void;
   clearSkyDome(): void;
+  loadTexture(
+    material: THREE.Material,
+    id: string,
+    data: MeshData,
+    mapCrap?: string
+  ): THREE.Material;
+  loadMesh(
+    data: MeshData,
+    x: number,
+    y: number,
+    z: number,
+    rotation: [x: number, y: number, z: number],
+    scale: number,
+    scene: THREE.Object3D,
+    doesnt: any,
+    matter: any
+  ): THREE.Mesh;
   init(
     map: MapData,
     mode: GameMode,

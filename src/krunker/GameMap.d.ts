@@ -17,7 +17,13 @@ export interface SpawnPoint {
   dst?: number;
 }
 
+export interface MeshData {
+  src: string;
+  [key: string]: any;
+}
+
 export interface MapData {
+  name?: string;
   skyDome?: boolean;
   skyDomeCol0?: string;
   skyDomeCol1?: string;

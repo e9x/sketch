@@ -72,7 +72,8 @@ export interface SketchConfig {
   newNametags: boolean;
   boxes: boolean;
   chams: boolean;
-  espOpacity: number;
+  overlayOpacity: number;
+  chamsOpacity: number;
   tracers: boolean;
   forceAuto: boolean;
   recoilControl: boolean;
@@ -105,6 +106,10 @@ export interface SketchConfig {
   targetListMode: "off" | "guestOnly" | "whitelist" | "blacklist";
   badColor: string;
   goodColor: string;
+  hideClouds: boolean;
+
+  // LEGACY:
+  espOpacity?: number;
 }
 
 /**
@@ -130,7 +135,8 @@ const defaultConfig: SketchConfig = {
   newNametags: false,
   boxes: false,
   chams: false,
-  espOpacity: 0.7,
+  overlayOpacity: 1,
+  chamsOpacity: 0.6,
   tracers: false,
   forceAuto: false,
   recoilControl: false,
@@ -163,9 +169,22 @@ const defaultConfig: SketchConfig = {
   targetListMode: "off",
   badColor: "#ff0000",
   goodColor: "#00ff00",
+  hideClouds: false,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
+
+// legacy migrations
+{
+  const espOpacity = sketchConfig.get("espOpacity");
+
+  if (typeof espOpacity === "number") {
+    sketchConfig.delete("espOpacity");
+    sketchConfig.set("chamsOpacity", espOpacity);
+    sketchConfig.set("overlayOpacity", espOpacity);
+    console.log("migrated esp opacity");
+  }
+}
 
 export const useSketchConfig = <K extends keyof SketchConfig>(
   key: K

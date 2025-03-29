@@ -12,6 +12,43 @@ import type KrunkBox from "./KrunkBox";
 import type * as THREE from "three";
 import type { MapData } from "./krunker/GameMap";
 import type { Hook } from "./inject";
+import { AI } from "./krunker/AI";
+
+const canSee = Symbol();
+let checkingCanSee = false;
+
+export function canISeeEnt(ent: Player | AI) {
+  if (canSee in ent) return ent[canSee];
+  const game = getGame();
+  const localPlayer = getLocalPlayer();
+
+  checkingCanSee = true;
+  const s =
+    ogCanSee!.call(
+      game,
+      window.spectating && game.controls.spect.target
+        ? game.controls.spect.target
+        : localPlayer,
+      ent.x,
+      ent.y,
+      ent.z
+    ) === null;
+  checkingCanSee = false;
+  ent[canSee] = s;
+  return s;
+}
+
+declare module "./krunker/Player" {
+  interface Player {
+    [canSee]?: boolean;
+  }
+}
+
+declare module "./krunker/AI" {
+  interface AI {
+    [canSee]?: boolean;
+  }
+}
 
 // export const data: any[] & Record<string, any> = [];
 export const data: Record<string, any> = {};
@@ -171,6 +208,11 @@ export const preRenderHooks: (() => void)[] = [];
 
 let conf: MapData | undefined;
 
+export function getActiveMap() {
+  if (!conf) throw new Error("Too early");
+  return conf;
+}
+
 export function redrawSky() {
   try {
     // trigger an update
@@ -236,7 +278,7 @@ function doRenderHooks() {
       });
     maps.set(nConfig, config);
 
-    console.log("map config:", [nConfig]);
+    // console.log("map config:", [nConfig]);
 
     init.call(this, nConfig, mode, idk1, idk2);
   };
@@ -244,11 +286,37 @@ function doRenderHooks() {
   const renderFn = render.render;
   // we hook the render way too early
   render.render = function (...args) {
+    const game = getGame();
+    for (const player of game.players.list) delete player[canSee];
+    for (const ai of game.AI.ais) delete ai[canSee];
+
     if (localPlayer) for (const hook of preRenderHooks) hook();
     const result = renderFn.call(this, ...args);
     // if (localPlayer) for (const hook of gameRenderHooks) hook();
     return result;
   };
+
+  // toggle clouds
+  defineProperty(render, "loadTexture", {
+    configurable: true,
+    set(value: RenderManager["loadTexture"]) {
+      delete (render as any).loadTexture;
+      render.loadTexture = function (mat, id, data, crap) {
+        const ret = value.call(this, mat, id, data, crap);
+        // console.log("load tex", mat, id, data, crap);
+        if (data.src === "clouds_0") {
+          let visible = mat.visible;
+          console.log("got cloud", mat, id, data, crap);
+          Object.defineProperty(mat, "visible", {
+            get: () => (sketchConfig.get("hideClouds") ? false : visible),
+            set: (v) => (visible = v),
+          });
+        }
+
+        return ret;
+      };
+    },
+  });
 
   const threeRenderFn = render.renderer.render;
   render.renderer.render = function (scene, camera) {
@@ -337,12 +405,21 @@ export const onGameHooks: (() => void)[] = [];
 
 let sprayingFakeServer = false;
 
+let ogCanSee: Game["canSee"] | undefined;
+
 function doGameHooks() {
   const game = getGame();
 
-  console.log("game playerz", game.players);
-
   const { sprayPosition } = game.players;
+
+  ogCanSee = game.canSee;
+
+  // cansee determines whether to show nametags
+  game.canSee = function (...args) {
+    if (sketchConfig.get("newNametags")) return 1;
+    if (sketchConfig.get("nametags")) return null;
+    return ogCanSee!.call(this, ...args);
+  };
 
   const { broadcast } = game;
 
@@ -414,7 +491,8 @@ function doGameHooks() {
     let trans = obj.transparent;
     defineProperty(obj, "transparent", {
       get(this: MapObject) {
-        if (sketchConfig.get("wallbangs")) return this.penetrable ? 1 : 0;
+        if (sketchConfig.get("wallbangs") && checkingCanSee)
+          return this.penetrable ? 1 : 0;
         return trans;
       },
       set(this: MapObject, value) {

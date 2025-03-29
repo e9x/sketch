@@ -1,5 +1,11 @@
 import { iInputs } from "../consts";
-import { getGame, getLocalPlayer, getRender, inputHooks } from "../filters";
+import {
+  canISeeEnt,
+  getGame,
+  getLocalPlayer,
+  getRender,
+  inputHooks,
+} from "../filters";
 import { getPlayerMeshes, isEnemy } from "../krunkerUtil";
 import type { OBB } from "../lib/obb";
 import { createOBB } from "../lib/obb";
@@ -68,7 +74,7 @@ export function triggerbotHook() {
         const triggerbotDistance = sketchConfig.get("triggerbotDistance");
 
         for (const player of game.players.list)
-          if (isEnemy(player) && player.objInstances && player.canBSeen) {
+          if (isEnemy(player) && player.objInstances && canISeeEnt(player)) {
             const box = new game.THREE.Box3();
 
             for (const mesh of getPlayerMeshes(player, false))
