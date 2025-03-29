@@ -36,7 +36,7 @@ export interface SketchSkybox {
 }
 
 export const skyboxes: Record<string, SketchSkybox> = Object.fromEntries(
-  ["galaxy", "lean", "night", "sunset", "jew"].map((e) => [
+  ["galaxy", "lean", "night", "sunset", "jew", "jew2", "nigga"].map((e) => [
     e,
     {
       name: e[0].toUpperCase() + e.slice(1),
