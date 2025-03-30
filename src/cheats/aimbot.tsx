@@ -109,7 +109,7 @@ function playerHitbox(player: Player, hitbox: string) {
       ? config.headScale / 2
       : hitbox === "chest"
         ? config.playerHeight - config.headScale - config.legHeight
-        : 0.1;
+        : config.legHeight / 2;
 
   return new THREE.Vector3(
     player.x,
