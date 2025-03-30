@@ -124,8 +124,10 @@ function playerHitbox(player: Player, hitbox: string) {
  * Get the position that will be aimed at (eg the head)
  */
 function playerAimPoint(player: Player) {
+  const hitbox = sketchConfig.get("hitbox");
   const bot = sketchConfig.get("bot");
-  if (bot) {
+
+  if (bot && ["head", "auto"].includes(hitbox)) {
     const config = getConfig();
     const { THREE } = getGame();
 
@@ -135,8 +137,6 @@ function playerAimPoint(player: Player) {
       player.z
     );
   }
-
-  const hitbox = sketchConfig.get("hitbox");
 
   if (hitbox === "auto") {
     const points = [
