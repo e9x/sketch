@@ -301,7 +301,9 @@ export function espHook() {
         // Just manually select the meshes to hook
         // Much faster than calling traverse()
         for (const mesh of getPlayerMeshes(entity)) {
-          if (hook in mesh) continue;
+          if (typeof mesh !== "object" || mesh === null || hook in mesh)
+            continue;
+
           mesh[hook] = true;
 
           const twin = mesh.clone(false);
