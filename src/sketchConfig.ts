@@ -29,6 +29,14 @@ const stargaze: MapData = {
   fogD: 2000,
 };
 
+const lean: MapData = {
+  skyDome: false,
+  light: "#894060",
+  ambient: "#8f3ad3",
+  sky: "#748e75",
+  fog: "#895960",
+};
+
 export interface SketchSkybox {
   name: string;
   // 'posx.jpg', 'negx.jpg', 'posy.jpg', 'negy.jpg', 'posz.jpg', 'negz.jpg'
@@ -160,7 +168,7 @@ const defaultConfig: SketchConfig = {
   skyColor: false,
   skyColorHex: "#000",
   mapOverrides: false,
-  mapOverridesCode: stargaze,
+  mapOverridesCode: lean,
   skybox: "off",
   watermark: false,
   spinbot: false,

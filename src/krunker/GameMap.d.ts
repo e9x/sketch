@@ -34,10 +34,10 @@ export interface MapData {
   skyDomeTexA?: number;
   skyDomeMovD?: string;
   skyDomeMovT?: number;
-  ambient?: string;
-  light?: string;
-  sky?: string;
-  fog?: string;
+  ambient?: string | number;
+  light?: string | number;
+  sky?: string | number;
+  fog?: string | number;
   fogD?: number;
   ambInd?: number;
   ambIndC?: number;
