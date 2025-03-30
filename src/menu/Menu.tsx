@@ -24,6 +24,7 @@ import { Text } from "../krunker-ui/components/Text";
 import { Select } from "../krunker-ui/components/Select";
 import { Button } from "../krunker-ui/components/Button";
 import { waitFor } from "../util";
+import { MapData } from "krunker/GameMap";
 
 declare global {
   // present on editor.html
@@ -119,6 +120,11 @@ export default function Menu() {
     useSketchConfig("mapOverridesCode");
   const [skybox, setSkybox] = useSketchConfig("skybox");
   const [hideClouds, setHideClouds] = useSketchConfig("hideClouds");
+  let activ: MapData | undefined;
+
+  try {
+    activ = getActiveMap();
+  } catch {}
 
   return (
     <Settings
@@ -375,7 +381,7 @@ export default function Menu() {
                     }}
                   />
                   <Button
-                    title={"Steal Map: " + getActiveMap().name || "some map"}
+                    title={"Steal Map: " + (activ?.name || "some map")}
                     description="exports the current map in JSON format"
                     text="Export"
                     onClick={() => {
@@ -389,7 +395,7 @@ export default function Menu() {
                     }}
                   />
                   <Button
-                    title={"Edit Map: " + getActiveMap().name || "some map"}
+                    title={"Edit Map: " + (activ?.name || "some map")}
                     description="edits the current map"
                     text="Edit"
                     onClick={async () => {

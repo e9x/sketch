@@ -107,7 +107,9 @@ function playerHitbox(player: Player, hitbox: string) {
   const hitboxOffset =
     hitbox === "head"
       ? config.headScale / 2
-      : config.playerHeight - config.headScale - config.legHeight;
+      : hitbox === "chest"
+        ? config.playerHeight - config.headScale - config.legHeight
+        : 0.1;
 
   return new THREE.Vector3(
     player.x,
@@ -127,7 +129,8 @@ function playerAimPoint(player: Player) {
   const hitbox = sketchConfig.get("hitbox");
   const bot = sketchConfig.get("bot");
 
-  if (bot && ["head", "auto"].includes(hitbox)) {
+  // absolute top
+  if (bot && ["auto"].includes(hitbox)) {
     const config = getConfig();
     const { THREE } = getGame();
 
@@ -142,6 +145,7 @@ function playerAimPoint(player: Player) {
     const points = [
       playerHitbox(player, "head"),
       playerHitbox(player, "chest"),
+      playerHitbox(player, "feet"),
     ];
     const { THREE } = getGame();
     const overlaySize = getOverlaySizeScaled();
@@ -168,7 +172,9 @@ function playerAimPoint(player: Player) {
     const near = distances.sort((a, b) => a.distance - b.distance)[0];
     // Return the nearest point
     return near?.point;
-  } else return playerHitbox(player, hitbox);
+  }
+
+  return playerHitbox(player, hitbox);
 }
 
 function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
@@ -668,6 +674,7 @@ export function AimbotMenu() {
           <option value="auto">Nearest</option>
           <option value="head">Head</option>
           <option value="chest">Chest</option>
+          <option value="feet">Feet</option>
         </Select>
       </Set>
       <Set title="Aimbot Target">

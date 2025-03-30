@@ -62,7 +62,7 @@ export const skyboxes: Record<string, SketchSkybox> = Object.fromEntries(
 
 export interface SketchConfig {
   aimbot: "off" | "smooth" | "silent";
-  hitbox: "head" | "chest" | "auto";
+  hitbox: "head" | "chest" | "feet" | "auto";
   bot: boolean;
   botAim: boolean;
   wallbangs: boolean;

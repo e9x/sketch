@@ -80,6 +80,7 @@ beforeGame.push(() => {
   ) {
     // catch fingerprinting crap
     let value = getItem.call(this, key);
+    //console.log([key, value]);
     if (key === "conUID_") {
       console.log("conUID blocked 👀");
       value = null;
