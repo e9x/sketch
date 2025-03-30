@@ -34,7 +34,7 @@ const lean: MapData = {
   light: "#894060",
   ambient: "#8f3ad3",
   sky: "#748e75",
-  fog: "#895960",
+  fog: "#6f3569",
 };
 
 export interface SketchSkybox {
