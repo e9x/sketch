@@ -23,6 +23,7 @@ import {
   isInMenus,
   lerp,
   getOverlaySizeScaled,
+  get3Ddistance,
 } from "../krunkerUtil";
 import type { Player } from "../krunker/Player";
 import sketchConfig, {
@@ -230,7 +231,8 @@ function validTarget(target: Player | AI) {
 function onTargetList(target: Player) {
   const targetListMode = sketchConfig.get("targetListMode");
 
-  if (targetListMode === "guestOnly") return target.name.startsWith("Guest_");
+  if (targetListMode === "guestOnly")
+    return target.name === "Guest_" + target.sid;
 
   // If targetListMode is off, immediately allow the target
   if (targetListMode === "off") return true;
@@ -485,6 +487,22 @@ export function aimbotHook() {
     }
 
     if (target) {
+      const see = get3Ddistance(
+        localPlayer.x,
+        localPlayer.y,
+        localPlayer.z,
+        target.x,
+        target.y,
+        target.z
+      );
+
+      if (
+        localPlayer.weapon.melee &&
+        localPlayer.weapon.range! < see &&
+        !localPlayer.canThrow
+      )
+        return;
+
       if (bot && aimbot === "silent") {
         inputs[iInputs.shoot] = 1;
       }

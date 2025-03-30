@@ -56,11 +56,13 @@ export interface GameMode {
   forceCharge: boolean;
 }
 
+export declare class MapManager {
+  objects: MapObject[];
+}
+
 declare class GameMap {
   terrain: Terrain | null;
-  manager: {
-    objects: MapObject[];
-  };
+  manager: MapManager;
   maps: MapData[];
   spawns: SpawnPoint[];
 }

@@ -23,6 +23,21 @@ import { Settings } from "../krunker-ui/settings";
 import { Text } from "../krunker-ui/components/Text";
 import { Select } from "../krunker-ui/components/Select";
 import { Button } from "../krunker-ui/components/Button";
+import { waitFor } from "../util";
+
+declare global {
+  // present on editor.html
+  interface KrunkerEditor {
+    importMap(data: string): void;
+    skipTempPop: boolean;
+  }
+
+  interface Window {
+    showWindow(i: number): void;
+    closeWindow(): void;
+    KE: KrunkerEditor;
+  }
+}
 
 function downloadFile(fileName: string, fileData: string) {
   const downloadLink = document.createElement("a");
@@ -83,6 +98,13 @@ function pickFile() {
 }
 
 let defaultTabID: number | undefined;
+
+function stealActiveMap() {
+  const active = { ...getActiveMap() };
+  delete active.game;
+  delete active.id;
+  return active;
+}
 
 export default function Menu() {
   const [menuKey, setMenuKey] = useSketchConfig("menuKey");
@@ -318,8 +340,8 @@ export default function Menu() {
                     }}
                   />
                   <Switch
-                    title="Hide clouds"
-                    description="whether to not rendedr clouds"
+                    title="Hide clouds/LightCones"
+                    description="whether to not render crap in the sky"
                     defaultChecked={hideClouds}
                     onChange={(event) =>
                       setHideClouds(event.currentTarget.checked)
@@ -353,18 +375,32 @@ export default function Menu() {
                     }}
                   />
                   <Button
-                    title={"Export Map: " + getActiveMap().name || "some map"}
+                    title={"Steal Map: " + getActiveMap().name || "some map"}
                     description="exports the current map in JSON format"
-                    text="Steal"
+                    text="Export"
                     onClick={() => {
+                      const active = stealActiveMap();
                       const a = document.createElement("a");
-                      const active = getActiveMap();
                       a.href =
                         "data:application/json;base64," +
                         btoa(JSON.stringify(active));
-                      a.download = (getActiveMap().name || "someMap") + ".json";
+                      a.download = (active.name || "someMap") + ".json";
                       a.click();
-                      console.log("FUCK");
+                    }}
+                  />
+                  <Button
+                    title={"Edit Map: " + getActiveMap().name || "some map"}
+                    description="edits the current map"
+                    text="Edit"
+                    onClick={async () => {
+                      const active = stealActiveMap();
+                      const win = window.open("editor.html");
+                      if (win === null)
+                        return alert("Why can't I open the editor window...");
+                      await waitFor(() => "KE" in win, 100);
+                      win.KE.skipTempPop = true;
+                      win.closeWindow();
+                      win.KE.importMap(JSON.stringify(active));
                     }}
                   />
                 </Set>

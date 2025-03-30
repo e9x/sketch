@@ -13,6 +13,8 @@
 
 const signaturePadding = 2;
 
+let didWarn = false;
+
 class HookedWebSocket extends WebSocket {
   constructor(...args) {
     super(...args);
@@ -24,19 +26,38 @@ class HookedWebSocket extends WebSocket {
       if (!(data instanceof ArrayBuffer))
         throw new TypeError("Expected ArrayBuffer");
 
-      const decoded = msgpack.decode(new Uint8Array(data));
+      let decoded = packet;
+
+      try {
+        decoded = msgpack.decode(new Uint8Array(data));
+      } catch (err) {
+        if (!didWarn) {
+          console.warn("Couldn't decode packet with msgpack");
+          didWarn = true;
+        }
+      }
+
       if (!Array.isArray(decoded)) throw new TypeError("Expected array");
 
       console.info("%c <= ", "background:#FF6A19;color:#000", decoded);
     });
   }
   send(packet) {
-    const signature = packet.slice(-signaturePadding);
-    const decoded = msgpack.decode(packet.slice(0, -signaturePadding));
+    // const signature = packet.slice(-signaturePadding);
+    let decoded = packet;
+
+    try {
+      decoded = msgpack.decode(packet.slice(0, -signaturePadding));
+    } catch (err) {
+      if (!didWarn) {
+        console.warn("Couldn't decode packet with msgpack");
+        didWarn = true;
+      }
+    }
+
     console.debug("%c => ", "background:#7F7;color:#000", decoded);
-    return super.send(
-      Uint8Array.from([...msgpack.encode(decoded), ...signature])
-    );
+    return super.send(packet);
+    // return super.send(Uint8Array.from([...msgpack.encode(decoded), ...signature]));
   }
 }
 

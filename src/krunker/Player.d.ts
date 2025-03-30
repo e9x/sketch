@@ -3,6 +3,8 @@ import type * as THREE from "three";
 import MapObject from "./Object";
 
 interface Weapon {
+  melee?: boolean;
+  range?: number;
   /**
    * true or undefined = can't aim
    * false = can aim
@@ -121,6 +123,7 @@ export declare class Player {
   height: number;
   landBobY: number;
   recoilAnimY: number;
+  canThrow: boolean;
   weapon: Weapon;
   procInputs(
     inputs: number[],

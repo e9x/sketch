@@ -7,6 +7,11 @@ import type { Player, manager } from "./Player";
 import type classes from "./classes";
 import type * as THREE from "three";
 
+declare interface Attachment {
+  req(player: Player, game: Game): boolean;
+  [key: string | symbol]: any;
+}
+
 declare class Game {
   constructor(...args: unknown[]);
   AI: AIManager;
@@ -18,6 +23,7 @@ declare class Game {
   COLLISIONS: unknown;
   THREE: typeof THREE;
   players: manager;
+  attach: Attachment[];
   config: {
     thirdPerson?: boolean;
     fiRat?: number;

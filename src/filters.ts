@@ -10,7 +10,7 @@ import { console, defineProperty } from "./crashout";
 import { mirrorAttributes } from "./hook";
 import type KrunkBox from "./KrunkBox";
 import type * as THREE from "three";
-import type { MapData } from "./krunker/GameMap";
+import type { MapData, MapManager } from "./krunker/GameMap";
 import type { Hook } from "./inject";
 import { AI } from "./krunker/AI";
 
@@ -261,7 +261,7 @@ function doRenderHooks() {
   const maps = new WeakMap<any, any>();
 
   render.init = function (config, mode, idk1, idk2) {
-    console.log("RENDER: init");
+    //console.log("RENDER: init");
     // console.trace("lol init ez", [config, mode, idk1, idk2]);
     if (maps.has(config)) config = maps.get(config);
 
@@ -301,6 +301,7 @@ function doRenderHooks() {
     configurable: true,
     set(value: RenderManager["loadTexture"]) {
       delete (render as any).loadTexture;
+
       render.loadTexture = function (mat, id, data, crap) {
         const ret = value.call(this, mat, id, data, crap);
         // console.log("load tex", mat, id, data, crap);
@@ -346,6 +347,28 @@ function doRenderHooks() {
     },
     set: (value) => {
       ogAds = value;
+    },
+  });
+
+  //console.log(render, "LO!L!!");
+  defineProperty(render, "add", {
+    configurable: true,
+    set(value: RenderManager["add"]) {
+      delete (render as any).add;
+      //console.log("add:", value);
+      const hookNHide = /^clouds_|lightcone_/;
+      render.add = function (mesh, data) {
+        value.call(this, mesh, data);
+        //console.log("The Fucking Object:", mesh, data);
+        if (typeof data === "object" && hookNHide.test(data.src)) {
+          let visible = mesh.visible;
+          //console.log("got cloud", mesh, data);
+          Object.defineProperty(mesh, "visible", {
+            get: () => (sketchConfig.get("hideClouds") ? false : visible),
+            set: (v) => (visible = v),
+          });
+        }
+      };
     },
   });
 }
@@ -407,8 +430,25 @@ let sprayingFakeServer = false;
 
 let ogCanSee: Game["canSee"] | undefined;
 
+const hookAttach = Symbol();
+
 function doGameHooks() {
   const game = getGame();
+
+  for (const attach of game.attach) {
+    if (!(hookAttach in attach)) {
+      const { req } = attach;
+      //console.log({ req });
+      attach.req = (player, game) => {
+        return (
+          sketchConfig.get("skinHack") ||
+          typeof req !== "function" ||
+          req(player, game)
+        );
+      };
+      attach[hookAttach] = true;
+    }
+  }
 
   const { sprayPosition } = game.players;
 

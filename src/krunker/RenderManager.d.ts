@@ -9,12 +9,17 @@ declare class RenderManager {
   scene: THREE.Scene;
   skyDome: THREE.Object3D;
   lastEnvId: number | null;
+  // GEOS: {
+  //   generateCone(): THREE.Mesh;
+  // };
   updateGameEnvironment(id: number, newData?: any): void;
   updateLightMap(data: MapData): void;
   updateShadowMap(): void;
   skyDomeInit(config: any): THREE.Object3D;
   // init(game: any, config: any, idk: any, idk2: any): void;
   clearSkyDome(): void;
+  add(mesh: THREE.Mesh, data: any): void;
+  addCone(N: any, z: any, Z: any, ne: any, re: any, ae: any, data: any): void;
   loadTexture(
     material: THREE.Material,
     id: string,
