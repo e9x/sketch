@@ -32,7 +32,7 @@ export function Text({
         placeholder={placeholder}
         value={value}
         defaultValue={defaultValue}
-        onChange={onChange}
+        onInput={onChange}
         spellcheck={spellCheck === true}
       />
     </Control>

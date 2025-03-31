@@ -33,7 +33,7 @@ export function BindModePicker({
         className="inputGrey2"
         value={value}
         defaultValue={defaultValue}
-        onChange={onChange}
+        onInput={onChange}
       >
         <option value={BindMode.toggle}>Press (Toggle)</option>,
         <option value={BindMode.hold}>Continuous (Hold)</option>

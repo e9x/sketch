@@ -37,7 +37,7 @@ export function Slider({
             ? defaultValue.toString()
             : defaultValue
         }
-        onChange={(event) => {
+        onInput={(event) => {
           if (rangeInput.current)
             rangeInput.current.valueAsNumber =
               event.currentTarget.valueAsNumber;

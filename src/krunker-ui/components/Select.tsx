@@ -32,7 +32,7 @@ export function Select({
         className="inputGrey2"
         ref={sel}
         value={defaultValue}
-        onChange={onChange}
+        onInput={onChange}
       >
         {children}
       </select>

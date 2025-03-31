@@ -25,6 +25,8 @@ import { Select } from "../krunker-ui/components/Select";
 import { Button } from "../krunker-ui/components/Button";
 import { waitFor } from "../util";
 import { MapData } from "krunker/GameMap";
+import { ragePreset } from "presets/rage";
+import { useEffect, useMemo, useState } from "preact/hooks";
 
 declare global {
   // present on editor.html
@@ -107,6 +109,42 @@ function stealActiveMap() {
   return active;
 }
 
+const presets: Record<string, SketchConfig> = {
+  default: sketchConfig.defaultConfig,
+  rage: ragePreset,
+};
+
+function getPreset() {
+  const e = sketchConfig.export();
+  for (let presetName in presets) {
+    const data = presets[presetName];
+    for (let key in data) {
+      if (
+        JSON.stringify(data[key as keyof SketchConfig]) !==
+        JSON.stringify(e[key as keyof SketchConfig])
+      )
+        continue;
+      return presetName;
+    }
+  }
+  return "custom";
+}
+
+function usePreset() {
+  const [state, setState] = useState(getPreset);
+
+  useEffect(() => {
+    const listener = () => setState(getPreset());
+    sketchConfig.configTarget.addEventListener("change", listener, {
+      once: true,
+    });
+    return () =>
+      sketchConfig.configTarget.removeEventListener("change", listener);
+  }, []);
+
+  return state;
+}
+
 export default function Menu() {
   const [menuKey, setMenuKey] = useSketchConfig("menuKey");
   const [menuButton] = useSketchConfig("menuButton");
@@ -121,10 +159,22 @@ export default function Menu() {
   const [skybox, setSkybox] = useSketchConfig("skybox");
   const [hideClouds, setHideClouds] = useSketchConfig("hideClouds");
   let activ: MapData | undefined;
-
+  const preset = usePreset();
   try {
     activ = getActiveMap();
   } catch {}
+
+  useEffect(() => {
+    try {
+      getGame().players.regenMeshes(getLocalPlayer());
+    } catch {
+      // game or localPlayer aren't a thing yet
+    }
+  }, [thirdPerson]);
+
+  useEffect(() => {
+    redrawSky();
+  }, [mapOverrides, mapOverridesCode, skyColor, skyColorHex]);
 
   return (
     <Settings
@@ -185,6 +235,34 @@ export default function Menu() {
             >
               Import
             </div>
+            <select
+              id="settingsPreset"
+              onChange={(event) => {
+                const v = event.currentTarget.value;
+                switch (v) {
+                  case "default":
+                    sketchConfig.reset();
+                    break;
+                  case "custom":
+                    break;
+                  default:
+                    sketchConfig.import(presets[v]);
+                    break;
+                }
+              }}
+              class="inputGrey2"
+              style="margin-left:0px;font-size:14px"
+            >
+              <option value="default" selected={preset === "default"}>
+                Default
+              </option>
+              <option value="rage" selected={preset === "default"}>
+                Rage
+              </option>
+              <option value="custom" selected={preset === "custom"}>
+                Custom
+              </option>
+            </select>
           </div>
         </>
       }
@@ -231,12 +309,13 @@ export default function Menu() {
                     checked={silentFail}
                     onChange={(event) => {
                       if (
-                        confirm(
+                        !silentFail &&
+                        !confirm(
                           "Enabling this setting will require you to follow the Sketch guide to disable it if there's an update, the access key expires, or the cheat isn't updated. The cheat won't load if any of these occur, and you won't be able to re-enable this option without following the guide. Proceed?"
                         )
-                      ) {
-                        setSilentFail(event.currentTarget.checked);
-                      }
+                      )
+                        event.currentTarget.checked = false;
+                      setSilentFail(event.currentTarget.checked);
                     }}
                   />
                   <KeybindOverlayMenu />
@@ -268,14 +347,9 @@ export default function Menu() {
                     title="Third Person"
                     description="Enables third person mode"
                     defaultChecked={thirdPerson}
-                    onChange={(event) => {
-                      setThirdPerson(event.currentTarget.checked);
-                      try {
-                        getGame().players.regenMeshes(getLocalPlayer());
-                      } catch {
-                        // game or localPlayer aren't a thing yet
-                      }
-                    }}
+                    onChange={(event) =>
+                      setThirdPerson(event.currentTarget.checked)
+                    }
                   />
                   <AdblockMenu />
                 </HeadlessSet>
@@ -341,8 +415,6 @@ export default function Menu() {
                         setMapOverridesCode(p);
                         event.currentTarget.value = JSON.stringify(p);
                       }
-
-                      redrawSky();
                     }}
                   />
                   <Switch
@@ -357,28 +429,25 @@ export default function Menu() {
                     title="Use Map Overrides"
                     description="JSON data to always merge with the current map. Use for sky color etc etc"
                     defaultChecked={mapOverrides}
-                    onChange={(event) => {
-                      setMapOverrides(event.currentTarget.checked);
-                      redrawSky();
-                    }}
+                    onChange={(event) =>
+                      setMapOverrides(event.currentTarget.checked)
+                    }
                   />
                   <ColorPicker
                     title="Sky Color"
                     description="Changes the sky's color"
                     defaultValue={skyColorHex}
-                    onChange={(event) => {
-                      setSkyColorHex(event.currentTarget.value);
-                      if (sketchConfig.get("skyColor")) redrawSky();
-                    }}
+                    onChange={(event) =>
+                      setSkyColorHex(event.currentTarget.value)
+                    }
                   />
                   <Switch
                     title="Use Custom Sky Color"
                     description="Changes the sky's color"
                     defaultChecked={skyColor}
-                    onChange={(event) => {
-                      setSkyColor(event.currentTarget.checked);
-                      redrawSky();
-                    }}
+                    onChange={(event) =>
+                      setSkyColor(event.currentTarget.checked)
+                    }
                   />
                   <Button
                     title={"Steal Map: " + (activ?.name || "some map")}

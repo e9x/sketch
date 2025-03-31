@@ -1,6 +1,10 @@
 import type { JSONStorage } from "./values";
 import { useState, useEffect } from "preact/hooks";
 
+interface ConfigEvent extends Event {
+  configKey: string | number | symbol;
+}
+
 export default class Config<Data extends object> {
   defaultConfig: Data;
   private cache = new Map<keyof Data, Data[keyof Data]>();
@@ -19,12 +23,17 @@ export default class Config<Data extends object> {
   set<K extends keyof Data>(key: K, value: Data[K]) {
     this.cache.set(key, value);
     this.storage.setValue(key as string, value);
-    this.configTarget.dispatchEvent(new Event(key as string));
+    this.configTarget.dispatchEvent(new Event("key " + key.toString()));
+    const e = new Event("change") as ConfigEvent;
+    e.configKey = key;
+    this.configTarget.dispatchEvent(e);
   }
   delete(key: keyof Data) {
     this.cache.delete(key);
     this.storage.deleteValue(key as string);
-    this.configTarget.dispatchEvent(new Event(key as string));
+    const e = new Event("change") as ConfigEvent;
+    e.configKey = key;
+    this.configTarget.dispatchEvent(e);
   }
   reset() {
     for (const key in this.defaultConfig) this.delete(key as keyof Data);
@@ -59,16 +68,13 @@ export function useConfig<Data extends object, K extends keyof Data>(
   const [state, setState] = useState(config.get(key));
 
   useEffect(() => {
-    function listener() {
-      setState(config.get(key));
+    function listener(event: Event) {
+      if ((event as ConfigEvent).configKey === key) setState(config.get(key));
     }
 
-    config.configTarget.addEventListener(key as string, listener, {
-      once: true,
-    });
+    config.configTarget.addEventListener("change", listener);
 
-    return () =>
-      config.configTarget.removeEventListener(key as string, listener);
+    return () => config.configTarget.removeEventListener("change", listener);
   });
 
   return [

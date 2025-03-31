@@ -21,7 +21,7 @@ export function Switch({
       <label className="switch" style={{ marginLeft: 10 }}>
         <input
           type="checkbox"
-          onChange={onChange}
+          onInput={onChange}
           checked={checked}
           defaultChecked={defaultChecked}
         />
