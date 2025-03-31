@@ -130,7 +130,7 @@ function playerAimPoint(player: Player) {
   const bot = sketchConfig.get("bot");
 
   // absolute top
-  if (bot && ["auto"].includes(hitbox)) {
+  if (bot && ["auto", "head"].includes(hitbox)) {
     const config = getConfig();
     const { THREE } = getGame();
 
