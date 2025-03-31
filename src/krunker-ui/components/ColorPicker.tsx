@@ -3,7 +3,6 @@ import type { BaseControlProps } from "./Control.jsx";
 import { Control } from "./Control.jsx";
 
 export interface ColorPickerProps extends BaseControlProps {
-  value?: string;
   defaultValue?: string;
   onChange?: h.JSX.GenericEventHandler<HTMLInputElement>;
   onInput?: h.JSX.GenericEventHandler<HTMLInputElement>;
@@ -13,7 +12,6 @@ export function ColorPicker({
   title,
   attention,
   description,
-  value,
   defaultValue,
   onChange,
   onInput,
@@ -24,8 +22,7 @@ export function ColorPicker({
         type="color"
         name="color"
         style={{ float: "right" }}
-        value={value}
-        defaultValue={defaultValue}
+        value={defaultValue}
         onChange={onChange}
         onInput={onInput}
       />

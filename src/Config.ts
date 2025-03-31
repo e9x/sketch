@@ -1,14 +1,38 @@
 import type { JSONStorage } from "./values";
 import { useState, useEffect } from "preact/hooks";
 
-interface ConfigEvent extends Event {
+export interface ConfigEvent extends Event {
   configKey: string | number | symbol;
+}
+
+export interface ConfigET extends EventTarget {
+  dispatchEvent(e: ConfigEvent): boolean;
+  addEventListener(
+    type: "change",
+    listener: (this: ConfigET, ev: ConfigEvent) => any,
+    options?: boolean | AddEventListenerOptions
+  ): void;
+  addEventListener(
+    type: string,
+    callback: EventListenerOrEventListenerObject | null,
+    options?: AddEventListenerOptions | boolean
+  ): void;
+  removeEventListener(
+    type: "change",
+    listener: (this: ConfigET, ev: ConfigEvent) => any,
+    options?: boolean | EventListenerOptions
+  ): void;
+  removeEventListener(
+    type: string,
+    callback: EventListenerOrEventListenerObject | null,
+    options?: EventListenerOptions | boolean
+  ): void;
 }
 
 export default class Config<Data extends object> {
   defaultConfig: Data;
   private cache = new Map<keyof Data, Data[keyof Data]>();
-  configTarget = new EventTarget();
+  configTarget = new EventTarget() as ConfigET;
   private storage: JSONStorage;
   constructor(defaultConfig: Data, storage: JSONStorage) {
     this.defaultConfig = defaultConfig;
@@ -23,7 +47,6 @@ export default class Config<Data extends object> {
   set<K extends keyof Data>(key: K, value: Data[K]) {
     this.cache.set(key, value);
     this.storage.setValue(key as string, value);
-    this.configTarget.dispatchEvent(new Event("key " + key.toString()));
     const e = new Event("change") as ConfigEvent;
     e.configKey = key;
     this.configTarget.dispatchEvent(e);
@@ -38,10 +61,17 @@ export default class Config<Data extends object> {
   reset() {
     for (const key in this.defaultConfig) this.delete(key as keyof Data);
   }
-  import(config: Data) {
-    for (const key in this.defaultConfig)
-      if (key in config) this.set(key as keyof Data, config[key as keyof Data]);
-      else this.delete(key as keyof Data);
+  /**
+   *
+   * @param config
+   * @param del whether to delete keys that aren't specified in the new config or to preserve the original ones
+   */
+  import(config: Partial<Data>, del = true) {
+    for (const key in this.defaultConfig) {
+      //@ts-ignore
+      if (key in config) this.set(key, config[key]);
+      else if (del) this.delete(key);
+    }
   }
   export() {
     const exported: Partial<Data> = {};
@@ -68,8 +98,8 @@ export function useConfig<Data extends object, K extends keyof Data>(
   const [state, setState] = useState(config.get(key));
 
   useEffect(() => {
-    function listener(event: Event) {
-      if ((event as ConfigEvent).configKey === key) setState(config.get(key));
+    function listener(event: ConfigEvent) {
+      if (event.configKey === key) setState(config.get(key));
     }
 
     config.configTarget.addEventListener("change", listener);

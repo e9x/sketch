@@ -4,7 +4,6 @@ import type { BaseControlProps } from "./Control.jsx";
 
 export interface TextProps extends BaseControlProps {
   placeholder?: string;
-  value?: string;
   defaultValue?: string;
   /**
    * False by default.
@@ -18,7 +17,6 @@ export function Text({
   attention,
   description,
   placeholder,
-  value,
   defaultValue,
   spellCheck,
   onChange,
@@ -30,8 +28,7 @@ export function Text({
         name="text"
         className="inputGrey2"
         placeholder={placeholder}
-        value={value}
-        defaultValue={defaultValue}
+        value={defaultValue}
         onInput={onChange}
         spellcheck={spellCheck === true}
       />

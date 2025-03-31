@@ -19,14 +19,14 @@ import { Control } from "../krunker-ui/components/Control";
 import { Link } from "../krunker-ui/components/Link";
 import { HeadlessSet, Set } from "../krunker-ui/components/Set";
 import { Switch } from "../krunker-ui/components/Switch";
-import { Settings } from "../krunker-ui/settings";
+import { Settings, Tab } from "../krunker-ui/settings";
 import { Text } from "../krunker-ui/components/Text";
 import { Select } from "../krunker-ui/components/Select";
 import { Button } from "../krunker-ui/components/Button";
 import { waitFor } from "../util";
-import { MapData } from "krunker/GameMap";
-import { ragePreset } from "presets/rage";
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { MapData } from "../krunker/GameMap";
+import { rageConfig } from "../presets/rage";
+import { useEffect, useState } from "preact/hooks";
 
 declare global {
   // present on editor.html
@@ -109,23 +109,26 @@ function stealActiveMap() {
   return active;
 }
 
-const presets: Record<string, SketchConfig> = {
+const presets: Record<string, Partial<SketchConfig>> = {
   default: sketchConfig.defaultConfig,
-  rage: ragePreset,
+  rage: rageConfig,
 };
 
 function getPreset() {
   const e = sketchConfig.export();
-  for (let presetName in presets) {
+  presets: for (let presetName in presets) {
     const data = presets[presetName];
     for (let key in data) {
       if (
         JSON.stringify(data[key as keyof SketchConfig]) !==
         JSON.stringify(e[key as keyof SketchConfig])
-      )
-        continue;
-      return presetName;
+      ) {
+        // console.log(presetName + ": " + key);
+        continue presets;
+      }
     }
+
+    return presetName;
   }
   return "custom";
 }
@@ -135,9 +138,7 @@ function usePreset() {
 
   useEffect(() => {
     const listener = () => setState(getPreset());
-    sketchConfig.configTarget.addEventListener("change", listener, {
-      once: true,
-    });
+    sketchConfig.configTarget.addEventListener("change", listener);
     return () =>
       sketchConfig.configTarget.removeEventListener("change", listener);
   }, []);
@@ -145,36 +146,230 @@ function usePreset() {
   return state;
 }
 
+const tabs: Tab[] = [
+  {
+    name: "Menu",
+    body: () => {
+      const [menuKey, setMenuKey] = useSketchConfig("menuKey");
+      const [menuButton] = useSketchConfig("menuButton");
+      const [silentFail, setSilentFail] = useSketchConfig("silentFail");
+
+      return (
+        <>
+          <Set title="Menu">
+            <BindHolder title="Menu Key">
+              <Bind
+                bind={menuKey}
+                setBind={(bind) => {
+                  if (bind === 10001) alert("Invalid bind");
+                  else setMenuKey(bind);
+                }}
+                reset={() => setMenuKey()}
+                unbind={() => setMenuKey(-1)}
+              />
+            </BindHolder>
+            <Switch
+              title="Menu Button"
+              defaultChecked={menuButton}
+              onChange={(event) => {
+                if (menuKey === -1) {
+                  event.currentTarget.checked = false;
+                  alert(
+                    "You must set a menu keybind before disabling the button"
+                  );
+                } else {
+                  // use sketchConfig.set so it's instant
+                  sketchConfig.set("menuButton", event.currentTarget.checked);
+                  updateSketchMenuButton();
+                }
+              }}
+            />
+            <Switch
+              title="Streamer Mode"
+              description="When enabled, the cheat will silently fail if there's an update, the access key expires, or the cheat isn't updated. To disable this setting, visit the Sketch guide and look for the 'Resetting Hide Updates/Key' section, which contains a link to disable the setting."
+              defaultChecked={silentFail}
+              onChange={(event) => {
+                if (
+                  !silentFail &&
+                  !confirm(
+                    "Enabling this setting will require you to follow the Sketch guide to disable it if there's an update, the access key expires, or the cheat isn't updated. The cheat won't load if any of these occur, and you won't be able to re-enable this option without following the guide. Proceed?"
+                  )
+                )
+                  event.currentTarget.checked = false;
+                setSilentFail(event.currentTarget.checked);
+              }}
+            />
+            <KeybindOverlayMenu />
+            <WatermarkMenu />
+          </Set>
+          <HeadlessSet>
+            <Link title="Guide" href={docsURL} />
+            <Link title="Discord Server" href={discordURL} />
+            <Control title="The Gaming Gurus" />
+            <Control title={`Sketch v${sketchVersion}`} />
+          </HeadlessSet>
+        </>
+      );
+    },
+  },
+  {
+    name: "Combat",
+    body: () => {
+      return <AimbotMenu />;
+    },
+  },
+  {
+    name: "Misc",
+    body: () => {
+      const [thirdPerson, setThirdPerson] = useSketchConfig("thirdPerson");
+
+      return (
+        <>
+          <HeadlessSet>
+            <Switch
+              title="Third Person"
+              description="Enables third person mode"
+              defaultChecked={thirdPerson}
+              onChange={(event) => setThirdPerson(event.currentTarget.checked)}
+            />
+            <AdblockMenu />
+          </HeadlessSet>
+          <Set title="Movements">
+            <BhopMenu />
+          </Set>
+        </>
+      );
+    },
+  },
+  {
+    name: "Visual",
+    body: () => {
+      const [noAdsFovMlt, setNoAdsFovMlt] = useSketchConfig("noAdsFovMlt");
+      const [skyColor, setSkyColor] = useSketchConfig("skyColor");
+      const [skyColorHex, setSkyColorHex] = useSketchConfig("skyColorHex");
+      const [mapOverrides, setMapOverrides] = useSketchConfig("mapOverrides");
+      const [mapOverridesCode, setMapOverridesCode] =
+        useSketchConfig("mapOverridesCode");
+      const [skybox, setSkybox] = useSketchConfig("skybox");
+      const [hideClouds, setHideClouds] = useSketchConfig("hideClouds");
+
+      let activ: MapData | undefined;
+      try {
+        activ = getActiveMap();
+      } catch {}
+
+      return (
+        <>
+          <HeadlessSet>
+            <SkinHackMenu />
+            <Switch
+              title="Disable ADS FOV multiplier"
+              defaultChecked={noAdsFovMlt}
+              onChange={(event) => setNoAdsFovMlt(event.currentTarget.checked)}
+            />
+          </HeadlessSet>
+          <Set title="ESP">
+            <ESPMenu />
+          </Set>
+          <Set title="Custom Map">
+            <Select
+              title="Skybox"
+              defaultValue={skybox}
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+                setSkybox(value as SketchConfig["skybox"]);
+              }}
+            >
+              <option value="off">Default</option>
+              {Object.entries(skyboxes).map(([name, sky], i) => (
+                <option value={name} key={name}>
+                  {sky.name}
+                </option>
+              ))}
+            </Select>
+            <Text
+              title="Map Overrides"
+              description="If the overrides should take effect"
+              defaultValue={JSON.stringify(mapOverridesCode)}
+              onChange={(event) => {
+                // blank = reset
+                const value = event.currentTarget.value.trim();
+                if (value === "") setMapOverridesCode();
+                else {
+                  let p;
+                  try {
+                    p = JSON.parse(value);
+                  } catch (err) {
+                    alert("Bad map overrides:\n" + (err as SyntaxError).stack);
+                    return;
+                  }
+                  setMapOverridesCode(p);
+                  event.currentTarget.value = JSON.stringify(p);
+                }
+              }}
+            />
+            <Switch
+              title="Hide clouds/LightCones"
+              description="whether to not render crap in the sky"
+              defaultChecked={hideClouds}
+              onChange={(event) => setHideClouds(event.currentTarget.checked)}
+            />
+            <Switch
+              title="Use Map Overrides"
+              description="JSON data to always merge with the current map. Use for sky color etc etc"
+              defaultChecked={mapOverrides}
+              onChange={(event) => setMapOverrides(event.currentTarget.checked)}
+            />
+            <ColorPicker
+              title="Sky Color"
+              description="Changes the sky's color"
+              defaultValue={skyColorHex}
+              onChange={(event) => setSkyColorHex(event.currentTarget.value)}
+            />
+            <Switch
+              title="Use Custom Sky Color"
+              description="Changes the sky's color"
+              defaultChecked={skyColor}
+              onChange={(event) => setSkyColor(event.currentTarget.checked)}
+            />
+            <Button
+              title={"Steal Map: " + (activ?.name || "some map")}
+              description="exports the current map in JSON format"
+              text="Export"
+              onClick={() => {
+                const active = stealActiveMap();
+                const a = document.createElement("a");
+                a.href =
+                  "data:application/json;base64," +
+                  btoa(JSON.stringify(active));
+                a.download = (active.name || "someMap") + ".json";
+                a.click();
+              }}
+            />
+            <Button
+              title={"Edit Map: " + (activ?.name || "some map")}
+              description="edits the current map"
+              text="Edit"
+              onClick={async () => {
+                const active = stealActiveMap();
+                const win = window.open("editor.html");
+                if (win === null)
+                  return alert("Why can't I open the editor window...");
+                await waitFor(() => "KE" in win, 100);
+                win.KE.skipTempPop = true;
+                win.closeWindow();
+                win.KE.importMap(JSON.stringify(active));
+              }}
+            />
+          </Set>
+        </>
+      );
+    },
+  },
+];
+
 export default function Menu() {
-  const [menuKey, setMenuKey] = useSketchConfig("menuKey");
-  const [menuButton] = useSketchConfig("menuButton");
-  const [noAdsFovMlt, setNoAdsFovMlt] = useSketchConfig("noAdsFovMlt");
-  const [silentFail, setSilentFail] = useSketchConfig("silentFail");
-  const [thirdPerson, setThirdPerson] = useSketchConfig("thirdPerson");
-  const [skyColor, setSkyColor] = useSketchConfig("skyColor");
-  const [skyColorHex, setSkyColorHex] = useSketchConfig("skyColorHex");
-  const [mapOverrides, setMapOverrides] = useSketchConfig("mapOverrides");
-  const [mapOverridesCode, setMapOverridesCode] =
-    useSketchConfig("mapOverridesCode");
-  const [skybox, setSkybox] = useSketchConfig("skybox");
-  const [hideClouds, setHideClouds] = useSketchConfig("hideClouds");
-  let activ: MapData | undefined;
   const preset = usePreset();
-  try {
-    activ = getActiveMap();
-  } catch {}
-
-  useEffect(() => {
-    try {
-      getGame().players.regenMeshes(getLocalPlayer());
-    } catch {
-      // game or localPlayer aren't a thing yet
-    }
-  }, [thirdPerson]);
-
-  useEffect(() => {
-    redrawSky();
-  }, [mapOverrides, mapOverridesCode, skyColor, skyColorHex]);
 
   return (
     <Settings
@@ -246,244 +441,22 @@ export default function Menu() {
                   case "custom":
                     break;
                   default:
-                    sketchConfig.import(presets[v]);
+                    sketchConfig.import(presets[v], false);
                     break;
                 }
               }}
+              value={preset}
               class="inputGrey2"
               style="margin-left:0px;font-size:14px"
             >
-              <option value="default" selected={preset === "default"}>
-                Default
-              </option>
-              <option value="rage" selected={preset === "default"}>
-                Rage
-              </option>
-              <option value="custom" selected={preset === "custom"}>
-                Custom
-              </option>
+              <option value="default">Default</option>
+              <option value="rage">Rage</option>
+              <option value="custom">Custom</option>
             </select>
           </div>
         </>
       }
-      tabs={[
-        {
-          name: "Menu",
-          body: () => {
-            return (
-              <>
-                <Set title="Menu">
-                  <BindHolder title="Menu Key">
-                    <Bind
-                      bind={menuKey}
-                      setBind={(bind) => {
-                        if (bind === 10001) alert("Invalid bind");
-                        else setMenuKey(bind);
-                      }}
-                      reset={() => setMenuKey()}
-                      unbind={() => setMenuKey(-1)}
-                    />
-                  </BindHolder>
-                  <Switch
-                    title="Menu Button"
-                    defaultChecked={menuButton}
-                    onChange={(event) => {
-                      if (menuKey === -1) {
-                        event.currentTarget.checked = false;
-                        alert(
-                          "You must set a menu keybind before disabling the button"
-                        );
-                      } else {
-                        // use sketchConfig.set so it's instant
-                        sketchConfig.set(
-                          "menuButton",
-                          event.currentTarget.checked
-                        );
-                        updateSketchMenuButton();
-                      }
-                    }}
-                  />
-                  <Switch
-                    title="Streamer Mode"
-                    description="When enabled, the cheat will silently fail if there's an update, the access key expires, or the cheat isn't updated. To disable this setting, visit the Sketch guide and look for the 'Resetting Hide Updates/Key' section, which contains a link to disable the setting."
-                    checked={silentFail}
-                    onChange={(event) => {
-                      if (
-                        !silentFail &&
-                        !confirm(
-                          "Enabling this setting will require you to follow the Sketch guide to disable it if there's an update, the access key expires, or the cheat isn't updated. The cheat won't load if any of these occur, and you won't be able to re-enable this option without following the guide. Proceed?"
-                        )
-                      )
-                        event.currentTarget.checked = false;
-                      setSilentFail(event.currentTarget.checked);
-                    }}
-                  />
-                  <KeybindOverlayMenu />
-                  <WatermarkMenu />
-                </Set>
-                <HeadlessSet>
-                  <Link title="Guide" href={docsURL} />
-                  <Link title="Discord Server" href={discordURL} />
-                  <Control title="The Gaming Gurus" />
-                  <Control title={`Sketch v${sketchVersion}`} />
-                </HeadlessSet>
-              </>
-            );
-          },
-        },
-        {
-          name: "Combat",
-          body: () => {
-            return <AimbotMenu />;
-          },
-        },
-        {
-          name: "Misc",
-          body: () => {
-            return (
-              <>
-                <HeadlessSet>
-                  <Switch
-                    title="Third Person"
-                    description="Enables third person mode"
-                    defaultChecked={thirdPerson}
-                    onChange={(event) =>
-                      setThirdPerson(event.currentTarget.checked)
-                    }
-                  />
-                  <AdblockMenu />
-                </HeadlessSet>
-                <Set title="Movements">
-                  <BhopMenu />
-                </Set>
-              </>
-            );
-          },
-        },
-        {
-          name: "Visual",
-          body: () => {
-            return (
-              <>
-                <HeadlessSet>
-                  <SkinHackMenu />
-                  <Switch
-                    title="Disable ADS FOV multiplier"
-                    defaultChecked={noAdsFovMlt}
-                    onChange={(event) =>
-                      setNoAdsFovMlt(event.currentTarget.checked)
-                    }
-                  />
-                </HeadlessSet>
-                <Set title="ESP">
-                  <ESPMenu />
-                </Set>
-                <Set title="Custom Map">
-                  <Select
-                    title="Skybox"
-                    defaultValue={skybox}
-                    onChange={(event) => {
-                      const value = event.currentTarget.value;
-                      setSkybox(value as SketchConfig["skybox"]);
-                    }}
-                  >
-                    <option value="off">Default</option>
-                    {Object.entries(skyboxes).map(([name, sky], i) => (
-                      <option value={name} key={name}>
-                        {sky.name}
-                      </option>
-                    ))}
-                  </Select>
-                  <Text
-                    title="Map Overrides"
-                    description="If the overrides should take effect"
-                    defaultValue={JSON.stringify(mapOverridesCode)}
-                    onChange={(event) => {
-                      // blank = reset
-                      const value = event.currentTarget.value.trim();
-                      if (value === "") setMapOverridesCode();
-                      else {
-                        let p;
-                        try {
-                          p = JSON.parse(value);
-                        } catch (err) {
-                          alert(
-                            "Bad map overrides:\n" + (err as SyntaxError).stack
-                          );
-                          return;
-                        }
-                        setMapOverridesCode(p);
-                        event.currentTarget.value = JSON.stringify(p);
-                      }
-                    }}
-                  />
-                  <Switch
-                    title="Hide clouds/LightCones"
-                    description="whether to not render crap in the sky"
-                    defaultChecked={hideClouds}
-                    onChange={(event) =>
-                      setHideClouds(event.currentTarget.checked)
-                    }
-                  />
-                  <Switch
-                    title="Use Map Overrides"
-                    description="JSON data to always merge with the current map. Use for sky color etc etc"
-                    defaultChecked={mapOverrides}
-                    onChange={(event) =>
-                      setMapOverrides(event.currentTarget.checked)
-                    }
-                  />
-                  <ColorPicker
-                    title="Sky Color"
-                    description="Changes the sky's color"
-                    defaultValue={skyColorHex}
-                    onChange={(event) =>
-                      setSkyColorHex(event.currentTarget.value)
-                    }
-                  />
-                  <Switch
-                    title="Use Custom Sky Color"
-                    description="Changes the sky's color"
-                    defaultChecked={skyColor}
-                    onChange={(event) =>
-                      setSkyColor(event.currentTarget.checked)
-                    }
-                  />
-                  <Button
-                    title={"Steal Map: " + (activ?.name || "some map")}
-                    description="exports the current map in JSON format"
-                    text="Export"
-                    onClick={() => {
-                      const active = stealActiveMap();
-                      const a = document.createElement("a");
-                      a.href =
-                        "data:application/json;base64," +
-                        btoa(JSON.stringify(active));
-                      a.download = (active.name || "someMap") + ".json";
-                      a.click();
-                    }}
-                  />
-                  <Button
-                    title={"Edit Map: " + (activ?.name || "some map")}
-                    description="edits the current map"
-                    text="Edit"
-                    onClick={async () => {
-                      const active = stealActiveMap();
-                      const win = window.open("editor.html");
-                      if (win === null)
-                        return alert("Why can't I open the editor window...");
-                      await waitFor(() => "KE" in win, 100);
-                      win.KE.skipTempPop = true;
-                      win.closeWindow();
-                      win.KE.importMap(JSON.stringify(active));
-                    }}
-                  />
-                </Set>
-              </>
-            );
-          },
-        },
-      ]}
+      tabs={tabs}
     />
   );
 }

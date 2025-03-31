@@ -284,6 +284,13 @@ function doRenderHooks() {
     init.call(this, nConfig, mode, idk1, idk2);
   };
 
+  let lastThirdPerson: boolean | undefined;
+  let skyConf = ["mapOverrides", "mapOverridesCode", "skyColor", "skyColorHex"];
+  sketchConfig.configTarget.addEventListener("change", (e) => {
+    if (typeof e.configKey === "string" && skyConf.includes(e.configKey))
+      redrawSky();
+  });
+
   const renderFn = render.render;
   // we hook the render way too early
   render.render = function (...args) {
@@ -291,7 +298,17 @@ function doRenderHooks() {
     for (const player of game.players.list) delete player[canSee];
     for (const ai of game.AI.ais) delete ai[canSee];
 
-    if (localPlayer) for (const hook of preRenderHooks) hook();
+    if (localPlayer) {
+      for (const hook of preRenderHooks) hook();
+
+      if (game.config.thirdPerson !== lastThirdPerson) {
+        try {
+          game.players.regenMeshes(getLocalPlayer());
+          lastThirdPerson = game.config.thirdPerson;
+        } catch {}
+      }
+    }
+
     const result = renderFn.call(this, ...args);
     // if (localPlayer) for (const hook of gameRenderHooks) hook();
     return result;
