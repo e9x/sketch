@@ -9,13 +9,16 @@ import {
 import { afterGame, beforeGame, hook } from "./filters";
 import { getInit, gameLoad, fetchWASM } from "./inject";
 import sketchConfig from "./sketchConfig";
-import { begToken, showUpdated, showFutile } from "./anxiety";
+import { begToken, showUpdated, showFutile, panic } from "./anxiety";
 import { sketchButton } from "./menu/createUI";
 import "./cheats";
 
 if (isKrunker) {
   checkHash();
-  main();
+  main().catch((err) => {
+    if (sketchConfig("silentFail")) return;
+    panic(err.stack);
+  });
 }
 // else if (location.origin === new URL(apiURL).origin) {
 else {
@@ -58,7 +61,7 @@ async function main() {
   }
 
   if (!version.sketchUpdated) {
-    if (sketchConfig.get("silentFail")) return;
+    if (sketchConfig.get("silentFail")) return fetchWASM();
     return showFutile(version);
   }
 
@@ -84,7 +87,7 @@ async function main() {
 
   while (true) {
     if (!token) {
-      if (sketchConfig.get("silentFail")) return;
+      if (sketchConfig.get("silentFail")) return fetchWASM();
       token = await begToken();
       tokenConfig.set("token", token);
     }
