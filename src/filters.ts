@@ -306,7 +306,7 @@ function doRenderHooks() {
       render.loadTexture = function (mat, id, data, crap) {
         const ret = value.call(this, mat, id, data, crap);
         // console.log("load tex", mat, id, data, crap);
-        if (data.src === "clouds_0") {
+        if (data.src === "clouds_0" || data.emissive === "#FFC980") {
           let visible = mat.visible;
           console.log("got cloud", mat, id, data, crap);
           Object.defineProperty(mat, "visible", {

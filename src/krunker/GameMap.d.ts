@@ -19,6 +19,7 @@ export interface SpawnPoint {
 
 export interface MeshData {
   src: string;
+  emissive: string;
   [key: string]: any;
 }
 
