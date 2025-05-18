@@ -147,14 +147,15 @@ export function skinHackHook() {
 }
 
 export function SkinHackMenu() {
-  const [skinHack, setSkinHack] = useSketchConfig("skinHack");
+  // const [skinHack, setSkinHack] = useSketchConfig("skinHack");
 
-  return (
-    <Switch
-      title="Skin Hack"
-      description="Unlocks all the skins. Your skins will only appear to you. They won't show to other players. You must be signed in."
-      defaultChecked={skinHack}
-      onChange={(event) => setSkinHack(event.currentTarget.checked)}
-    />
-  );
+  // return (
+  //   <Switch
+  //     title="Skin Hack"
+  //     description="Unlocks all the skins. Your skins will only appear to you. They won't show to other players. You must be signed in."
+  //     defaultChecked={skinHack}
+  //     onChange={(event) => setSkinHack(event.currentTarget.checked)}
+  //   />
+  // );
+  return <></>
 }

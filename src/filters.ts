@@ -63,7 +63,7 @@ export const patches: Record<
 
 export const dataArg = "_" + Math.random().toString(36).slice(2);
 
-patches.UseStrict = [/"use strict";/, () => ""];
+// patches.UseStrict = [/"use strict";/, () => ""];
 
 /* javascript-obfuscator:disable */
 
@@ -616,50 +616,50 @@ export function getMenuPlayer() {
 // returns {ind:number,cnt:number}[]
 // used for ui to list owned items
 
-patches.UISkins = [
-  /((\w+)\.isDev\?\w+:)(\2\?\2\.skins:\[\])/,
-  (match, crap, player, skinArray) => crap + `${dataArg}.uiSkins(${skinArray})`,
-];
+// patches.UISkins = [
+//   /((\w+)\.isDev\?\w+:)(\2\?\2\.skins:\[\])/,
+//   (match, crap, player, skinArray) => crap + `${dataArg}.uiSkins(${skinArray})`,
+// ];
 
 // force the loadout menu to render "owned" skins, even logged out
 // so schizo..
-patches.ForceLoadout = [
-  /(\w+)&&(\(\w+\[\w+\.loadout\[0\]\]!=null)/,
-  (match, player, crap) => `(${dataArg}.skinHack||${player})&&${crap}`,
-];
+// patches.ForceLoadout = [
+//   /(\w+)&&(\(\w+\[\w+\.loadout\[0\]\]!=null)/,
+//   (match, player, crap) => `(${dataArg}.skinHack||${player})&&${crap}`,
+// ];
 
 // now do customize...
-patches.Skins = [
-  /(\(\w+)\|\|(_.store\.skins)/,
-  (match, con1, con2) => `${con1}||${dataArg}.skinHack||${con2}`,
-];
+// patches.Skins = [
+//   /(\(\w+)\|\|(_.store\.skins)/,
+//   (match, con1, con2) => `${con1}||${dataArg}.skinHack||${con2}`,
+// ];
 
 // NOW SKIN tone chicken bone
 // (ee && ee.premiumT > 0 ? "<input class='skinColorItem
-patches.PremiumSkinColors = [
-  /(\((\w+)&&\2.premiumT>0)\?("<input class='skinColorItem)/g,
-  (match, con1, player, out1) => `${con1}||${dataArg}.skinHack?${out1}`,
-];
+// patches.PremiumSkinColors = [
+//   /(\((\w+)&&\2.premiumT>0)\?("<input class='skinColorItem)/g,
+//   (match, con1, player, out1) => `${con1}||${dataArg}.skinHack?${out1}`,
+// ];
 
 // bypass premium check for skinz
 //:3
-patches.PremiumSkins = [
-  /((\w+)&&\2.premiumT>0);(_\.isSandbox)/,
-  (match, condition, player, crap) =>
-    `${dataArg}.skinHack||${condition};` + crap,
-];
+// patches.PremiumSkins = [
+//   /((\w+)&&\2.premiumT>0);(_\.isSandbox)/,
+//   (match, condition, player, crap) =>
+//     `${dataArg}.skinHack||${condition};` + crap,
+// ];
 
-patches["𝓯𝓻𝓮𝓪𝓴𝔂 𝓼𝓹𝓻𝓪𝔂"] = [
-  /(\w+)\.isSandbox\?(\w+)\.players\.spray\((.*?)\):(\w+)\.send/g,
-  (match, gameVar, dumbGameVar, sprayArgs, ioVar) =>
-    `${gameVar}.isSandbox?${dumbGameVar}.players.spray(${sprayArgs}):${dataArg}.skinHack?${dataArg}.spraySemen(${sprayArgs}):${ioVar}.send`,
-];
+// patches["𝓯𝓻𝓮𝓪𝓴𝔂 𝓼𝓹𝓻𝓪𝔂"] = [
+//   /(\w+)\.isSandbox\?(\w+)\.players\.spray\((.*?)\):(\w+)\.send/g,
+//   (match, gameVar, dumbGameVar, sprayArgs, ioVar) =>
+//     `${gameVar}.isSandbox?${dumbGameVar}.players.spray(${sprayArgs}):${dataArg}.skinHack?${dataArg}.spraySemen(${sprayArgs}):${ioVar}.send`,
+// ];
 
 // game checks for premium on press and release
-patches["skin picker wheel"] = [
-  /sprayWheel\.isKey\(\w+\)&&\(\w+\.isSandbox\|\|/g,
-  (match) => match + `${dataArg}.skinHack||`,
-];
+// patches["skin picker wheel"] = [
+//   /sprayWheel\.isKey\(\w+\)&&\(\w+\.isSandbox\|\|/g,
+//   (match) => match + `${dataArg}.skinHack||`,
+// ];
 
 let box: KrunkBox | undefined;
 
@@ -671,11 +671,11 @@ export function getBox() {
 // https://convertcase.net/unicode-text-converter/
 
 //
-patches["🦁𝓣𝓱𝓮 𝓛𝓲𝓸𝓷 𝓡𝓪𝓹𝓮𝓼 𝓽𝓱𝓮 𝓢𝓶𝓪𝓵𝓵 𝓓𝓸𝓰 𝓦𝓱𝓮𝓷 𝓘𝓽 𝓑𝓪𝓻𝓴𝓼"] = [
-  /if\((\w+)\.isSandbox\|\|(\w+)\.account&&\2\.account\.premiumT>0\)\{var (\w+)=/,
-  (match, gameVar, accVar, skinFreeVar) =>
-    `if(${dataArg}.skinHack||${gameVar}.isSandbox||${accVar}.account&&${accVar}.account.premiumT>0){var ${skinFreeVar}=${dataArg}.skinHack||`,
-];
+// patches["🦁𝓣𝓱𝓮 𝓛𝓲𝓸𝓷 𝓡𝓪𝓹𝓮𝓼 𝓽𝓱𝓮 𝓢𝓶𝓪𝓵𝓵 𝓓𝓸𝓰 𝓦𝓱𝓮𝓷 𝓘𝓽 𝓑𝓪𝓻𝓴𝓼"] = [
+//   /if\((\w+)\.isSandbox\|\|(\w+)\.account&&\2\.account\.premiumT>0\)\{var (\w+)=/,
+//   (match, gameVar, accVar, skinFreeVar) =>
+//     `if(${dataArg}.skinHack||${gameVar}.isSandbox||${accVar}.account&&${accVar}.account.premiumT>0){var ${skinFreeVar}=${dataArg}.skinHack||`,
+// ];
 
 const fakeObj = function (this: any, a: any) {
   return Object.call(this, a);
