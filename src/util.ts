@@ -60,122 +60,68 @@ export interface FetchResponse {
   json: () => Promise<any>;
 }
 
-export const GM_fetch = fetch;
+const ogFetch = fetch;
 
 /**
  * Substitute for fetch()
  */
-export function kysGM_fetch(url: URL | string, opts: FetchOptions = {}) {
+export function GM_fetch(url: URL | string, opts: FetchOptions = {}) {
   // do this retarded shit for now...
-  // return fetch(url, opts);
   url = url.toString();
   // debugger;
-  if (isNode) {
-    // Check if the request should use https or http
-    const isHttps = url.startsWith("https://");
-    const lib: typeof import("http") | typeof import("https") = isHttps
-      ? require("https")
-      : require("http");
+  if (!isNode) return ogFetch(url, opts);
 
-    const abortListener = () => {
-      cleanup();
-      req.destroy();
-    };
+  // Check if the request should use https or http
+  const isHttps = url.startsWith("https://");
+  const lib: typeof import("http") | typeof import("https") = isHttps
+    ? require("https")
+    : require("http");
 
-    const cleanup = () => {
-      if (opts.signal) opts.signal.removeEventListener("abort", abortListener);
-    };
+  const abortListener = () => {
+    cleanup();
+    req.destroy();
+  };
 
-    const req = lib.request(url, {
-      method: opts.method || "GET",
-      headers: opts.headers,
-    });
+  const cleanup = () => {
+    if (opts.signal) opts.signal.removeEventListener("abort", abortListener);
+  };
 
-    return new Promise<FetchResponse>((resolve, reject) => {
-      req.on("response", (res) => {
-        console.log(res);
-        const chunks: Buffer[] = [];
-
-        res.on("data", (chunk) => {
-          chunks.push(chunk);
-        });
-
-        res.on("end", () => {
-          resolve({
-            status: res.statusCode!,
-            statusText: res.statusMessage!,
-            ok: res.statusCode! >= 200 && res.statusCode! < 300,
-            arrayBuffer: () => Promise.resolve(Buffer.concat(chunks).buffer),
-            text: () => Promise.resolve(Buffer.concat(chunks).toString()),
-            json: () =>
-              Promise.resolve(JSON.parse(Buffer.concat(chunks).toString())),
-            headers: new Headers(res.headers as HeadersInit),
-          });
-        });
-      });
-
-      req.on("error", (error) => {
-        cleanup();
-        reject(new TypeError("Failed to fetch: " + error.message));
-      });
-
-      if (opts.body) req.write(opts.body);
-
-      req.end();
-
-      if (opts.signal) {
-        if (opts.signal.aborted) abortListener();
-        else opts.signal.addEventListener("abort", abortListener);
-      }
-    });
-  }
-
-  const dec = new TextDecoder();
+  const req = lib.request(url, {
+    method: opts.method || "GET",
+    headers: opts.headers,
+  });
 
   return new Promise<FetchResponse>((resolve, reject) => {
-    const abortListener = () => {
-      cleanup();
-      req.abort();
-    };
+    req.on("response", (res) => {
+      console.log(res);
+      const chunks: Buffer[] = [];
 
-    const cleanup = () => {
-      if (opts.signal) opts.signal.removeEventListener("abort", abortListener);
-    };
+      res.on("data", (chunk) => {
+        chunks.push(chunk);
+      });
 
-    const req = GM_xmlhttpRequest({
-      url,
-      method: opts.method,
-      data: opts.body,
-      headers: opts.headers,
-      onerror: () => {
-        cleanup();
-        reject(new TypeError("Failed to fetch"));
-      },
-      responseType: "arraybuffer",
-      onabort: () => {
-        cleanup();
-        reject(new DOMException("The user aborted a request."));
-      },
-      onload: (res) => {
-        cleanup();
+      res.on("end", () => {
         resolve({
-          status: res.status,
-          statusText: res.statusText,
-          ok: res.status >= 200 && res.status < 300,
-          arrayBuffer: () => Promise.resolve(res.response),
-          text: () => Promise.resolve(dec.decode(res.response)),
-          json: () => Promise.resolve(JSON.parse(dec.decode(res.response))),
-          headers: res.responseHeaders
-            .split("\r\n")
-            .filter(Boolean) // empty lines
-            .reduce((headers, line) => {
-              const [name, value] = line.split(/:\s*?/);
-              headers.set(name, value);
-              return headers;
-            }, new Headers()),
+          status: res.statusCode!,
+          statusText: res.statusMessage!,
+          ok: res.statusCode! >= 200 && res.statusCode! < 300,
+          arrayBuffer: () => Promise.resolve(Buffer.concat(chunks).buffer),
+          text: () => Promise.resolve(Buffer.concat(chunks).toString()),
+          json: () =>
+            Promise.resolve(JSON.parse(Buffer.concat(chunks).toString())),
+          headers: new Headers(res.headers as HeadersInit),
         });
-      },
+      });
     });
+
+    req.on("error", (error) => {
+      cleanup();
+      reject(new TypeError("Failed to fetch: " + error.message));
+    });
+
+    if (opts.body) req.write(opts.body);
+
+    req.end();
 
     if (opts.signal) {
       if (opts.signal.aborted) abortListener();
