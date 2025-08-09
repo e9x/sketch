@@ -13,6 +13,7 @@ export const rageConfig: Partial<SketchConfig> = {
   drawFOV: false,
   targetOnAimKey: false,
   bhop: true,
+  rampAccel: true,
   slidehop: true,
   wallJump: true,
   nametags: true,

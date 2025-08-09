@@ -74,6 +74,7 @@ export interface SketchConfig {
   drawFOV: boolean;
   targetOnAimKey: boolean;
   bhop: boolean;
+  rampAccel: boolean;
   slidehop: boolean;
   wallJump: boolean;
   nametags: boolean;
@@ -118,6 +119,7 @@ export interface SketchConfig {
 
   // LEGACY:
   espOpacity?: number;
+
 }
 
 /**
@@ -137,6 +139,7 @@ const defaultConfig: SketchConfig = {
   drawFOV: false,
   targetOnAimKey: false,
   bhop: false,
+  rampAccel: false,
   slidehop: false,
   wallJump: true,
   nametags: false,
