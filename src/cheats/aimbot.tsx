@@ -104,6 +104,21 @@ function playerHitbox(player: Player, hitbox: string) {
   //   }
   // } else {
   const { THREE } = getGame();
+
+  if (hitbox === "head") {
+    const lol = new THREE.Vector3();
+    player.upperBody?.getWorldPosition(lol);
+    // lol.y += config.headScale / 2;
+    return lol;
+  }
+
+  if (hitbox === "chest") {
+    const lol = new THREE.Vector3();
+    player.headObj?.getWorldPosition(lol);
+    // lol.y += config.headScale / 2;
+    return lol;
+  }
+
   const hitboxOffset =
     hitbox === "head"
       ? config.headScale / 2
@@ -127,19 +142,19 @@ function playerHitbox(player: Player, hitbox: string) {
  */
 function playerAimPoint(player: Player) {
   const hitbox = sketchConfig.get("hitbox");
-  const bot = sketchConfig.get("bot");
+  // const bot = sketchConfig.get("bot");
 
   // absolute top
-  if (bot && ["auto", "head"].includes(hitbox)) {
-    const config = getConfig();
-    const { THREE } = getGame();
+  // if (bot && ["auto", "head"].includes(hitbox)) {
+  //   const config = getConfig();
+  //   const { THREE } = getGame();
 
-    return new THREE.Vector3(
-      player.x,
-      player.y + player.height - player.crouchVal * config.crouchDst,
-      player.z
-    );
-  }
+  //   return new THREE.Vector3(
+  //     player.x,
+  //     player.y + player.height - player.crouchVal * config.crouchDst,
+  //     player.z
+  //   );
+  // }
 
   if (hitbox === "auto") {
     const points = [
