@@ -29,32 +29,32 @@ export function bhopHook() {
   let didCrouch = false;
   let bhopTimer = 0;
   let bhopStart = 0;
-  let lastJump = 0;
+  // let lastJump = 0;
 
   const bhopDelay = 130;
 
   inputHooks.push((inputs) => {
     const localPlayer = getLocalPlayer();
 
-    const oldBhop = sketchConfig.get("rampAccel");
+    // const oldBhop = sketchConfig.get("rampAccel");
 
-    if (oldBhop) {
-      if (inputs[iInputs.jump]) {
-        inputs[iInputs.jump] = isBhoppable() ? lastJump : 0;
-        lastJump ^= 1;
-      }
+    // if (oldBhop) {
+    //   if (inputs[iInputs.jump]) {
+    //     inputs[iInputs.jump] = isBhoppable() ? lastJump : 0;
+    //     lastJump ^= 1;
+    //   }
 
-      // if crouch is held, slidehop
-      if (sketchConfig.get("slidehop") && inputs[iInputs.crouch]) {
-        const willCrouch = (localPlayer.velocity.y || 0) < 0;
-        inputs[iInputs.crouch] = willCrouch ? 1 : 0;
-        didCrouch = willCrouch;
-      } else {
-        didCrouch = false;
-      }
+    //   // if crouch is held, slidehop
+    //   if (sketchConfig.get("slidehop") && inputs[iInputs.crouch]) {
+    //     const willCrouch = (localPlayer.velocity.y || 0) < 0;
+    //     inputs[iInputs.crouch] = willCrouch ? 1 : 0;
+    //     didCrouch = willCrouch;
+    //   } else {
+    //     didCrouch = false;
+    //   }
 
-      return;
-    }
+    //   return;
+    // }
 
     if (sketchConfig.get("bhop") && inputs[iInputs.jump]) {
       const now = Date.now();
@@ -102,7 +102,7 @@ export function bhopHook() {
 
 export function BhopMenu() {
   const [bhop, setBhop] = useSketchConfig("bhop");
-  const [oldBhop, setOldBhop] = useSketchConfig("rampAccel");
+  // const [oldBhop, setOldBhop] = useSketchConfig("rampAccel");
   const [slidehop, setSlidehop] = useSketchConfig("slidehop");
   const [wallJump, setWallJump] = useSketchConfig("wallJump");
 
@@ -114,12 +114,12 @@ export function BhopMenu() {
         defaultChecked={bhop}
         onChange={(event) => setBhop(event.currentTarget.checked)}
       />
-      <Switch
+      {/*<Switch
         title="Old Bhop"
         description="Reverts fixes to automatic bhop"
         defaultChecked={oldBhop}
         onChange={(event) => setOldBhop(event.currentTarget.checked)}
-      />
+      />*/}
       <Switch
         title="Slidehop"
         description="Hold crouch to slidehop"
