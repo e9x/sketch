@@ -16,7 +16,7 @@ import "./cheats";
 if (isKrunker) {
   checkHash();
   main().catch((err) => {
-    if (sketchConfig("silentFail")) return;
+    if (sketchConfig.get("silentFail")) return;
     panic(err.stack);
   });
 }
