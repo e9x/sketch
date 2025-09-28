@@ -69,8 +69,8 @@ export async function getInit(
 
   const game = new Function(
     ...Object.keys(args),
-    gameData.source +
-      (isDevelopment ? "//# sourceURL=https://krunker.io/js/game.js" : "")
+    gameData.source.replace("//# sourceMappingURL=app.js.map", "") +
+      (isDevelopment ? "//# sourceURL=https://krunker.io/js/app.js" : "")
   ) as (...args: any[]) => void;
 
   return { success: true, init: () => game(...Object.values(args)) };
