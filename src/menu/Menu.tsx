@@ -6,7 +6,7 @@ import { KeybindOverlayMenu } from "../cheats/keybindOverlay";
 import { SkinHackMenu } from "../cheats/skins";
 import { WatermarkMenu } from "../cheats/watermark";
 import { discordURL, docsURL, sketchVersion } from "../consts";
-import { getActiveMap, getGame, getLocalPlayer, redrawSky } from "../filters";
+import { getActiveMap } from "../filters";
 import sketchConfig, {
   SketchConfig,
   skyboxes,

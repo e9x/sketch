@@ -10,7 +10,7 @@ import { console, defineProperty } from "./crashout";
 import { mirrorAttributes } from "./hook";
 import type KrunkBox from "./KrunkBox";
 import type * as THREE from "three";
-import type { MapData, MapManager } from "./krunker/GameMap";
+import type { MapData } from "./krunker/GameMap";
 import type { Hook } from "./inject";
 import { AI } from "./krunker/AI";
 
@@ -51,17 +51,17 @@ declare module "./krunker/AI" {
 }
 
 // export const data: any[] & Record<string, any> = [];
-export const data: Record<string, any> = {};
+// export const data: Record<string, any> = {};
 
-export const patches: Record<
-  string,
-  [
-    match: RegExp | string,
-    replacer: (substring: string, ...args: any[]) => string,
-  ]
-> = {};
+// export const patches: Record<
+//   string,
+//   [
+//     match: RegExp | string,
+//     replacer: (substring: string, ...args: any[]) => string,
+//   ]
+// > = {};
 
-export const dataArg = "_" + Math.random().toString(36).slice(2);
+// export const dataArg = "_" + Math.random().toString(36).slice(2);
 
 // patches.UseStrict = [/"use strict";/, () => ""];
 
@@ -226,8 +226,6 @@ export function redrawSky() {
     render.lastEnvId = null;
     render.init(conf, game.mode, true);
     render.updateShadowMap();
-    //render.updateGameEnvironment(-1, id);
-    //render.updateGameEnvironment(-2, conf[0]);
     render.lastEnvId = id;
     render.updateLightMap(conf);
   } catch (e) {
@@ -262,8 +260,7 @@ function doRenderHooks() {
   const maps = new WeakMap<any, any>();
 
   render.init = function (config, mode, idk1, idk2) {
-    //console.log("RENDER: init");
-    // console.trace("lol init ez", [config, mode, idk1, idk2]);
+    console.trace("lol init ez", [config, mode, idk1, idk2]);
     if (maps.has(config)) config = maps.get(config);
 
     let nConfig = config;
@@ -294,7 +291,7 @@ function doRenderHooks() {
   const renderFn = render.render;
   // we hook the render way too early
   render.render = function (...args) {
-    const game = getGame();
+   const game = getGame();
     for (const player of game.players.list) delete player[canSee];
     for (const ai of game.AI.ais) delete ai[canSee];
 
@@ -305,7 +302,7 @@ function doRenderHooks() {
         try {
           game.players.regenMeshes(getLocalPlayer());
           lastThirdPerson = game.config.thirdPerson;
-        } catch {}
+        } catch { }
       }
     }
 
@@ -377,7 +374,7 @@ function doRenderHooks() {
       const hookNHide = /^clouds_|lightcone_/;
       render.add = function (mesh, data) {
         value.call(this, mesh, data);
-        //console.log("The Fucking Object:", mesh, data);
+        console.log("The Fucking Object:", mesh, data);
         if (typeof data === "object" && hookNHide.test(data.src)) {
           let visible = mesh.visible;
           //console.log("got cloud", mesh, data);
@@ -739,18 +736,18 @@ export const hook: Hook = (
 
   args.Object = fakeObj;
 
-  for (const name in patches) {
-    const patch = patches[name];
-    let ran = false;
-    src = src.replace(patch[0], (...args) => {
-      ran = true;
-      return patch[1](...args);
-    });
-    //if (isDevelopment)
-    console.log("patching", name, "worked:", ran);
-  }
+  // for (const name in patches) {
+  //   const patch = patches[name];
+  //   let ran = false;
+  //   src = src.replace(patch[0], (...args) => {
+  //     ran = true;
+  //     return patch[1](...args);
+  //   });
+  //   //if (isDevelopment)
+  //   console.log("patching", name, "worked:", ran);
+  // }
 
-  args[dataArg] = data;
+  // args[dataArg] = data;
 
   return src;
 };

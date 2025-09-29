@@ -1,13 +1,14 @@
+// graveyard
 import {
-  data,
+  // data,
   getGame,
-  getLocalPlayer,
+  // getLocalPlayer,
   getMenuPlayer,
   onGameHooks,
 } from "../filters";
-import type { Player, Skin } from "../krunker/Player";
-import sketchConfig, { useSketchConfig } from "../sketchConfig";
-import { Switch } from "../krunker-ui/components/Switch";
+// import type { Player, Skin } from "../krunker/Player";
+// import sketchConfig, { useSketchConfig } from "../sketchConfig";
+// import { Switch } from "../krunker-ui/components/Switch";
 
 function gameHook() {
   const { generateMeshes } = getGame().players;
@@ -120,30 +121,30 @@ function gameHook() {
 }
 
 export function skinHackHook() {
-  const dummySkinArray = [...Array(25000)].map((_, i) => ({
-    ind: i,
-    cnt: 1,
-  })) as Skin[];
+  // const dummySkinArray = [...Array(25000)].map((_, i) => ({
+  //   ind: i,
+  //   cnt: 1,
+  // })) as Skin[];
 
   onGameHooks.push(gameHook);
 
-  data.uiSkins = (skinArray: Skin[]) => {
-    if (sketchConfig.get("skinHack")) return dummySkinArray;
-    else return skinArray;
-  };
+  // data.uiSkins = (skinArray: Skin[]) => {
+  //   if (sketchConfig.get("skinHack")) return dummySkinArray;
+  //   else return skinArray;
+  // };
 
-  Object.defineProperty(data, "skinHack", {
-    get: () => sketchConfig.get("skinHack"),
-  });
+  // Object.defineProperty(data, "skinHack", {
+  //   get: () => sketchConfig.get("skinHack"),
+  // });
 
-  data.spraySemen = (_: Player, skinI?: number) => {
-    skinI ||= Number(
-      getSavedVal("sprayIndex") || getSavedVal("sprayindex") || 2482
-    );
+  // data.spraySemen = (_: Player, skinI?: number) => {
+  //   skinI ||= Number(
+  //     getSavedVal("sprayIndex") || getSavedVal("sprayindex") || 2482
+  //   );
 
-    // console.log(skinI);
-    getGame().players.spray(getLocalPlayer(), skinI);
-  };
+  //   // console.log(skinI);
+  //   getGame().players.spray(getLocalPlayer(), skinI);
+  // };
 }
 
 export function SkinHackMenu() {
