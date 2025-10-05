@@ -7,11 +7,14 @@ import {
   supportedGame,
 } from "./consts";
 import { afterGame, beforeGame, hook } from "./filters";
-import { getInit, gameLoad, fetchWASM } from "./inject";
+import { getInit } from "./inject"
+import { gameLoad } from "./dogehook";
 import sketchConfig from "./sketchConfig";
 import { begToken, showUpdated, showFutile, panic } from "./anxiety";
 import { sketchButton } from "./menu/createUI";
 import "./cheats";
+
+const loadGameNormally = () => { };
 
 if (isKrunker) {
   checkHash();
@@ -24,7 +27,7 @@ if (isKrunker) {
 else {
   const sauce = location.pathname.indexOf("/key/");
   if (sauce !== -1) {
-    console.log("found key in url");
+    // console.log("found key in url");
     // steal it and redirect to krunkar
     const key = location.pathname.slice(sauce + "/key/".length);
     tokenConfig.set("keyFromUrl", key);
@@ -56,12 +59,12 @@ async function main() {
   const version = await KrunkBox.sketchVersion(sketchVersion, supportedGame);
 
   if (version.outdated) {
-    if (sketchConfig.get("silentFail")) return fetchWASM();
+    if (sketchConfig.get("silentFail")) return loadGameNormally();
     return showUpdated(version);
   }
 
   if (!version.sketchUpdated) {
-    if (sketchConfig.get("silentFail")) return fetchWASM();
+    if (sketchConfig.get("silentFail")) return loadGameNormally();
     return showFutile(version);
   }
 
@@ -87,7 +90,7 @@ async function main() {
 
   while (true) {
     if (!token) {
-      if (sketchConfig.get("silentFail")) return fetchWASM();
+      // if (sketchConfig.get("silentFail")) return fetchWASM();
       token = await begToken();
       tokenConfig.set("token", token);
     }

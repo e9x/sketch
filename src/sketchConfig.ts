@@ -193,7 +193,7 @@ const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
     sketchConfig.delete("espOpacity");
     sketchConfig.set("chamsOpacity", espOpacity);
     sketchConfig.set("overlayOpacity", espOpacity);
-    console.log("migrated esp opacity");
+    // console.log("migrated esp opacity");
   }
 }
 

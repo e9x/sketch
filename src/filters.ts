@@ -221,7 +221,8 @@ export function redrawSky() {
     // getRender().renderer.setClearColor(getRealClearColor());
     const render = getRender();
     const game = getGame();
-    if (!conf) return console.warn("FUCK");
+    if (!conf) return;
+    //  console.warn("FUCK");
     const id = render.lastEnvId;
     render.lastEnvId = null;
     render.init(conf, game.mode, true);
@@ -260,7 +261,7 @@ function doRenderHooks() {
   const maps = new WeakMap<any, any>();
 
   render.init = function (config, mode, idk1, idk2) {
-    console.trace("lol init ez", [config, mode, idk1, idk2]);
+    // console.trace("lol init ez", [config, mode, idk1, idk2]);
     if (maps.has(config)) config = maps.get(config);
 
     let nConfig = config;
@@ -322,7 +323,7 @@ function doRenderHooks() {
         // console.log("load tex", mat, id, data, crap);
         if (data.src === "clouds_0" || data.emissive === "#FFC980") {
           let visible = mat.visible;
-          console.log("got cloud", mat, id, data, crap);
+          // console.log("got cloud", mat, id, data, crap);
           Object.defineProperty(mat, "visible", {
             get: () => (sketchConfig.get("hideClouds") ? false : visible),
             set: (v) => (visible = v),
@@ -374,7 +375,7 @@ function doRenderHooks() {
       const hookNHide = /^clouds_|lightcone_/;
       render.add = function (mesh, data) {
         value.call(this, mesh, data);
-        console.log("The Fucking Object:", mesh, data);
+        // console.log("The Fucking Object:", mesh, data);
         if (typeof data === "object" && hookNHide.test(data.src)) {
           let visible = mesh.visible;
           //console.log("got cloud", mesh, data);

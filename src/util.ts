@@ -93,7 +93,7 @@ export function GM_fetch(url: URL | string, opts: FetchOptions = {}) {
 
   return new Promise<FetchResponse>((resolve, reject) => {
     req.on("response", (res) => {
-      console.log(res);
+      // console.log(res);
       const chunks: Buffer[] = [];
 
       res.on("data", (chunk) => {
