@@ -13,7 +13,10 @@ function makeFrame() {
     ifr = document.createElement("iframe");
     ifr.src = location.href;
     ifr.style.display = "none";
-    document.documentElement.append(ifr);
+    const div = document.createElement("div");
+    document.documentElement.append(div);
+    const realm = div.attachShadow({ mode: "closed" });
+    realm.append(ifr);
     // @ts-ignore
     const ifrFetch = ifr.contentWindow.fetch;
     Object.defineProperty(ifr.contentWindow, "fetch", {
@@ -24,6 +27,7 @@ function makeFrame() {
                 return function (url, init) {
                     if (url.includes("/seek-game")) {
                         ifr.remove();
+                        div.remove();
                         tokenPromiseResolve(url);
                         return;
                     }
