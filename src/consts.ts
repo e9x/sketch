@@ -40,7 +40,7 @@ export function getExposedWindow() {
 
 export { isNode };
 
-export const isKrunker = location.hostname === "krunker.io";
+export const isKrunker = window === top && location.hostname === "krunker.io";
 
 /*
 mouseY,
