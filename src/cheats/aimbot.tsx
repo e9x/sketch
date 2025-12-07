@@ -672,7 +672,7 @@ export function AimbotMenu() {
           description="Controls the speed of the aimbot's rotation"
           defaultValue={smoothFactor}
           min={0}
-          max={1}
+          max={2}
           step={0.05}
           onChange={(event) =>
             setSmoothFactor(event.currentTarget.valueAsNumber)
