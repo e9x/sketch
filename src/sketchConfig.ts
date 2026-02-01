@@ -61,7 +61,9 @@ export const skyboxes: Record<string, SketchSkybox> = Object.fromEntries(
 );
 
 export interface SketchConfig {
-  aimbot: "off" | "smooth" | "silent";
+  aimbot: "smooth" | "silent";
+  aimbotEnabled: boolean;
+  toggleAimbotKey: number;
   hitbox: "head" | "chest" | "feet" | "auto";
   bot: boolean;
   botAim: boolean;
@@ -126,7 +128,9 @@ export interface SketchConfig {
  * Default config. Also serves as a source of all the config keys (you can't iterate over an interface so this is the next best thing)
  */
 const defaultConfig: SketchConfig = {
-  aimbot: "off",
+  aimbot: "silent",
+  aimbotEnabled: true,
+  toggleAimbotKey: -1,
   hitbox: "auto",
   bot: false,
   botAim: true,

@@ -43,6 +43,7 @@ import { Slider } from "../krunker-ui/components/Slider";
 import { Switch } from "../krunker-ui/components/Switch";
 import type { AI } from "../krunker/AI";
 import type * as THREE from "three";
+import { keyListeners } from "../keys";
 
 // optimize call (tampermonkey is slow)
 // ^-- don't listen to him
@@ -333,6 +334,14 @@ export function aimbotHook() {
     }
   });
 
+  keyListeners.push((event, code, down) => {
+    const toggleAimbotKey = sketchConfig.get("toggleAimbotKey");
+    if (toggleAimbotKey !== -1 && code === toggleAimbotKey && down) {
+      event.preventDefault();
+      sketchConfig.set("aimbotEnabled", !sketchConfig.get("aimbotEnabled"));
+    }
+  });
+
   // bot auto reload
   inputHooks.push((inputs) => {
     const bot = sketchConfig.get("bot");
@@ -371,8 +380,10 @@ export function aimbotHook() {
     lastDidAim = didAim;
     didAim = false;
 
+    const aimbotEnabled = sketchConfig.get("aimbotEnabled")
+
     if (
-      aimbot === "off" ||
+      !aimbotEnabled ||
       (aimKey !== -1 && game.controls.keys[aimKey] !== 1)
     ) {
       targetPlayer = undefined;
@@ -577,6 +588,8 @@ export function aimbotHook() {
 
 export function AimbotMenu() {
   const [aimbot, setAimbot] = useSketchConfig("aimbot");
+  const [aimbotEnabled, setAimbotEnabled] = useSketchConfig("aimbotEnabled");
+  const [toggleAimbotKey, setToggleAimbotKey] = useSketchConfig("toggleAimbotKey");
   const [bot, setBot] = useSketchConfig("bot");
   const [botAim, setBotAim] = useSketchConfig("botAim");
   const [fovCheck, setfovCheck] = useSketchConfig("fovCheck");
@@ -635,16 +648,32 @@ export function AimbotMenu() {
           />
         </BindHolder>
         <Select
-          title="Aimbot"
+          title="Aimbot Type"
           defaultValue={aimbot}
           onChange={(event) =>
             setAimbot(event.currentTarget.value as SketchConfig["aimbot"])
           }
         >
-          <option value="off">Off</option>
           <option value="smooth">Assist</option>
           <option value="silent">Silent</option>
         </Select>
+        <Switch
+          title="Aimbot Enabled" 
+          defaultChecked={aimbotEnabled}
+          onChange={(event) =>
+            setAimbotEnabled(event.currentTarget.checked)
+          } />
+        <BindHolder title="Aimbot Toggle Key">
+          <Bind
+            bind={toggleAimbotKey}
+            setBind={(bind) => {
+              if (bind === 10001) alert("Invalid bind");
+              else setToggleAimbotKey(bind);
+            }}
+            reset={() => setToggleAimbotKey()}
+            unbind={() => setToggleAimbotKey(-1)}
+          />
+        </BindHolder>
         <Slider
           title="Aim reaction time"
           description="Time before aiming at target after aiming/pressing aim key"

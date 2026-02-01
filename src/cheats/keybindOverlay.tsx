@@ -13,8 +13,12 @@ export function keybindOverlayHook() {
           key: sketchConfig.get("menuKey"),
         },
         {
-          name: "Aim",
+          name: "Aimkey",
           key: sketchConfig.get("aimKey"),
+        },
+        {
+          name: "Aimbot Toggle",
+          key: sketchConfig.get("toggleAimbotKey"),
         },
         {
           name: "Triggerbot",
