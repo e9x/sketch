@@ -49,12 +49,12 @@ export const skyboxes: Record<string, SketchSkybox> = Object.fromEntries(
     {
       name: e[0].toUpperCase() + e.slice(1),
       faces: [
-        `https://pedophile.pics/skybox/${e}/SkyboxFt.png`,
-        `https://pedophile.pics/skybox/${e}/SkyboxBk.png`,
-        `https://pedophile.pics/skybox/${e}/SkyboxUp.png`,
-        `https://pedophile.pics/skybox/${e}/SkyboxDn.png`,
-        `https://pedophile.pics/skybox/${e}/SkyboxRt.png`,
-        `https://pedophile.pics/skybox/${e}/SkyboxLf.png`,
+        `https://pages.eli.gift/skybox/${e}/SkyboxFt.png`,
+        `https://pages.eli.gift/skybox/${e}/SkyboxBk.png`,
+        `https://pages.eli.gift/skybox/${e}/SkyboxUp.png`,
+        `https://pages.eli.gift/skybox/${e}/SkyboxDn.png`,
+        `https://pages.eli.gift/skybox/${e}/SkyboxRt.png`,
+        `https://pages.eli.gift/skybox/${e}/SkyboxLf.png`,
       ],
     },
   ])
