@@ -49,12 +49,12 @@ export const skyboxes: Record<string, SketchSkybox> = Object.fromEntries(
     {
       name: e[0].toUpperCase() + e.slice(1),
       faces: [
-        `https://pages.eli.gift/skybox/${e}/SkyboxFt.png`,
-        `https://pages.eli.gift/skybox/${e}/SkyboxBk.png`,
-        `https://pages.eli.gift/skybox/${e}/SkyboxUp.png`,
-        `https://pages.eli.gift/skybox/${e}/SkyboxDn.png`,
-        `https://pages.eli.gift/skybox/${e}/SkyboxRt.png`,
-        `https://pages.eli.gift/skybox/${e}/SkyboxLf.png`,
+        `https://eli.gift/skybox/${e}/SkyboxFt.png`,
+        `https://eli.gift/skybox/${e}/SkyboxBk.png`,
+        `https://eli.gift/skybox/${e}/SkyboxUp.png`,
+        `https://eli.gift/skybox/${e}/SkyboxDn.png`,
+        `https://eli.gift/skybox/${e}/SkyboxRt.png`,
+        `https://eli.gift/skybox/${e}/SkyboxLf.png`,
       ],
     },
   ])
