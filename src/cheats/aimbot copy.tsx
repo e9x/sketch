@@ -196,6 +196,8 @@ function playerAimPoint(player: Player) {
 function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
   const aimbot = sketchConfig.get("aimbot");
   const smoothFactor = sketchConfig.get("smoothFactor");
+  const mouseLockX = sketchConfig.get("mouseLockX"); // Fetch X lock percentage (0.0 - 1.0)
+  const mouseLockY = sketchConfig.get("mouseLockY"); // Fetch Y lock percentage (0.0 - 1.0)
 
   const game = getGame();
   const render = getRender();
@@ -204,6 +206,7 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
 
   const { THREE } = render;
 
+  // Calculate the required target Pitch (X) and Yaw (Y)
   rotation.setX(
     (getXDire(
       game.controls.object.position.x,
@@ -225,7 +228,8 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
     ) || 0
   );
 
-  if (aimbot === "smooth")
+  // Standard smooth lerping
+  if (aimbot === "smooth") {
     lerp(
       rotation,
       new THREE.Vector2(
@@ -234,6 +238,26 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
       ),
       smoothFactor
     );
+  }
+
+  // Apply Mouse Lock percentages
+  if (typeof mouseLockX === "number" && typeof mouseLockY === "number") {
+    const currentPitch = game.controls.pchObjc.rotation.x;
+    const currentYaw = game.controls.object.rotation.y;
+
+    // Pitch (X-axis / Vertical) Interpolation
+    // Doesn't wrap around, so we can standard linear interpolate it
+    const pitchDelta = rotation.x - currentPitch;
+    rotation.setX(currentPitch + pitchDelta * mouseLockX);
+
+    // Yaw (Y-axis / Horizontal) Interpolation
+    // Requires shortest angular path calculation to prevent the camera from spinning the wrong way
+    const max = Math.PI * 2;
+    const da = (rotation.y - currentYaw) % max;
+    const yawDelta = ((2 * da) % max) - da;
+    
+    rotation.setY(currentYaw + yawDelta * mouseLockY);
+  }
 
   return rotation;
 }

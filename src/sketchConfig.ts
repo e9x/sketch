@@ -122,6 +122,9 @@ export interface SketchConfig {
   // LEGACY:
   espOpacity?: number;
 
+  mouseLockX: number;
+  mouseLockY: number;
+
 }
 
 /**
@@ -185,6 +188,8 @@ const defaultConfig: SketchConfig = {
   badColor: "#ff0000",
   goodColor: "#00ff00",
   hideClouds: false,
+  mouseLockX: 0,
+  mouseLockY: 0,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
