@@ -134,7 +134,7 @@ export default class KrunkBox {
     }
   }
   async gameData(): Promise<
-    | { success: true; source: string; skins: string }
+    | { success: true; source: string; renamed: Record<string,string> }
     | { success: false; error: [code: string, ...flags: any[]] }
   > {
     while (true) {
@@ -172,7 +172,7 @@ export default class KrunkBox {
       return {
         success: true,
         source: dec.decode(a.slice(0, srcLength)),
-        skins: dec.decode(a.slice(srcLength)),
+        renamed: JSON.parse(dec.decode(a.slice(srcLength))),
       };
     }
   }

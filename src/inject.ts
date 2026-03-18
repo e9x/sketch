@@ -7,12 +7,12 @@ import { isDevelopment } from "./consts";
 export type Hook = (
   src: string,
   krunkbox: KrunkBox,
-  args: Record<string, any>
+  args: Record<string, any>,
 ) => string;
 
 export async function getInit(
   krunkbox: KrunkBox,
-  hook: Hook
+  hook: Hook,
 ): Promise<
   | { success: false; error: [code: string, ...flags: any[]] }
   | { success: true; init: () => void }
@@ -21,8 +21,9 @@ export async function getInit(
   const gameData = await krunkbox.gameData();
   if (!gameData.success) return gameData;
 
-  // just a really long version of `any`
-  (window as unknown as { skinfx: string }).skinfx = gameData.skins;
+  // wow so obfuscate
+  //@ts-ignore
+  for (let i in gameData.renamed) window[gameData.renamed[i]] = window[i];
 
   const args: Record<string, any> = {};
   // args.WP_MMToken = token;
@@ -33,7 +34,7 @@ export async function getInit(
   const game = new Function(
     ...Object.keys(args),
     gameData.source.replace("//# sourceMappingURL=app.js.map", "") +
-    (isDevelopment ? "//# sourceURL=https://krunker.io/js/app.js" : "")
+      (isDevelopment ? "//# sourceURL=https://krunker.io/js/app.js" : ""),
   ) as (...args: any[]) => void;
 
   return { success: true, init: () => game(...Object.values(args)) };
