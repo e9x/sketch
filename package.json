@@ -14,10 +14,13 @@
   },
   "type": "module",
   "dependencies": {
+    "jsonpack": "^1.1.5",
+    "msgpackr": "^1.11.9",
     "preact": "^10.26.4"
   },
   "devDependencies": {
     "@fastify/send": "^4.0.0",
+    "@types/jsonpack": "^1.1.6",
     "@types/node": "^22.13.14",
     "@types/tampermonkey": "^5.0.4",
     "@types/three": "^0.150.2",
