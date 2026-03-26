@@ -2,6 +2,7 @@ import { keyListeners } from "../keys";
 import sketchConfig from "../sketchConfig";
 import Menu from "./Menu";
 import { createRenderContainer } from "../krunker-ui/container";
+import { waitFor } from "../util";
 
 function sketchWindow() {
   const html = createRenderContainer(() => <Menu />);
@@ -39,13 +40,13 @@ export function updateSketchMenuButton() {
   sketchMenuButton.style.display = sketchConfig.get("menuButton") ? "" : "none";
 }
 
-export function sketchButton() {
+export async function sketchButton() {
   const menuItemContainer =
     document.querySelector<HTMLDivElement>("#menuItemContainer");
   if (menuItemContainer)
     menuItemContainer.innerHTML += `<div class="menuItem" onmouseenter="playTick()" onclick="playSelect()" id="sketchMenu"><span class="material-icons-outlined menBtnIcn" style="color: #fbff00">edit</span><div class="menuItemTitle">Sketch</div></div>`;
 
-  sketchMenuButton = document.getElementById("sketchMenu") as HTMLDivElement;
+  sketchMenuButton = await waitFor(() => document.getElementById("sketchMenu") as HTMLDivElement);
   sketchMenuButton.removeAttribute("id");
   sketchMenuButton.addEventListener("click", sketchWindow);
   updateSketchMenuButton();
