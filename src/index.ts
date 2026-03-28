@@ -113,11 +113,10 @@ async function main() {
     }
 
     await gameLoad;
-    sketchButton();
-
     for (const bg of beforeGame) bg();
     game.init();
     for (const ag of afterGame) ag();
+    sketchButton();
 
     break;
   }

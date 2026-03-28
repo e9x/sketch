@@ -66,6 +66,7 @@ export interface SketchConfig {
   toggleAimbotKey: number;
   hitbox: "head" | "chest" | "feet" | "auto";
   bot: boolean;
+  botCrouch: boolean;
   botAim: boolean;
   wallbangs: boolean;
   fovCheck: boolean;
@@ -111,7 +112,7 @@ export interface SketchConfig {
   mapOverridesCode: MapData;
   skybox: string;
   watermark: boolean;
-  spinbot: boolean;
+  spinbot: "off" | "physical" | "visual";
   triggerbotDistance: number;
   targetList: AimbotTarget[];
   targetListMode: "off" | "guestOnly" | "whitelist" | "blacklist";
@@ -136,6 +137,7 @@ const defaultConfig: SketchConfig = {
   toggleAimbotKey: -1,
   hitbox: "auto",
   bot: false,
+  botCrouch: true,
   botAim: true,
   wallbangs: false,
   fovCheck: true,
@@ -173,7 +175,7 @@ const defaultConfig: SketchConfig = {
   skinHack: false,
   keybindOverlay: false,
   healthBars: false,
-  adblock: false,
+  adblock: true,
   thirdPerson: false,
   skyColor: false,
   skyColorHex: "#000",
@@ -181,7 +183,7 @@ const defaultConfig: SketchConfig = {
   mapOverridesCode: lean,
   skybox: "off",
   watermark: false,
-  spinbot: false,
+  spinbot: "off",
   triggerbotDistance: 0.5,
   targetList: [],
   targetListMode: "off",
@@ -196,6 +198,12 @@ const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
 
 // legacy migrations
 {
+  const spinbot = sketchConfig.get("spinbot");
+  if (typeof spinbot === "boolean") {
+    sketchConfig.set("spinbot", spinbot ? "physical" : "off");
+    console.log("migrated spinbot");
+  }
+
   const espOpacity = sketchConfig.get("espOpacity");
 
   if (typeof espOpacity === "number") {

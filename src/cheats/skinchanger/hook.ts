@@ -1,58 +1,69 @@
 import { encode, decode } from "msgpackr";
 import * as jsonpack from "jsonpack";
 import Mod from "./mod";
-// import sketchConfig from "../../sketchConfig";
-import { getExposedWindow } from "consts";
+import { getExposedWindow } from "../../consts";
+import { mirrorAttributes } from "../../hook";
+import sketchConfig from "sketchConfig";
 
 export class Hook {
   init(mod: Mod) {
     const w = getExposedWindow();
-    w.WebSocket = class Hooked extends w.WebSocket {
-      _onmessage: null | (((this: WebSocket, ev: MessageEvent) => any) | null) =
-        null;
 
-      constructor(url: string, protocols?: string | string[]) {
-        super(url, protocols);
+    const ogW = w.WebSocket;
 
-        this.addEventListener("message", (ev) => {
-          let customEvent = {
-            isTrusted: true,
-            data: ev.data,
-          };
+    type Handler = ((this: WebSocket, ev: MessageEvent) => any) | null;
+    const handlers = new WeakMap<WebSocket, Handler>();
 
+    const newW = mirrorAttributes(function WebSocket(
+      this: WebSocket,
+      ...args: any[]
+    ) {
+      const ws = Reflect.construct(ogW, args, new.target) as WebSocket;
+      ws.addEventListener("message", (ev) => {
+        let customEvent = {
+          isTrusted: true,
+          data: ev.data,
+        };
+
+        try {
+          let ab = ev.data as ArrayBuffer;
+          let packet = decode(new Uint8Array(ab.slice(0, -2)));
+          let sig = ab.slice(-2);
+
+          let newPack = mod.onMessage(packet);
+          let newPackEnc = new Uint8Array(encode(newPack));
+          let newAbSig = new Uint8Array(newPackEnc.byteLength + 2);
+
+          newAbSig.set(newPackEnc);
+          newAbSig.set(new Uint8Array(sig), newPackEnc.byteLength);
+
+          customEvent.data = newAbSig.buffer;
+        } catch (e) {
+          console.log(e);
+        }
+
+        const handler = handlers.get(ws);
+        if (handler)
           try {
-            let ab = ev.data as ArrayBuffer;
-            let packet = decode(new Uint8Array(ab.slice(0, -2)));
-            let sig = ab.slice(-2);
-
-            let newPack = mod.onMessage(packet);
-            let newPackEnc = new Uint8Array(encode(newPack));
-            let newAbSig = new Uint8Array(newPackEnc.byteLength + 2);
-
-            newAbSig.set(newPackEnc);
-            newAbSig.set(new Uint8Array(sig), newPackEnc.byteLength);
-
-            customEvent.data = newAbSig.buffer;
-          } catch (e) {
-            console.log(e);
-          }
-
-          try {
-            this._onmessage?.call(this, customEvent as MessageEvent);
+            handler.call(ws, customEvent as MessageEvent);
           } catch (e) {
             console.error(e);
           }
-        });
-      }
+      });
+      return ws;
+    }, ogW);
 
-      set onmessage(
-        listener: ((this: WebSocket, ev: MessageEvent) => any) | null,
+    if (sketchConfig.get("skinHack")) {
+      w.WebSocket = newW;
+
+      newW.prototype = ogW.prototype;
+
+      const { send } = w.WebSocket.prototype;
+      w.WebSocket.prototype.send = mirrorAttributes(function send(
+        this: WebSocket,
+        data: any,
       ) {
-        this._onmessage = listener;
-      }
-
-      send(data: any) {
-        // if (sketchConfig.get("skinHack"))
+        if (sketchConfig.get("skinHack"))
           try {
             let ab = data as ArrayBuffer;
             let packet = decode(new Uint8Array(ab.slice(0, -2)));
@@ -70,35 +81,47 @@ export class Hook {
             console.log(e);
           }
 
-        return super.send(data);
-      }
-    } as any;
+        send.call(this, data);
+      }, send);
 
-    w.XMLHttpRequest = class Hooked extends w.XMLHttpRequest {
-      open(
-        method: string,
-        url: string,
-        async: boolean = true,
-        user?: string,
-        password?: string,
-      ) {
-        super.open(method, url, async, user, password);
+      const { get, set } = Object.getOwnPropertyDescriptor(
+        WebSocket.prototype,
+        "onmessage",
+      )!;
+      Object.defineProperty(WebSocket.prototype, "onmessage", {
+        get: mirrorAttributes(function (this: WebSocket, listener: Handler) {
+          return handlers.get(this);
+        }, get!),
+        set: mirrorAttributes(function (this: WebSocket, listener: Handler) {
+          handlers.set(this, listener);
+        }, set!),
+        configurable: true,
+      });
 
-        let urlObj = new URL(url, location.href);
+      w.XMLHttpRequest = class Hooked extends w.XMLHttpRequest {
+        open(
+          method: string,
+          url: string,
+          async: boolean = true,
+          user?: string,
+          password?: string,
+        ) {
+          super.open(method, url, async, user, password);
 
-        if (
-          urlObj.hostname !== "gapi.svc.krunker.io" &&
-          urlObj.pathname !== "/data/skins"
-        )
-          return;
+          let urlObj = new URL(url, location.href);
 
-        this.addEventListener("load", () => {
-          let skins: any = jsonpack.unpack(
-            this.response
-          );
-          mod.onSkinsLoaded(skins);
-        });
-      }
-    } as any;
+          if (
+            urlObj.hostname !== "gapi.svc.krunker.io" &&
+            urlObj.pathname !== "/data/skins"
+          )
+            return;
+
+          this.addEventListener("load", () => {
+            let skins: any = jsonpack.unpack(this.response);
+            mod.onSkinsLoaded(skins);
+          });
+        }
+      } as any;
+    }
   }
 }

@@ -307,6 +307,10 @@ function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
   return true;
 }
 
+declare global {
+  function SSpinbot(inputs: number[], i: typeof iInputs, sk: typeof sketchConfig): void;
+}
+
 export function aimbotHook() {
   let reloading = 0;
 
@@ -369,8 +373,10 @@ export function aimbotHook() {
   let aimReaction = 0;
   let didAim = false;
   let lastDidAim = false;
+  let doSpinbot = false;
 
   inputHooks.push((inputs) => {
+    doSpinbot = true;
     const aimbot = sketchConfig.get("aimbot");
     const aimReactionTime = sketchConfig.get("aimReactionTime") * 1000;
     const aimKey = sketchConfig.get("aimKey");
@@ -508,14 +514,17 @@ export function aimbotHook() {
     // if the weapon can't shoot
     // maybe use cantShootTimer?
     const aimTime = getAimTime(inputs);
-    if (aimbot === "silent") {
-      // 295.js: if (this.reloads[this.loadoutIndex] <= 0 && this.swapTime <= 0 && this.reloadTimer <= 0) {
-      if (
-        getCurrentReload(aimTime) > 0 ||
-        getCurrentSwapTime(aimTime) > 0 ||
-        getCurrentReloadTimer(aimTime) > 0
-      )
-        return;
+
+    // 295.js: if (this.reloads[this.loadoutIndex] <= 0 && this.swapTime <= 0 && this.reloadTimer <= 0) {
+    if (
+      getCurrentReload(aimTime) > 0 ||
+      getCurrentSwapTime(aimTime) > 0 ||
+      getCurrentReloadTimer(aimTime) > 0
+    ) {
+      if (aimbot === "silent") return;
+    } else {
+      // OHH SHIEET QWE ABOUT TO KILL A KRUNKA
+      doSpinbot = false;
     }
 
     if (target) {
@@ -562,27 +571,56 @@ export function aimbotHook() {
     }
   });
 
+  let v = 1;
+
   let spinCount = 0;
 
   inputHooks.push((inputs) => {
-    if (!sketchConfig.get("spinbot")) return;
+    // if (window.SSpinbot) {
+    //   try {
+    //     window.SSpinbot(inputs, iInputs, sketchConfig);
+    //   } catch (err) {
+    //     console.error(err);
+    //   }
+    //   return;
+    // }
 
-    if (inputs[iInputs.shoot]) return;
+    const sb = sketchConfig.get("spinbot");
+    const mlt = 84;
 
-    if (inputs[iInputs.moveDir] !== -1)
-      inputs[iInputs.moveDir] =
-        (inputs[iInputs.moveDir] +
-          spinCount -
-          Math.round(7 * (inputs[iInputs.yDir] / 1000 / (Math.PI * 2)))) %
-        7;
-    // crouch while not moving
-    else inputs[iInputs.crouch] = 1;
+    // idek what part of the body this is
+    const group = getLocalPlayer().objInstances?.children[0];
 
-    inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
+    if (sb === "off") {
+      if (group) group.rotation.y = 0;
+      return;
+    }
 
-    inputs[iInputs.yDir] = (spinCount / 7) * (Math.PI * 2) * 1000;
+    if (group) group.rotation.y = Math.random() * 1000;
 
-    if (inputs[iInputs.frame] % 1 === 0) spinCount = (spinCount + 1) % 7;
+    // inputs[iInputs.shoot]
+    if (!doSpinbot) return;
+
+    if (sb === "physical") {
+      if (inputs[iInputs.moveDir] !== -1)
+        inputs[iInputs.moveDir] =
+          (inputs[iInputs.moveDir] +
+            spinCount -
+            Math.round(7 * (inputs[iInputs.yDir] / 1000 / (Math.PI * 2)))) %
+          7;
+      // crouch while not moving
+      else if (sketchConfig.get("botCrouch")) inputs[iInputs.crouch] = 1;
+      inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
+      inputs[iInputs.yDir] = (spinCount / 7) * (Math.PI * 2) * 1000;
+      if (inputs[iInputs.frame] % 1 === 0) spinCount = (spinCount + 1) % 7;
+    } else {
+      // abuse animations
+      v ^= 1;
+      if (v === 1)
+        inputs[iInputs.yDir] -= (Math.PI / 2) * 1000 * mlt;
+      // force down
+      inputs[iInputs.xDir] = -(Math.PI / 2) * 1000;
+    }
   });
 }
 
@@ -591,6 +629,7 @@ export function AimbotMenu() {
   const [aimbotEnabled, setAimbotEnabled] = useSketchConfig("aimbotEnabled");
   const [toggleAimbotKey, setToggleAimbotKey] = useSketchConfig("toggleAimbotKey");
   const [bot, setBot] = useSketchConfig("bot");
+  const [botCrouch, setBotCrouch] = useSketchConfig("botCrouch");
   const [botAim, setBotAim] = useSketchConfig("botAim");
   const [fovCheck, setfovCheck] = useSketchConfig("fovCheck");
   const [wallbangs, setWallbangs] = useSketchConfig("wallbangs");
@@ -686,11 +725,6 @@ export function AimbotMenu() {
           onChange={(event) =>
             setAimReactionTime(event.currentTarget.valueAsNumber)
           }
-        />
-        <Switch
-          title="Spinbot"
-          defaultChecked={spinbot}
-          onChange={(event) => setSpinbot(event.currentTarget.checked)}
         />
         <Switch
           title="Target on Aim Key"
@@ -869,6 +903,12 @@ export function AimbotMenu() {
           onChange={(event) => setBot(event.currentTarget.checked)}
         />
         <Switch
+          title="Auto-Crouch"
+          description="Decreases hitbox size"
+          defaultChecked={botCrouch}
+          onChange={(event) => setBotCrouch(event.currentTarget.checked)}
+        />
+        <Switch
           title="Turret Always Aim"
           description="Automatically aims when in turret mode"
           defaultChecked={botAim}
@@ -879,6 +919,17 @@ export function AimbotMenu() {
           defaultChecked={wallbangs}
           onChange={(event) => setWallbangs(event.currentTarget.checked)}
         />
+        <Select
+          title="Spinbot Type"
+          defaultValue={spinbot}
+          onChange={(event) =>
+            setSpinbot(event.currentTarget.value as SketchConfig["spinbot"])
+          }
+        >
+          <option value="off">Off</option>
+          <option value="physical">Physical</option>
+          <option value="visual">Visual</option>
+        </Select>
       </Set>
       <Set title="Triggerbot">
         <TriggerbotMenu />
