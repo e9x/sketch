@@ -576,50 +576,63 @@ export function aimbotHook() {
   let spinCount = 0;
 
   inputHooks.push((inputs) => {
-    // if (window.SSpinbot) {
-    //   try {
-    //     window.SSpinbot(inputs, iInputs, sketchConfig);
-    //   } catch (err) {
-    //     console.error(err);
-    //   }
-    //   return;
-    // }
+    if (window.SSpinbot) {
+      try {
+        window.SSpinbot(inputs, iInputs, sketchConfig);
+      } catch (err) {
+        console.error(err);
+      }
+      return;
+    }
 
     const sb = sketchConfig.get("spinbot");
     const mlt = 84;
 
+    const lp = getLocalPlayer();
     // idek what part of the body this is
-    const group = getLocalPlayer().objInstances?.children[0];
-
+    const p1 = lp.lowerBody?.children[1];
+    const p2 = lp.headObj;
+    const p3 = lp.objInstances?.children[0];
+    const p4 = lp.faceMesh;
     if (sb === "off") {
-      if (group) group.rotation.y = 0;
+      if (p1) p1.rotation.x = 0;
+      if (p2) p2.rotation.x = 0;
+      if (p3) p3.rotation.y = 0;
+      if (p4) p4.rotation.x = 0;
       return;
     }
 
-    if (group) group.rotation.y = Math.random() * 1000;
+    if (p1) p1.rotation.x = -1;
+    if (p2) p2.rotation.x = -1;
+    if (p3) p3.rotation.y = Math.random() * 1000;
+    if (p4) p4.rotation.x = -1;
+
 
     // inputs[iInputs.shoot]
     if (!doSpinbot) return;
 
-    if (sb === "physical") {
-      if (inputs[iInputs.moveDir] !== -1)
-        inputs[iInputs.moveDir] =
-          (inputs[iInputs.moveDir] +
-            spinCount -
-            Math.round(7 * (inputs[iInputs.yDir] / 1000 / (Math.PI * 2)))) %
-          7;
-      // crouch while not moving
-      else if (sketchConfig.get("botCrouch")) inputs[iInputs.crouch] = 1;
-      inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
-      inputs[iInputs.yDir] = (spinCount / 7) * (Math.PI * 2) * 1000;
-      if (inputs[iInputs.frame] % 1 === 0) spinCount = (spinCount + 1) % 7;
-    } else {
-      // abuse animations
-      v ^= 1;
-      if (v === 1)
-        inputs[iInputs.yDir] -= (Math.PI / 2) * 1000 * mlt;
-      // force down
-      inputs[iInputs.xDir] = -(Math.PI / 2) * 1000;
+    switch (sb) {
+      case "physical":
+        if (inputs[iInputs.moveDir] !== -1)
+          inputs[iInputs.moveDir] =
+            (inputs[iInputs.moveDir] +
+              spinCount -
+              Math.round(7 * (inputs[iInputs.yDir] / 1000 / (Math.PI * 2)))) %
+            7;
+        // crouch while not moving
+        else if (sketchConfig.get("botCrouch")) inputs[iInputs.crouch] = 1;
+        inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
+        inputs[iInputs.yDir] = (spinCount / 7) * (Math.PI * 2) * 1000;
+        if (inputs[iInputs.frame] % 1 === 0) spinCount = (spinCount + 1) % 7;
+        break;
+      case "visual":
+        // force down
+        inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
+        // abuse animations
+        v ^= 1;
+        if (v === 1)
+          inputs[iInputs.yDir] -= (Math.PI / 2) * 1000 * mlt;
+        break;
     }
   });
 }
