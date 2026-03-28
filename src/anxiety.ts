@@ -83,7 +83,7 @@ export function begToken() {
       : `<p>Message <u>@melitha</u> in our <a id="discord">Discord</a> for help with your early access key.</p>`) +
     `<p style="font-size:10px;color:red;visbility:hidden" id="error"></p>` +
     `<form style="display:flex;flex-direction:row;gap:5px">` +
-    `<input type="text" placeholder="Access Key" id="accessKey" required />` +
+    `<input type="text" placeholder="Access Key" id="accessKey" type="password" required />` +
     `<input type="submit" value="Done" id="submit" />` +
     `</form>`;
 
