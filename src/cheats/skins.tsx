@@ -1,15 +1,17 @@
-import { useSketchConfig } from "../sketchConfig";
+import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "../krunker-ui/components/Switch";
 import { Hook } from "./skinchanger/hook";
 import Mod from "./skinchanger/mod";
 
 export function skinHackHook() {
-  new Hook().init(new Mod());
+  if (sketchConfig.get("skinHack"))
+    new Hook().init(new Mod());
 }
 
 export function SkinHackMenu() {
   const [skinHack, setSkinHack] = useSketchConfig("skinHack");
 
+  // return <></>;
   return (
     <Switch
       title="Skin Hack"
