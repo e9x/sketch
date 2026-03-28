@@ -81,19 +81,25 @@ export function bhopHook() {
 
     // if crouch is held, slidehop
     if (sketchConfig.get("slidehop") && inputs[iInputs.crouch]) {
-      if (!didCrouch) zeroSome = nextZeroSome;
+      if (localPlayer.onGround && !inputs[iInputs.jump]) {
+        inputs[iInputs.crouch] = 1;
+        didCrouch = true;
+      }
+      else {
+        if (!didCrouch) zeroSome = nextZeroSome;
 
-      // pick a new "zeroSome" everytime we slidehop
-      // otherwise they will randomly start/stop crouching as zeroSome is recalculated
-      // the users will appear to be relatively accurate with slidehopping
-      const willCrouch =
-        !localPlayer.onGround && (localPlayer.velocity.y || 0) < zeroSome;
+        // pick a new "zeroSome" everytime we slidehop
+        // otherwise they will randomly start/stop crouching as zeroSome is recalculated
+        // the users will appear to be relatively accurate with slidehopping
+        const willCrouch =
+          !localPlayer.onGround && (localPlayer.velocity.y || 0) < zeroSome;
 
-      inputs[iInputs.crouch] = willCrouch ? 1 : 0;
+        inputs[iInputs.crouch] = willCrouch ? 1 : 0;
 
-      if (!didCrouch && willCrouch) nextZeroSome = pickZeroSome();
+        if (!didCrouch && willCrouch) nextZeroSome = pickZeroSome();
 
-      didCrouch = willCrouch;
+        didCrouch = willCrouch;
+      }
     } else {
       didCrouch = false;
     }
