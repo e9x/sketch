@@ -77,7 +77,7 @@ export interface SketchConfig {
   drawFOV: boolean;
   targetOnAimKey: boolean;
   bhop: boolean;
-  // rampAccel: boolean;
+  rampAccel: boolean;
   slidehop: boolean;
   wallJump: boolean;
   nametags: boolean;
@@ -148,7 +148,7 @@ const defaultConfig: SketchConfig = {
   drawFOV: false,
   targetOnAimKey: false,
   bhop: false,
-  // rampAccel: false,
+  rampAccel: false,
   slidehop: false,
   wallJump: true,
   nametags: false,
