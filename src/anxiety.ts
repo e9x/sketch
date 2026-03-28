@@ -80,7 +80,7 @@ export function begToken() {
       ? `<p>In order to pay for servers and development, we've partnered with WorkInk.</p>` +
         `<p><a id="freeKey" target="_blank">Get Access Key</a></p>` +
         `<p><a href="https://krunker.zip/docs/quick-start/" target="_blank">Video Tutorial</a></p>`
-      : `<p>Message <u>@catseli</u> in our <a id="discord">Discord</a> for help with your early access key.</p>`) +
+      : `<p>Message <u>@melitha</u> in our <a id="discord">Discord</a> for help with your early access key.</p>`) +
     `<p style="font-size:10px;color:red;visbility:hidden" id="error"></p>` +
     `<form style="display:flex;flex-direction:row;gap:5px">` +
     `<input type="text" placeholder="Access Key" id="accessKey" required />` +
