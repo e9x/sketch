@@ -37,15 +37,16 @@ export function bhopHook() {
     const localPlayer = getLocalPlayer();
 
     const oldBhop = sketchConfig.get("rampAccel");
+    const autoSlide = sketchConfig.get("autoSlide");
 
     if (oldBhop) {
-      if (inputs[iInputs.jump]) {
+      if (autoSlide && inputs[iInputs.moveDir] !== -1  || inputs[iInputs.jump]) {
         inputs[iInputs.jump] = isBhoppable() ? lastJump : 0;
         lastJump ^= 1;
       }
 
       // if crouch is held, slidehop
-      if (sketchConfig.get("slidehop") && inputs[iInputs.crouch]) {
+      if (autoSlide || sketchConfig.get("slidehop") && inputs[iInputs.crouch]) {
         const willCrouch = (localPlayer.velocity.y || 0) < 0;
         inputs[iInputs.crouch] = willCrouch ? 1 : 0;
         didCrouch = willCrouch;
@@ -56,7 +57,7 @@ export function bhopHook() {
       return;
     }
 
-    if (sketchConfig.get("bhop") && inputs[iInputs.jump]) {
+    if (autoSlide && inputs[iInputs.moveDir] !== -1 || sketchConfig.get("bhop") && inputs[iInputs.jump]) {
       const now = Date.now();
 
       if (bhopTimer <= now) {
@@ -78,10 +79,9 @@ export function bhopHook() {
       bhopTimer = 0;
       bhopStart = 0;
     }
-
     // if crouch is held, slidehop
-    if (sketchConfig.get("slidehop") && inputs[iInputs.crouch]) {
-      if (localPlayer.onGround && !inputs[iInputs.jump]) {
+    if (autoSlide || sketchConfig.get("slidehop") && inputs[iInputs.crouch]) {
+      if (localPlayer.onGround && !inputs[iInputs.jump] && inputs[iInputs.crouch]) {
         inputs[iInputs.crouch] = 1;
         didCrouch = true;
       }
@@ -110,6 +110,7 @@ export function BhopMenu() {
   const [bhop, setBhop] = useSketchConfig("bhop");
   const [oldBhop, setOldBhop] = useSketchConfig("rampAccel");
   const [slidehop, setSlidehop] = useSketchConfig("slidehop");
+  const [autoSlide, setAutoSlide] = useSketchConfig("autoSlide");
   const [wallJump, setWallJump] = useSketchConfig("wallJump");
 
   return (
@@ -131,6 +132,12 @@ export function BhopMenu() {
         description="Hold crouch to slidehop"
         defaultChecked={slidehop}
         onChange={(event) => setSlidehop(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Autoslide"
+        description="Should you automatically slide without holding crouch"
+        defaultChecked={autoSlide}
+        onChange={(event) => setAutoSlide(event.currentTarget.checked)}
       />
       <Switch
         title="Wall Jump"

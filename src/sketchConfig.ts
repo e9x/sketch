@@ -79,6 +79,7 @@ export interface SketchConfig {
   bhop: boolean;
   rampAccel: boolean;
   slidehop: boolean;
+  autoSlide: boolean;
   wallJump: boolean;
   nametags: boolean;
   newNametags: boolean;
@@ -150,6 +151,7 @@ const defaultConfig: SketchConfig = {
   bhop: false,
   rampAccel: false,
   slidehop: false,
+  autoSlide: false,
   wallJump: true,
   nametags: false,
   newNametags: false,
