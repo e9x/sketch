@@ -256,6 +256,9 @@ function onTargetList(target: Player) {
   if (targetListMode === "guestOnly")
     return target.name === "Guest_" + target.sid;
 
+  if (targetListMode === "playerOnly")
+    return target.name !== "Guest_" + target.sid;
+
   // If targetListMode is off, immediately allow the target
   if (targetListMode === "off") return true;
 
@@ -781,6 +784,7 @@ export function AimbotMenu() {
           }
         >
           <option value="off">Off</option>
+          <option value="playersOnly">Players only</option>
           <option value="guestOnly">Guests only</option>
           <option value="whitelist">Whitelist</option>
           <option value="blacklist">Blacklist</option>
