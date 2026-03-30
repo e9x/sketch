@@ -116,7 +116,7 @@ export interface SketchConfig {
   spinbot: "off" | "physical" | "visual";
   triggerbotDistance: number;
   targetList: AimbotTarget[];
-  targetListMode: "off" | "guestOnly" | "whitelist" | "blacklist";
+  targetListMode: "off" | "guestOnly" | "playerOnly" | "whitelist" | "blacklist";
   badColor: string;
   goodColor: string;
   hideClouds: boolean;
@@ -126,6 +126,7 @@ export interface SketchConfig {
 
   mouseLockX: number;
   mouseLockY: number;
+  noSpread: boolean;
 
 }
 
@@ -194,6 +195,7 @@ const defaultConfig: SketchConfig = {
   hideClouds: false,
   mouseLockX: 0,
   mouseLockY: 0,
+  noSpread: false,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());

@@ -90,7 +90,7 @@ const sketchMain = await context({
         ...sketchMeta,
         version: pkg.version,
         // connect: [new URL(process.env.SKETCH_API_URL).hostname],
-      }) + "\n/*eslint-disable*/",
+      }).replace("// @run-at", "// @noframes\n// @run-at") + "\n/*eslint-disable*/",
   },
 });
 

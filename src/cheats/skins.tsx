@@ -9,6 +9,8 @@ import { mirrorAttributes } from "../hook";
   const mod = new Mod();
 
   export function skinHackHook() {
+    return;
+    
   if (!sketchConfig.get("skinHack")) return;
   const w = getExposedWindow();
 
@@ -131,6 +133,7 @@ import { mirrorAttributes } from "../hook";
 export function SkinHackMenu() {
   const [skinHack, setSkinHack] = useSketchConfig("skinHack");
 
+  return <></>;
   return (
     <Switch
       title="Skin Hack"
