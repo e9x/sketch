@@ -88,7 +88,7 @@ export interface Weapon {
   pj_nImp?: boolean; // No impulse/knockback
   pj_lookDir?: boolean; // Projectile faces direction of travel
 
-  cSpread: number;
+  cSpread: number[][];
 
   // Sub-object used by ProjectilesManager
   projectile?: {

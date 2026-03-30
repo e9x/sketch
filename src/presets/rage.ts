@@ -35,7 +35,7 @@ export const rageConfig: Partial<SketchConfig> = {
   noAdsFovMlt: true,
   multiPoint: true,
   multiPointScale: 0.5,
-  skinHack: false,
+  skinHack: true,
   keybindOverlay: false,
   healthBars: false,
   thirdPerson: true,

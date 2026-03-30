@@ -13,6 +13,7 @@ import type * as THREE from "three";
 import type { MapData } from "./krunker/GameMap";
 import type { Hook } from "./inject";
 import { AI } from "./krunker/AI";
+import type * as IO from "./krunker/io";
 
 const canSee = Symbol();
 let checkingCanSee = false;
@@ -31,7 +32,7 @@ export function canISeeEnt(ent: Player | AI) {
         : localPlayer,
       ent.x,
       ent.y,
-      ent.z
+      ent.z,
     ) === null;
   checkingCanSee = false;
   ent[canSee] = s;
@@ -50,18 +51,49 @@ declare module "./krunker/AI" {
   }
 }
 
-// export const data: any[] & Record<string, any> = [];
-// export const data: Record<string, any> = {};
+let io: typeof IO | undefined;
 
-// export const patches: Record<
-//   string,
-//   [
-//     match: RegExp | string,
-//     replacer: (substring: string, ...args: any[]) => string,
-//   ]
-// > = {};
+export function getIO() {
+  if (!io) throw new Error("Too early");
+  return io;
+}
 
-// export const dataArg = "_" + Math.random().toString(36).slice(2);
+export const onIoHooks: ((socket: WebSocket) => void)[] = [];
+
+export const data: Record<string, any> = {
+  socket(
+    io: { [x: string]: WebSocket },
+    prop: string | number,
+    arg: string | URL,
+  ) {
+    const ws = new WebSocket(arg);
+    // console.log({ io, ws, prop, arg });
+    for (const hook of onIoHooks) hook(ws);
+    io[prop] = ws;
+    return ws;
+  },
+};
+
+export const patches: Record<
+  string,
+  [
+    match: RegExp | string,
+    replacer: (substring: string, ...args: any[]) => string,
+  ]
+> = {};
+
+export const dataArg = "_" + Math.random().toString(36).slice(2);
+
+const v = /(?<![a-zA-Z0-9_])[iIìíîïÌÍÎÏ]+(?![a-zA-Z0-9_])/;
+
+patches.io = [
+  new RegExp(
+    `(this|${v.source})\\[(${v.source}\\(0x[0-9a-f]+\\))\\]=new WebSocket\\((${v.source})\\)`,
+  ),
+  (_, target, prop, arg) => `${dataArg}.socket(${target}, ${prop}, ${arg})`,
+];
+
+// patches.lol = [new RegExp(`this\\[(${v.source}\\(0x[0-9a-f]+\\))\\]=new WebSocket\\(`), (_, prop) => `this[${prop}] = ${dataArg}.socket = new WebSocket(`];
 
 // patches.UseStrict = [/"use strict";/, () => ""];
 
@@ -76,7 +108,7 @@ beforeGame.push(() => {
   const { getItem, setItem } = Storage.prototype;
   Storage.prototype.getItem = mirrorAttributes(function (
     this: Storage,
-    key: string
+    key: string,
   ) {
     // catch fingerprinting crap
     let value = getItem.call(this, key);
@@ -96,7 +128,7 @@ beforeGame.push(() => {
   Storage.prototype.setItem = mirrorAttributes(function (
     this: Storage,
     key: string,
-    value: string
+    value: string,
   ) {
     if (key === "krunker_id") {
       // for some reason is passed as an integer
@@ -292,7 +324,7 @@ function doRenderHooks() {
   const renderFn = render.render;
   // we hook the render way too early
   render.render = function (...args) {
-   const game = getGame();
+    const game = getGame();
     for (const player of game.players.list) delete player[canSee];
     for (const ai of game.AI.ais) delete ai[canSee];
 
@@ -303,7 +335,7 @@ function doRenderHooks() {
         try {
           game.players.regenMeshes(getLocalPlayer());
           lastThirdPerson = game.config.thirdPerson;
-        } catch { }
+        } catch {}
       }
     }
 
@@ -731,24 +763,24 @@ Object.defineProperties(fakeObj, descs);
 export const hook: Hook = (
   src: string,
   ebox: KrunkBox,
-  args: Record<string, any>
+  args: Record<string, any>,
 ) => {
   box = ebox;
 
   args.Object = fakeObj;
 
-  // for (const name in patches) {
-  //   const patch = patches[name];
-  //   let ran = false;
-  //   src = src.replace(patch[0], (...args) => {
-  //     ran = true;
-  //     return patch[1](...args);
-  //   });
-  //   //if (isDevelopment)
-  //   console.log("patching", name, "worked:", ran);
-  // }
+  for (const name in patches) {
+    const patch = patches[name];
+    let ran = false;
+    src = src.replace(patch[0], (...args) => {
+      ran = true;
+      return patch[1](...args);
+    });
+    //if (isDevelopment)
+    console.log("patching", name, "worked:", ran);
+  }
 
-  // args[dataArg] = data;
+  args[dataArg] = data;
 
   return src;
 };

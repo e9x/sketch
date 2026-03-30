@@ -71,126 +71,105 @@ function drawAimbotCircle(
   context.stroke();
 }
 
-function playerHitbox(player: Player, hitbox: string) {
+/**
+ * Generates an array of potential targets on an entity.
+ * Includes standard points and extra points if Multipoint is enabled.
+ */
+function getMultipoints(player: Player): THREE.Vector3[] {
   const config = getConfig();
-  // const localPlayer = getLocalPlayer();
-  // const game = getGame();
-  // if (sketchConfig.get("multiPoint")) {
-  //   const mpScale = sketchConfig.get("multiPointScale");
+  const game = getGame();
+  const points: THREE.Vector3[] = [];
 
-  //   const dimensions = {
-  //     x: player.x,
-  //     y: player.y,
-  //     z: player.z,
-  //     w: player.height * 0.5,
-  //     h: player.height - player.crouchVal * config.crouchDst - 0.2,
-  //   };
+  // Core points
+  points.push(playerHitbox(player, "head"));
+  points.push(playerHitbox(player, "chest"));
+  points.push(playerHitbox(player, "feet"));
 
-  //   // start at 2/3 (chest) or 3/3 (top) when
-  //   for (let y = hitbox === "chest" ? 2 : 3; y > 0; y--) {
-  //     for (let x = 0; x < 3; x++) {
-  //       for (let z = 0; z < 3; z++) {
-  //         const lineEnd = new game.THREE.Vector3(
-  //           player.x +
-  //             dimensions.w * (x ? (x % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale,
-  //           player.y + dimensions.h * (y / 3),
-  //           player.z +
-  //             dimensions.w * (z ? (z % 2 === 0 ? -1 : 1) * 0.5 : 0) * mpScale
-  //         );
-  //         const intersects =
-  //           game.canSee(localPlayer, lineEnd.x, lineEnd.y, lineEnd.z) === null;
-  //         if (intersects) return lineEnd;
-  //       }
-  //     }
-  //   }
-  // } else {
-  const { THREE } = getGame();
+  // Multipoint extension
+  if (sketchConfig.get("multiPoint")) {
+    const mpScale = sketchConfig.get("multiPointScale");
+    const h = player.height - player.crouchVal * config.crouchDst;
 
-  if (hitbox === "head") {
-    const lol = new THREE.Vector3();
-    player.upperBody?.getWorldPosition(lol);
-    // lol.y += config.headScale / 2;
-    return lol;
+    // Add points around the chest/head area for higher precision
+    for (let x = -1; x <= 1; x += 1) {
+      for (let z = -1; z <= 1; z += 1) {
+        if (x === 0 && z === 0) continue;
+        points.push(
+          new game.THREE.Vector3(
+            player.x + (x * mpScale),
+            player.y + (h * 0.6), // Chest height
+            player.z + (z * mpScale)
+          )
+        );
+      }
+    }
   }
 
-  if (hitbox === "chest") {
-    const lol = new THREE.Vector3();
-    player.headObj?.getWorldPosition(lol);
-    // lol.y += config.headScale / 2;
-    return lol;
-  }
-
-  const hitboxOffset =
-    hitbox === "head"
-      ? config.headScale / 2
-      : hitbox === "chest"
-        ? config.playerHeight - config.headScale - config.legHeight
-        : config.legHeight / 2;
-
-  return new THREE.Vector3(
-    player.x,
-    player.y +
-    player.height -
-    hitboxOffset -
-    player.crouchVal * config.crouchDst,
-    player.z
-  );
-  // }
+  return points;
 }
 
 /**
- * Get the position that will be aimed at (eg the head)
+ * Filter points by visibility and return the most suitable one.
+ * "Precise" here selects the target point closest to the crosshair.
  */
 function playerAimPoint(player: Player) {
-  const hitbox = sketchConfig.get("hitbox");
-  // const bot = sketchConfig.get("bot");
+  const game = getGame();
+  const localPlayer = getLocalPlayer();
+  const overlaySize = getOverlaySizeScaled();
+  const center = new game.THREE.Vector2(overlaySize.width / 2, overlaySize.height / 2);
 
-  // absolute top
-  // if (bot && ["auto", "head"].includes(hitbox)) {
-  //   const config = getConfig();
-  //   const { THREE } = getGame();
+  // 1. Get all potential points
+  const points = getMultipoints(player);
 
-  //   return new THREE.Vector3(
-  //     player.x,
-  //     player.y + player.height - player.crouchVal * config.crouchDst,
-  //     player.z
-  //   );
-  // }
+  // 2. Filter for visible points only
+  // canSee returns the distance of obstruction (0-1). If it's null/undefined, it's clear.
+  const visiblePoints = points.filter((point) => {
+    return game.canSee(localPlayer, point.x, point.y, point.z) === null;
+  });
 
-  if (hitbox === "auto") {
-    const points = [
-      playerHitbox(player, "head"),
-      playerHitbox(player, "chest"),
-      playerHitbox(player, "feet"),
-    ];
-    const { THREE } = getGame();
-    const overlaySize = getOverlaySizeScaled();
-    const center = new THREE.Vector2(
-      overlaySize.width / 2,
-      overlaySize.height / 2
-    );
-    // get 2d version of 3d by pos2D(point)
-    // return the point that is nearest to the center pls
-
-    // Calculate the distance from the center for each point
-    const distances = (points.filter(Boolean) as THREE.Vector3[]).map(
-      (point) => {
-        const screen = pos2D(point);
-        return {
-          point,
-          screen,
-          distance: center.distanceTo(screen),
-        };
-      }
-    );
-
-    // Sort by distance
-    const near = distances.sort((a, b) => a.distance - b.distance)[0];
-    // Return the nearest point
-    return near?.point;
+  if (visiblePoints.length === 0) {
+    // Fallback to standard hitbox if no multipoints are visible
+    return playerHitbox(player, sketchConfig.get("hitbox") === "auto" ? "head" : sketchConfig.get("hitbox"));
   }
 
-  return playerHitbox(player, hitbox);
+  // 3. Select the visible point closest to the center of the screen (most precise)
+  const bestPoint = visiblePoints
+    .map((point) => ({
+      point,
+      screen: pos2D(point),
+      dist: center.distanceTo(pos2D(point)),
+    }))
+    .sort((a, b) => a.dist - b.dist)[0];
+
+  return bestPoint.point;
+}
+
+/**
+ * Basic hitbox retrieval (retained for fallback)
+ */
+function playerHitbox(player: Player, hitbox: string) {
+  const config = getConfig();
+  const { THREE } = getGame();
+
+  if (hitbox === "head") {
+    const vec = new THREE.Vector3();
+    player.upperBody?.getWorldPosition(vec);
+    return vec;
+  }
+
+  if (hitbox === "chest") {
+    const vec = new THREE.Vector3();
+    player.headObj?.getWorldPosition(vec);
+    return vec;
+  }
+
+  const hitboxOffset = hitbox === "feet" ? config.legHeight / 2 : config.playerHeight / 2;
+
+  return new THREE.Vector3(
+    player.x,
+    player.y + player.height - hitboxOffset - player.crouchVal * config.crouchDst,
+    player.z
+  );
 }
 
 function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
@@ -614,28 +593,25 @@ export function aimbotHook() {
     // inputs[iInputs.shoot]
     if (!doSpinbot) return;
 
-    switch (sb) {
-      case "physical":
-        if (inputs[iInputs.moveDir] !== -1)
-          inputs[iInputs.moveDir] =
-            (inputs[iInputs.moveDir] +
-              spinCount -
-              Math.round(7 * (inputs[iInputs.yDir] / 1000 / (Math.PI * 2)))) %
-            7;
-        // crouch while not moving
-        else if (sketchConfig.get("botCrouch")) inputs[iInputs.crouch] = 1;
-        inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
-        inputs[iInputs.yDir] = (spinCount / 7) * (Math.PI * 2) * 1000;
-        if (inputs[iInputs.frame] % 1 === 0) spinCount = (spinCount + 1) % 7;
-        break;
-      case "visual":
-        // force down
-        inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
-        // abuse animations
-        v ^= 1;
-        if (v === 1)
-          inputs[iInputs.yDir] -= (Math.PI / 2) * 1000 * mlt;
-        break;
+    if (sb === "physical" || sb === "visual" && inputs[iInputs.moveDir] === -1) {
+      if (inputs[iInputs.moveDir] !== -1)
+        inputs[iInputs.moveDir] =
+          (inputs[iInputs.moveDir] +
+            spinCount -
+            Math.round(7 * (inputs[iInputs.yDir] / 1000 / (Math.PI * 2)))) %
+          7;
+      // crouch while not moving
+      else if (sketchConfig.get("botCrouch")) inputs[iInputs.crouch] = 1;
+      inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
+      inputs[iInputs.yDir] = (spinCount / 7) * (Math.PI * 2) * 1000;
+      if (inputs[iInputs.frame] % 1 === 0) spinCount = (spinCount + 1) % 7;
+    } else if (sb === "visual") {
+      // force down
+      inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
+      // abuse animations
+      v ^= 1;
+      if (v === 1)
+        inputs[iInputs.yDir] -= (Math.PI / 2) * 1000 * mlt;
     }
   });
 }
@@ -656,8 +632,8 @@ export function AimbotMenu() {
   const [smoothFactor, setSmoothFactor] = useSketchConfig("smoothFactor");
   const [fovRadius, setFOVRadius] = useSketchConfig("fovRadius");
   const [drawFOV, setDrawFOV] = useSketchConfig("drawFOV");
-  // const [multiPoint, setMultiPoint] = useSketchConfig("multiPoint");
-  // const [multiPointScale, setMultiPointScale] = useSketchConfig("multiPointScale");
+  const [multiPoint, setMultiPoint] = useSketchConfig("multiPoint");
+  const [multiPointScale, setMultiPointScale] = useSketchConfig("multiPointScale");
   const [targetOnAimKey, setTargetAimOnKey] = useSketchConfig("targetOnAimKey");
   const [spinbot, setSpinbot] = useSketchConfig("spinbot");
   const [targetListMode, setTargetListMode] = useSketchConfig("targetListMode");
@@ -666,6 +642,7 @@ export function AimbotMenu() {
   const addTargetList = useRef<HTMLSelectElement | null>(null);
   const [mouseLockX, setMouseLockX] = useSketchConfig("mouseLockX");
   const [mouseLockY, setMouseLockY] = useSketchConfig("mouseLockY");
+  // const [noSpread, setNoSpread] = useSketchConfig("noSpread");
 
   useEffect(() => {
     const callback = () => {
@@ -892,7 +869,7 @@ export function AimbotMenu() {
           }
         />
       </Set>
-      {/* <Set title="Multipoint">
+      <Set title="Multipoint">
         <Switch
           title="Multipoint"
           defaultChecked={multiPoint}
@@ -911,8 +888,14 @@ export function AimbotMenu() {
             setMultiPointScale(event.currentTarget.valueAsNumber)
           }
         />
-      </Set> */}
+      </Set>
       <Set title="Rage">
+        {/* <Switch
+          title="Spread Compensation"
+          description="Adjusts target to counter bullet spread"
+          defaultChecked={noSpread}
+          onChange={(event) => setNoSpread(event.currentTarget.checked)}
+        /> */}
         <Switch
           title="Turret"
           description="Automatically fires at players"
