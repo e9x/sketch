@@ -163,7 +163,7 @@ export function TriggerbotMenu() {
         }
         min={0}
         max={10}
-        step={0.5}
+        step={0.05}
       />
       <Slider
         title="Triggerbot Minimum (Seconds)"
