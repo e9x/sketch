@@ -62,14 +62,16 @@ export const onIoHooks: ((socket: WebSocket) => void)[] = [];
 
 export const data: Record<string, any> = {
   socket(
-    io: { [x: string]: WebSocket },
+    t: typeof IO,
     prop: string | number,
     arg: string | URL,
   ) {
+    io = t
     const ws = new WebSocket(arg);
     // console.log({ io, ws, prop, arg });
     for (const hook of onIoHooks) hook(ws);
-    io[prop] = ws;
+    // @ts-ignore
+    t[prop] = ws;
     return ws;
   },
 };
@@ -796,6 +798,6 @@ if (isDevelopment) {
     getOverlay,
     getConfig,
     getGameConfig,
-    // getIO,
+    getIO,
   });
 }
