@@ -122,12 +122,6 @@ export function BhopMenu() {
         onChange={(event) => setBhop(event.currentTarget.checked)}
       />
       <Switch
-        title="Old Bhop"
-        description="Reverts fixes to automatic bhop"
-        defaultChecked={oldBhop}
-        onChange={(event) => setOldBhop(event.currentTarget.checked)}
-      />
-      <Switch
         title="Slidehop"
         description="Hold crouch to slidehop"
         defaultChecked={slidehop}
@@ -144,6 +138,12 @@ export function BhopMenu() {
         description="If bhop should also automatically jump on walls. Bhop must be enabled."
         defaultChecked={wallJump}
         onChange={(event) => setWallJump(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Old Bhop"
+        description="Reverts fixes to automatic bhop"
+        defaultChecked={oldBhop}
+        onChange={(event) => setOldBhop(event.currentTarget.checked)}
       />
     </>
   );
