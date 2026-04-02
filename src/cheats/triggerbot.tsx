@@ -1,6 +1,7 @@
 import { iInputs } from "../consts";
 import {
   canISeeEnt,
+  getConfig,
   getGame,
   getLocalPlayer,
   getRender,
@@ -75,24 +76,24 @@ export function triggerbotHook() {
 
         for (const player of game.players.list)
           if (isEnemy(player) && player.objInstances && canISeeEnt(player)) {
-            const box = new game.THREE.Box3();
+            const config = getConfig();
+            const height = player.height - (player.crouchVal * config.crouchDst);
+            const radius = 1.5; // Standard Krunker player radius padding
 
-            for (const mesh of getPlayerMeshes(player, false))
-              if (mesh.visible) box.expandByObject(mesh);
+            const box = new game.THREE.Box3();
+            box.min.set(player.x - radius, player.y, player.z - radius);
+            box.max.set(player.x + radius, player.y + height, player.z + radius);
 
             box.expandByScalar(triggerbotDistance);
 
-            if (!obb) obb = createOBB(game.THREE);
-            obb.rotation.setFromMatrix4(player.objInstances.matrixWorld);
-            obb.halfSize.subVectors(box.max, box.min).multiplyScalar(0.5);
-            obb.center.addVectors(box.min, obb.halfSize);
-
-            const hit = obb.intersectsRay(raycaster.ray);
+            // Just intersect the Box3 directly. No OBB needed.
+            const hit = raycaster.ray.intersectsBox(box);
 
             if (hit) {
               shoot = true;
               break;
             }
+
           }
 
         if (shoot) {
@@ -101,7 +102,7 @@ export function triggerbotHook() {
             detectTime =
               Date.now() +
               (triggerbotSmoothBot ? 0 : sketchConfig.get("triggerbotMin")) *
-                1000;
+              1000;
           }
 
           if (detectTime < Date.now()) {
@@ -118,7 +119,7 @@ export function triggerbotHook() {
           continueTime =
             Date.now() +
             (triggerbotSmoothBot ? 0 : sketchConfig.get("triggerbotMax")) *
-              1000;
+            1000;
           didShoot = false;
         }
       }
@@ -173,7 +174,7 @@ export function TriggerbotMenu() {
         }
         min={0}
         max={1}
-        step={0.05}
+        step={0.001}
       />
       <Slider
         title="Triggerbot Maximum (Seconds)"
@@ -183,7 +184,7 @@ export function TriggerbotMenu() {
         }
         min={0}
         max={1}
-        step={0.05}
+        step={0.001}
       />
     </>
   );
