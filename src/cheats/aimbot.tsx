@@ -300,16 +300,10 @@ export function aimbotHook() {
 
   inputHooks.push((inputs) => {
     if (sketchConfig.get("vibrator")) {
-      // Only vibrate if the player isn't manually moving
       if (inputs[iInputs.moveDir] === -1) {
-        
         vibe ^= 1;
-        inputs[iInputs.crouch] = vibe;
-        // Use the game frame to decide the direction
-        // Math.floor(frame / 5) changes the index every 5 ticks
-        // % 4 loops the index through 0, 1, 2, 3
+        // inputs[iInputs.crouch] = vibe;
         const index = Math.floor(inputs[iInputs.frame] / 5) % 4;
-        
         inputs[iInputs.moveDir] = moveSequence[index];
       }
     }

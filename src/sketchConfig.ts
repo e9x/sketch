@@ -137,7 +137,7 @@ export interface SketchConfig {
  */
 const defaultConfig: SketchConfig = {
   aimbot: "silent",
-  aimbotEnabled: true,
+  aimbotEnabled: false,
   toggleAimbotKey: -1,
   hitbox: "auto",
   bot: false,
