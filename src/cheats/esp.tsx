@@ -492,6 +492,7 @@ export function ESPMenu() {
   const [badColor, setBadColor] = useSketchConfig("badColor");
   const [goodColor, setGoodColor] = useSketchConfig("goodColor");
   const [newNametags, setNewNametags] = useSketchConfig("newNametags");
+  const [espMenu, setEspMenu] = useSketchConfig("espMenu");
 
   return (
     <>
@@ -561,6 +562,11 @@ export function ESPMenu() {
         description="Changes the ESP color"
         defaultValue={goodColor}
         onChange={(event) => setGoodColor(event.currentTarget.value)}
+      />
+      <Switch
+        title="Show ESP in menus"
+        defaultChecked={espMenu}
+        onChange={(event) => setEspMenu(event.currentTarget.checked)}
       />
     </>
   );

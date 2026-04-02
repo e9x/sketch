@@ -129,6 +129,7 @@ export interface SketchConfig {
   noSpread: boolean;
   vibrator: boolean;
   autoSpawn: boolean;
+  espMenu: boolean;
 }
 
 /**
@@ -199,6 +200,7 @@ const defaultConfig: SketchConfig = {
   noSpread: false,
   vibrator: false,
   autoSpawn: false,
+  espMenu: true,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());

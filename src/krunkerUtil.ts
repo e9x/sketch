@@ -1,5 +1,6 @@
 /* eslint-disable no-var */
 
+import sketchConfig from "./sketchConfig";
 import { iInputs } from "./consts";
 import {
   getConfig,
@@ -21,7 +22,7 @@ export function getD3D(
   z1: number,
   x2: number,
   y2: number,
-  z2: number
+  z2: number,
 ) {
   const dx = x1 - x2;
   const dy = y1 - y2;
@@ -36,7 +37,7 @@ export function getXDire(
   z1: number,
   x2: number,
   y2: number,
-  z2: number
+  z2: number,
 ) {
   return (
     Math.asin(Math.abs(y1 - y2) / getD3D(x1, y1, z1, x2, y2, z2)) *
@@ -60,7 +61,7 @@ export function playerPos(player: Player | AI) {
 
 export function getOffScreenDir(
   camera: THREE.PerspectiveCamera,
-  vector: THREE.Vector3
+  vector: THREE.Vector3,
 ) {
   const cameraSpace = vector.clone();
   cameraSpace.applyMatrix4(camera.matrixWorldInverse);
@@ -202,6 +203,7 @@ export function canShoot(aimTime: number) {
 }
 
 export function isInMenus() {
+  if (sketchConfig.get("espMenu")) return false;
   return (
     document.getElementById("endUI")?.style.display !== "none" ||
     document.getElementById("menuHolder")?.style.display !== "none"
@@ -230,13 +232,13 @@ export function smoothnessMultiplier(smoothFactor: number) {
   if (smoothFactor > 1) {
     return 0.01 / smoothFactor;
   }
-  return 1 - (Math.log10(smoothFactor * 9 + 1) * 0.99);
+  return 1 - Math.log10(smoothFactor * 9 + 1) * 0.99;
 }
 
 export function lerp(
   rotation: THREE.Vector2,
   from: THREE.Vector2,
-  smoothFactor: number
+  smoothFactor: number,
 ) {
   const realSmoothFactor = smoothnessMultiplier(smoothFactor);
   rotation.setX(from.x + getAngleDst(from.x, rotation.x) * realSmoothFactor);
@@ -289,9 +291,9 @@ export function get3Ddistance(
   z1: number,
   x2: number,
   y2: number,
-  z2: number
+  z2: number,
 ) {
   return Math.sqrt(
-    Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2) + Math.pow(z2 - z1, 2)
+    Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2) + Math.pow(z2 - z1, 2),
   );
 }

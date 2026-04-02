@@ -135,6 +135,7 @@ export interface Skin {
 }
 
 export declare class Player {
+  currentWeaponId: number;
   constructor(...args: unknown[]);
   hasAnims: boolean;
   perks: number[];
