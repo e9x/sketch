@@ -26,7 +26,6 @@ import { Button } from "../krunker-ui/components/Button";
 import { waitFor } from "../util";
 import { MapData } from "../krunker/GameMap";
 import { rageConfig } from "../presets/rage";
-import { botConfig } from "../presets/bot";
 import { useEffect, useState } from "preact/hooks";
 
 declare global {
@@ -113,7 +112,6 @@ function stealActiveMap() {
 const presets: Record<string, Partial<SketchConfig>> = {
   default: sketchConfig.defaultConfig,
   rage: rageConfig,
-  bot: botConfig,
 };
 
 function getPreset() {
@@ -476,7 +474,6 @@ export default function Menu() {
             >
               <option value="default">Default</option>
               <option value="rage">Rage</option>
-              <option value="bot">Bot</option>
               <option value="custom">Custom</option>
             </select>
           </div>
