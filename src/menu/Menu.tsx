@@ -26,6 +26,7 @@ import { Button } from "../krunker-ui/components/Button";
 import { waitFor } from "../util";
 import { MapData } from "../krunker/GameMap";
 import { rageConfig } from "../presets/rage";
+import { botConfig } from "../presets/bot";
 import { useEffect, useState } from "preact/hooks";
 
 declare global {
@@ -46,7 +47,7 @@ function downloadFile(fileName: string, fileData: string) {
   const downloadLink = document.createElement("a");
   downloadLink.setAttribute(
     "href",
-    "data:text/plain;charset=utf-8," + encodeURIComponent(fileData)
+    "data:text/plain;charset=utf-8," + encodeURIComponent(fileData),
   );
   downloadLink.setAttribute("download", fileName);
   downloadLink.style.display = "none";
@@ -112,6 +113,7 @@ function stealActiveMap() {
 const presets: Record<string, Partial<SketchConfig>> = {
   default: sketchConfig.defaultConfig,
   rage: rageConfig,
+  bot: botConfig,
 };
 
 function getPreset() {
@@ -175,7 +177,7 @@ const tabs: Tab[] = [
                 if (menuKey === -1) {
                   event.currentTarget.checked = false;
                   alert(
-                    "You must set a menu keybind before disabling the button"
+                    "You must set a menu keybind before disabling the button",
                   );
                 } else {
                   // use sketchConfig.set so it's instant
@@ -192,7 +194,7 @@ const tabs: Tab[] = [
                 if (
                   !silentFail &&
                   !confirm(
-                    "Enabling this setting will require you to follow the Sketch guide to disable it if there's an update, the access key expires, or the cheat isn't updated. The cheat won't load if any of these occur, and you won't be able to re-enable this option without following the guide. Proceed?"
+                    "Enabling this setting will require you to follow the Sketch guide to disable it if there's an update, the access key expires, or the cheat isn't updated. The cheat won't load if any of these occur, and you won't be able to re-enable this option without following the guide. Proceed?",
                   )
                 )
                   event.currentTarget.checked = false;
@@ -366,6 +368,29 @@ const tabs: Tab[] = [
       );
     },
   },
+  {
+    name: "𝓕𝓻𝓮𝓪𝓴𝔂",
+    body: () => {
+      const [vibrator, setVibrator] = useSketchConfig("vibrator");
+      const [autoSpawn, setAutoSpawn] = useSketchConfig("autoSpawn");
+
+      return (
+        <HeadlessSet>
+          <Switch
+            title="Vibrator"
+            description="Prevents being kicked for AFK"
+            defaultChecked={vibrator}
+            onChange={(event) => setVibrator(event.currentTarget.checked)}
+          />
+          <Switch
+            title="Auto Spawn"
+            defaultChecked={autoSpawn}
+            onChange={(event) => setAutoSpawn(event.currentTarget.checked)}
+          />
+        </HeadlessSet>
+      );
+    },
+  },
 ];
 
 export default function Menu() {
@@ -416,7 +441,7 @@ export default function Menu() {
               onClick={() => {
                 downloadFile(
                   "sketch.json",
-                  JSON.stringify(sketchConfig.export())
+                  JSON.stringify(sketchConfig.export()),
                 );
               }}
             >
@@ -451,6 +476,7 @@ export default function Menu() {
             >
               <option value="default">Default</option>
               <option value="rage">Rage</option>
+              <option value="bot">Bot</option>
               <option value="custom">Custom</option>
             </select>
           </div>

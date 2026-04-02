@@ -646,7 +646,6 @@ export function AimbotMenu() {
   const [botAim, setBotAim] = useSketchConfig("botAim");
   const [fovCheck, setfovCheck] = useSketchConfig("fovCheck");
   const [wallbangs, setWallbangs] = useSketchConfig("wallbangs");
-  const [vibrator, setVibrator] = useSketchConfig("vibrator");
   const [hitbox, setHitbox] = useSketchConfig("hitbox");
   const [aimKey, setAimKey] = useSketchConfig("aimKey");
   const [aimReactionTime, setAimReactionTime] =
@@ -923,12 +922,6 @@ export function AimbotMenu() {
           description="Automatically fires at players"
           defaultChecked={bot}
           onChange={(event) => setBot(event.currentTarget.checked)}
-        />
-        <Switch
-          title="Vibrator"
-          description="Prevents being kicked for AFK"
-          defaultChecked={vibrator}
-          onChange={(event) => setVibrator(event.currentTarget.checked)}
         />
 
         <Switch

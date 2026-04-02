@@ -7,14 +7,14 @@ import {
   supportedGame,
 } from "./consts";
 import { afterGame, beforeGame, hook } from "./filters";
-import { getInit } from "./inject"
+import { getInit } from "./inject";
 import { gameLoad } from "./dogehook";
 import sketchConfig from "./sketchConfig";
 import { begToken, showUpdated, showFutile, panic } from "./anxiety";
 import { sketchButton } from "./menu/createUI";
 import "./cheats";
 
-const loadGameNormally = () => { };
+const loadGameNormally = () => {};
 
 if (isKrunker) {
   checkHash();
@@ -50,10 +50,12 @@ function checkHash() {
     history.replaceState(
       "",
       document.title,
-      location.pathname + location.search
+      location.pathname + location.search,
     );
   }
 }
+
+declare function enterGame(): void;
 
 async function main() {
   const version = await KrunkBox.sketchVersion(sketchVersion, supportedGame);
@@ -117,6 +119,10 @@ async function main() {
     game.init();
     for (const ag of afterGame) ag();
     sketchButton();
+
+    setInterval(() => {
+      if (sketchConfig.get("autoSpawn")) enterGame();
+    }, 100);
 
     break;
   }

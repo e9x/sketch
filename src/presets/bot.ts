@@ -1,13 +1,12 @@
 import { type SketchConfig } from "../sketchConfig";
 
-export const rageConfig: Partial<SketchConfig> = {
+export const botConfig: Partial<SketchConfig> = {
   aimbot: "silent",
-  aimbotEnabled: true,
-  hitbox: "head",
+  aimbotEnabled: false,
   bot: true,
   botCrouch: false,
-  botAim: true,
-  wallbangs: true,
+  botAim: false,
+  wallbangs: false,
   fovCheck: false,
   aimKey: -1,
   aimReactionTime: 0,
@@ -15,6 +14,7 @@ export const rageConfig: Partial<SketchConfig> = {
   drawFOV: false,
   targetOnAimKey: false,
   bhop: true,
+  autoSlide: false,
   rampAccel: true,
   slidehop: true,
   wallJump: true,
@@ -38,7 +38,9 @@ export const rageConfig: Partial<SketchConfig> = {
   multiPointScale: 0.5,
   skinHack: true,
   keybindOverlay: false,
-  healthBars: false,
+  healthBars: true,
   thirdPerson: true,
-  spinbot: "visual",
+  spinbot: "off",
+  vibrator: true,
+  autoSpawn: true,
 };
