@@ -127,7 +127,7 @@ export interface SketchConfig {
   mouseLockX: number;
   mouseLockY: number;
   noSpread: boolean;
-
+  vibrator: boolean;
 }
 
 /**
@@ -196,6 +196,7 @@ const defaultConfig: SketchConfig = {
   mouseLockX: 0,
   mouseLockY: 0,
   noSpread: false,
+  vibrator: false,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());

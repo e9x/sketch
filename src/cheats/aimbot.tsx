@@ -293,7 +293,28 @@ declare global {
   function SSpinbot(inputs: number[], i: typeof iInputs, sk: typeof sketchConfig): void;
 }
 
+const moveSequence = [1, 7, 5, 3]; // W, A, S, D
+
 export function aimbotHook() {
+  let vibe = 0;
+
+  inputHooks.push((inputs) => {
+    if (sketchConfig.get("vibrator")) {
+      // Only vibrate if the player isn't manually moving
+      if (inputs[iInputs.moveDir] === -1) {
+        
+        vibe ^= 1;
+        inputs[iInputs.crouch] = vibe;
+        // Use the game frame to decide the direction
+        // Math.floor(frame / 5) changes the index every 5 ticks
+        // % 4 loops the index through 0, 1, 2, 3
+        const index = Math.floor(inputs[iInputs.frame] / 5) % 4;
+        
+        inputs[iInputs.moveDir] = moveSequence[index];
+      }
+    }
+  });
+
   let reloading = 0;
 
   overlayRenderHooks.push(() => {
@@ -625,6 +646,7 @@ export function AimbotMenu() {
   const [botAim, setBotAim] = useSketchConfig("botAim");
   const [fovCheck, setfovCheck] = useSketchConfig("fovCheck");
   const [wallbangs, setWallbangs] = useSketchConfig("wallbangs");
+  const [vibrator, setVibrator] = useSketchConfig("vibrator");
   const [hitbox, setHitbox] = useSketchConfig("hitbox");
   const [aimKey, setAimKey] = useSketchConfig("aimKey");
   const [aimReactionTime, setAimReactionTime] =
@@ -902,6 +924,13 @@ export function AimbotMenu() {
           defaultChecked={bot}
           onChange={(event) => setBot(event.currentTarget.checked)}
         />
+        <Switch
+          title="Vibrator"
+          description="Prevents being kicked for AFK"
+          defaultChecked={vibrator}
+          onChange={(event) => setVibrator(event.currentTarget.checked)}
+        />
+
         <Switch
           title="Auto-Crouch"
           description="Decreases hitbox size"
