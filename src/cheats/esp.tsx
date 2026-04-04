@@ -279,10 +279,11 @@ export function espHook() {
     materials.update();
 
     const chams = sketchConfig.get("chams");
+    const showInMenu = sketchConfig.get("espMenu");
 
     for (const entity of game.players.list) {
       if (entity.objInstances) {
-        const can = chams && !isInMenus() && canESP(entity);
+        const can = chams && (showInMenu || !isInMenus()) && canESP(entity);
 
         if (can) entity[espMat] = getEntityMaterial(entity, materials.mesh);
         else delete entity[espMat];
