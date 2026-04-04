@@ -120,9 +120,11 @@ async function main() {
     for (const ag of afterGame) ag();
     sketchButton();
 
-    setInterval(() => {
-      if (sketchConfig.get("autoSpawn")) enterGame();
-    }, 100);
+    setTimeout(() => {
+      setInterval(() => {
+        if (sketchConfig.get("autoSpawn")) enterGame();
+      }, 100);
+    }, 1e3);
 
     break;
   }

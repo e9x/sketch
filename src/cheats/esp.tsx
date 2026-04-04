@@ -497,6 +497,11 @@ export function ESPMenu() {
   return (
     <>
       <Switch
+        title="Show ESP in menus"
+        defaultChecked={espMenu}
+        onChange={(event) => setEspMenu(event.currentTarget.checked)}
+      />
+      <Switch
         title="Nametags"
         description="Shows player nametags through walls"
         defaultChecked={nametags}
@@ -562,11 +567,6 @@ export function ESPMenu() {
         description="Changes the ESP color"
         defaultValue={goodColor}
         onChange={(event) => setGoodColor(event.currentTarget.value)}
-      />
-      <Switch
-        title="Show ESP in menus"
-        defaultChecked={espMenu}
-        onChange={(event) => setEspMenu(event.currentTarget.checked)}
       />
     </>
   );

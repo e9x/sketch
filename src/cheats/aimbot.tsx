@@ -53,7 +53,7 @@ const { Math } = window;
 function isPointInsideCircle(
   point: THREE.Vector2,
   circleCenter: THREE.Vector2,
-  radius: number
+  radius: number,
 ) {
   const distance = point.distanceTo(circleCenter);
   return distance <= radius;
@@ -62,7 +62,7 @@ function isPointInsideCircle(
 function drawAimbotCircle(
   context: CanvasRenderingContext2D,
   center: THREE.Vector2,
-  radius: number
+  radius: number,
 ): void {
   context.beginPath();
   context.arc(center.x, center.y, radius, 0, Math.PI2);
@@ -96,10 +96,10 @@ function getMultipoints(player: Player): THREE.Vector3[] {
         if (x === 0 && z === 0) continue;
         points.push(
           new game.THREE.Vector3(
-            player.x + (x * mpScale),
-            player.y + (h * 0.6), // Chest height
-            player.z + (z * mpScale)
-          )
+            player.x + x * mpScale,
+            player.y + h * 0.6, // Chest height
+            player.z + z * mpScale,
+          ),
         );
       }
     }
@@ -116,7 +116,10 @@ function playerAimPoint(player: Player) {
   const game = getGame();
   const localPlayer = getLocalPlayer();
   const overlaySize = getOverlaySizeScaled();
-  const center = new game.THREE.Vector2(overlaySize.width / 2, overlaySize.height / 2);
+  const center = new game.THREE.Vector2(
+    overlaySize.width / 2,
+    overlaySize.height / 2,
+  );
 
   // 1. Get all potential points
   const points = getMultipoints(player);
@@ -129,7 +132,12 @@ function playerAimPoint(player: Player) {
 
   if (visiblePoints.length === 0) {
     // Fallback to standard hitbox if no multipoints are visible
-    return playerHitbox(player, sketchConfig.get("hitbox") === "auto" ? "head" : sketchConfig.get("hitbox"));
+    return playerHitbox(
+      player,
+      sketchConfig.get("hitbox") === "auto"
+        ? "head"
+        : sketchConfig.get("hitbox"),
+    );
   }
 
   // 3. Select the visible point closest to the center of the screen (most precise)
@@ -163,12 +171,16 @@ function playerHitbox(player: Player, hitbox: string) {
     return vec;
   }
 
-  const hitboxOffset = hitbox === "feet" ? config.legHeight / 2 : config.playerHeight / 2;
+  const hitboxOffset =
+    hitbox === "feet" ? config.legHeight / 2 : config.playerHeight / 2;
 
   return new THREE.Vector3(
     player.x,
-    player.y + player.height - hitboxOffset - player.crouchVal * config.crouchDst,
-    player.z
+    player.y +
+      player.height -
+      hitboxOffset -
+      player.crouchVal * config.crouchDst,
+    player.z,
   );
 }
 
@@ -190,9 +202,9 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
       game.controls.object.position.z,
       target.x,
       target.y,
-      target.z
+      target.z,
     ) || 0) -
-    localPlayer.recoilAnimY * config.recoilMlt
+      localPlayer.recoilAnimY * config.recoilMlt,
   );
 
   rotation.setY(
@@ -200,8 +212,8 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
       game.controls.object.position.z,
       game.controls.object.position.x,
       target.z,
-      target.x
-    ) || 0
+      target.x,
+    ) || 0,
   );
 
   if (aimbot === "smooth")
@@ -209,9 +221,9 @@ function calcRot(rotation: THREE.Vector2, target: THREE.Vector3) {
       rotation,
       new THREE.Vector2(
         game.controls.pchObjc.rotation.x,
-        game.controls.object.rotation.y
+        game.controls.object.rotation.y,
       ),
-      smoothFactor
+      smoothFactor,
     );
 
   return rotation;
@@ -290,22 +302,35 @@ function validPoint(point: THREE.Vector3, center: THREE.Vector2) {
 }
 
 declare global {
-  function SSpinbot(inputs: number[], i: typeof iInputs, sk: typeof sketchConfig): void;
+  function SSpinbot(
+    inputs: number[],
+    i: typeof iInputs,
+    sk: typeof sketchConfig,
+  ): void;
 }
 
 const moveSequence = [1, 7, 5, 3]; // W, A, S, D
 
 export function aimbotHook() {
-  let vibe = 0;
-
   inputHooks.push((inputs) => {
-    if (sketchConfig.get("vibrator")) {
-      if (inputs[iInputs.moveDir] === -1) {
-        vibe ^= 1;
-        // inputs[iInputs.crouch] = vibe;
-        const index = Math.floor(inputs[iInputs.frame] / 5) % 4;
-        inputs[iInputs.moveDir] = moveSequence[index];
-      }
+    if (sketchConfig.get("vibrator") && inputs[iInputs.moveDir] === -1) {
+      const frame = inputs[iInputs.frame];
+
+      // 1. Press WASD for 10 frames each
+      // moveSequence = [1, 7, 5, 3] which corresponds to W, A, S, D
+      const index = Math.floor(frame / 10) % 4;
+      inputs[iInputs.moveDir] = moveSequence[index];
+
+      // 2. Move yDir constantly in a circle
+      // We calculate a rotation based on the frame count.
+      // (Math.PI * 2) is a full circle.
+      // Dividing frame by 20 controls the speed (higher = slower spin).
+      // We multiply by 1000 because Krunker inputs expect rotation * 1000.
+      const rotationSpeed = 100;
+      inputs[iInputs.yDir] = (frame / rotationSpeed) * Math.PI * 2 * 1000;
+
+      // Optional: If you want the character to look down while spinning (like a spinbot)
+      // inputs[iInputs.xDir] = (Math.PI / 2) * 1000;
     }
   });
 
@@ -321,14 +346,14 @@ export function aimbotHook() {
 
     const overlay = getOverlay();
 
-    if (drawFOV) {
+    if (drawFOV && !isInMenus()) {
       overlay.ctx.save();
       overlay.ctx.scale(overlay.scale, overlay.scale);
       const { THREE } = getGame();
       const overlaySize = getOverlaySizeScaled();
       const center = new THREE.Vector2(
         overlaySize.width / 2,
-        overlaySize.height / 2
+        overlaySize.height / 2,
       );
       drawAimbotCircle(overlay.ctx, center, fovRadius);
       overlay.ctx.restore();
@@ -383,12 +408,9 @@ export function aimbotHook() {
     lastDidAim = didAim;
     didAim = false;
 
-    const aimbotEnabled = sketchConfig.get("aimbotEnabled")
+    const aimbotEnabled = sketchConfig.get("aimbotEnabled");
 
-    if (
-      !aimbotEnabled ||
-      (aimKey !== -1 && game.controls.keys[aimKey] !== 1)
-    ) {
+    if (!aimbotEnabled || (aimKey !== -1 && game.controls.keys[aimKey] !== 1)) {
       targetPlayer = undefined;
       aimKeyHeld = false;
       return;
@@ -440,7 +462,7 @@ export function aimbotHook() {
 
     const center = new THREE.Vector2(
       innerWidth / overlay.scale / 2,
-      innerHeight / overlay.scale / 2
+      innerHeight / overlay.scale / 2,
     );
 
     if (targetPlayer) {
@@ -468,9 +490,9 @@ export function aimbotHook() {
           .filter(onTargetList)
           .map((player) => ({ player, point: playerAimPoint(player) }))
           .filter(({ point }) => point && validPoint(point, center)) as {
-            player: Player;
-            point: THREE.Vector3;
-          }[]
+          player: Player;
+          point: THREE.Vector3;
+        }[]
       )
         .map(({ player, point }) => ({
           player,
@@ -531,7 +553,7 @@ export function aimbotHook() {
         localPlayer.z,
         target.x,
         target.y,
-        target.z
+        target.z,
       );
 
       if (
@@ -547,7 +569,7 @@ export function aimbotHook() {
 
       const rotation = new THREE.Vector2(
         inputs[iInputs.xDir] / 1000,
-        inputs[iInputs.yDir] / 1000
+        inputs[iInputs.yDir] / 1000,
       );
 
       calcRot(rotation, target);
@@ -604,11 +626,13 @@ export function aimbotHook() {
     if (p3) p3.rotation.y = Math.random() * 1000;
     if (p4) p4.rotation.x = -1;
 
-
     // inputs[iInputs.shoot]
     if (!doSpinbot) return;
 
-    if (sb === "physical" || sb === "visual" && inputs[iInputs.moveDir] === -1) {
+    if (
+      sb === "physical" ||
+      (sb === "visual" && inputs[iInputs.moveDir] === -1)
+    ) {
       if (inputs[iInputs.moveDir] !== -1)
         inputs[iInputs.moveDir] =
           (inputs[iInputs.moveDir] +
@@ -625,8 +649,7 @@ export function aimbotHook() {
       inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
       // abuse animations
       v ^= 1;
-      if (v === 1)
-        inputs[iInputs.yDir] -= (Math.PI / 2) * 1000 * mlt;
+      if (v === 1) inputs[iInputs.yDir] -= (Math.PI / 2) * 1000 * mlt;
     }
   });
 }
@@ -634,7 +657,8 @@ export function aimbotHook() {
 export function AimbotMenu() {
   const [aimbot, setAimbot] = useSketchConfig("aimbot");
   const [aimbotEnabled, setAimbotEnabled] = useSketchConfig("aimbotEnabled");
-  const [toggleAimbotKey, setToggleAimbotKey] = useSketchConfig("toggleAimbotKey");
+  const [toggleAimbotKey, setToggleAimbotKey] =
+    useSketchConfig("toggleAimbotKey");
   const [bot, setBot] = useSketchConfig("bot");
   const [botCrouch, setBotCrouch] = useSketchConfig("botCrouch");
   const [botAim, setBotAim] = useSketchConfig("botAim");
@@ -648,7 +672,8 @@ export function AimbotMenu() {
   const [fovRadius, setFOVRadius] = useSketchConfig("fovRadius");
   const [drawFOV, setDrawFOV] = useSketchConfig("drawFOV");
   const [multiPoint, setMultiPoint] = useSketchConfig("multiPoint");
-  const [multiPointScale, setMultiPointScale] = useSketchConfig("multiPointScale");
+  const [multiPointScale, setMultiPointScale] =
+    useSketchConfig("multiPointScale");
   const [targetOnAimKey, setTargetAimOnKey] = useSketchConfig("targetOnAimKey");
   const [spinbot, setSpinbot] = useSketchConfig("spinbot");
   const [targetListMode, setTargetListMode] = useSketchConfig("targetListMode");
@@ -668,9 +693,11 @@ export function AimbotMenu() {
             .filter(
               (player) =>
                 !player.isYou &&
-                targetList.every((target) => target[1] !== player.id.toString())
+                targetList.every(
+                  (target) => target[1] !== player.id.toString(),
+                ),
             )
-            .map((player) => [player.name, player.id.toString()])
+            .map((player) => [player.name, player.id.toString()]),
         );
       } catch (err) {
         console.error(err);
@@ -709,9 +736,8 @@ export function AimbotMenu() {
         <Switch
           title="Aimbot Enabled"
           defaultChecked={aimbotEnabled}
-          onChange={(event) =>
-            setAimbotEnabled(event.currentTarget.checked)
-          } />
+          onChange={(event) => setAimbotEnabled(event.currentTarget.checked)}
+        />
         <BindHolder title="Aimbot Toggle Key">
           <Bind
             bind={toggleAimbotKey}
@@ -771,7 +797,7 @@ export function AimbotMenu() {
           defaultValue={targetListMode}
           onChange={(event) =>
             setTargetListMode(
-              event.currentTarget.value as SketchConfig["targetListMode"]
+              event.currentTarget.value as SketchConfig["targetListMode"],
             )
           }
         >
@@ -826,7 +852,7 @@ export function AimbotMenu() {
                       className="punishButton kick"
                       onClick={() => {
                         setTargetList(
-                          targetList.filter((t) => t[1] !== target[1])
+                          targetList.filter((t) => t[1] !== target[1]),
                         );
                       }}
                     >
@@ -862,26 +888,52 @@ export function AimbotMenu() {
           onChange={(event) => setDrawFOV(event.currentTarget.checked)}
         />
         <Slider
-          title={<>Mouse lock % X<span style={{ fontWeight: "bold", color: "inherit", margin: "0 5px", fontStyle: "italic", fontSize: "12px" }}>o7y</span></>}
+          title={
+            <>
+              Mouse lock % X
+              <span
+                style={{
+                  fontWeight: "bold",
+                  color: "inherit",
+                  margin: "0 5px",
+                  fontStyle: "italic",
+                  fontSize: "12px",
+                }}
+              >
+                o7y
+              </span>
+            </>
+          }
           description=""
           defaultValue={mouseLockX}
           min={0}
           max={1}
           step={0.005}
-          onChange={(event) =>
-            setMouseLockX(event.currentTarget.valueAsNumber)
-          }
+          onChange={(event) => setMouseLockX(event.currentTarget.valueAsNumber)}
         />
         <Slider
-          title={<>Mouse lock % Y<span style={{ fontWeight: "bold", color: "inherit", margin: "0 5px", fontStyle: "italic", fontSize: "12px" }}>o7y</span></>}
+          title={
+            <>
+              Mouse lock % Y
+              <span
+                style={{
+                  fontWeight: "bold",
+                  color: "inherit",
+                  margin: "0 5px",
+                  fontStyle: "italic",
+                  fontSize: "12px",
+                }}
+              >
+                o7y
+              </span>
+            </>
+          }
           description=""
           defaultValue={mouseLockY}
           min={0}
           max={1}
           step={0.005}
-          onChange={(event) =>
-            setMouseLockY(event.currentTarget.valueAsNumber)
-          }
+          onChange={(event) => setMouseLockY(event.currentTarget.valueAsNumber)}
         />
       </Set>
       <Set title="Multipoint">

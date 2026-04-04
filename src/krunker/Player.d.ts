@@ -135,8 +135,9 @@ export interface Skin {
 }
 
 export declare class Player {
-  currentWeaponId: number;
   constructor(...args: unknown[]);
+  ping: number;
+  currentWeaponId: number;
   hasAnims: boolean;
   perks: number[];
   isKranked: boolean;

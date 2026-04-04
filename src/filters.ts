@@ -571,7 +571,6 @@ function doGameHooks() {
 
   game.controls.tmpInpts.push = function (inputs) {
     if (localPlayer) for (const hook of inputHooks) hook(inputs);
-
     return tmpInptsPush.call(this, inputs);
   };
 
