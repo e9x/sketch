@@ -10,6 +10,7 @@ import parseUrl from "parseurl";
 import { userscriptMetadataGenerator } from "userscript-metadata-generator";
 
 const isDevelopment = process.argv.includes("--dev");
+const isDebug = process.argv.includes("--debug");
 
 process.env.NODE_ENV = isDevelopment ? "development" : "production";
 
@@ -58,12 +59,12 @@ const mainOut = fileURLToPath(new URL("dist/sketch.user.js", import.meta.url));
 const sketchMain = await context({
   entryPoints: ["./src/index.ts"],
   format: "iife",
-  sourcemap: "external",
+  sourcemap: isDebug ? "external" : false,
   define: envReplacements,
   outfile: mainOut,
   external: ["os", "fs", "path", "http", "https", "electron"],
   bundle: true,
-  minify: !isDevelopment,
+  minify: !isDebug,
   jsx: "transform",
   supported: {
     "nullish-coalescing": false,
