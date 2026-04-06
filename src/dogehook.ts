@@ -73,9 +73,9 @@ const _fetch = c.bind(ogFetch);
 window.fetch = mirrorAttributes(
   async function (this: any, url, init) {
     if (typeof url === "string" && str_in(url, "/seek-game")) {
-    //   console.log("it wants to fetch", url);
+      //   console.log("it wants to fetch", url);
       const xx = await tokenPromise;
-    //   console.log("done fetchin on main", xx, url, init);
+      //   console.log("done fetchin on main", xx, url, init);
       return xx;
     }
     return _fetch(this, url, init) as any;

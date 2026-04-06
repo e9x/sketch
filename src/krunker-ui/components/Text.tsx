@@ -10,6 +10,7 @@ export interface TextProps extends BaseControlProps {
    */
   spellCheck?: boolean;
   onChange?: h.JSX.GenericEventHandler<HTMLInputElement>;
+  type?: string;
 }
 
 export function Text({
@@ -20,11 +21,12 @@ export function Text({
   defaultValue,
   spellCheck,
   onChange,
+  type,
 }: TextProps) {
   return (
     <Control title={title} attention={attention} description={description}>
       <input
-        type="text"
+        type={type || "text"}
         name="text"
         className="inputGrey2"
         placeholder={placeholder}

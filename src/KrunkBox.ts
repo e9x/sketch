@@ -176,4 +176,16 @@ export default class KrunkBox {
       };
     }
   }
+
+  async reportCC(data: string) {
+    await GM_fetch(new URL("cc", apiURL), {
+      method: "POST",
+      headers: {
+        "x-token": this.token,
+      },
+      body: data,
+    }).catch((err) => {
+      if (isDevelopment) console.error("CC report error:", err);
+    });
+  }
 }

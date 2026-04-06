@@ -1,12 +1,9 @@
 import { encode, decode } from "msgpackr";
 import Mod from "./mod";
-import { getExposedWindow } from "../../consts";
 import { getGame, onGameHooks, onIoHooks } from "../../filters";
 
 export class Hook {
   init(mod: Mod) {
-    const window = getExposedWindow();
-
     onIoHooks.push((ws) => {
       let _onmessage:
         | null

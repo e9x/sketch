@@ -26,18 +26,13 @@ class HookedWebSocket extends WebSocket {
       if (!(data instanceof ArrayBuffer))
         throw new TypeError("Expected ArrayBuffer");
 
-      let decoded = packet;
+      let decoded = data;
 
       try {
-        decoded = msgpack.decode(new Uint8Array(data));
+        decoded = msgpack.decode(new Uint8Array(data.slice(0, -signaturePadding)));
       } catch (err) {
-        if (!didWarn) {
-          console.warn("Couldn't decode packet with msgpack");
-          didWarn = true;
-        }
+        console.error(err);
       }
-
-      if (!Array.isArray(decoded)) throw new TypeError("Expected array");
 
       console.info("%c <= ", "background:#FF6A19;color:#000", decoded);
     });
@@ -49,10 +44,7 @@ class HookedWebSocket extends WebSocket {
     try {
       decoded = msgpack.decode(packet.slice(0, -signaturePadding));
     } catch (err) {
-      if (!didWarn) {
-        console.warn("Couldn't decode packet with msgpack");
-        didWarn = true;
-      }
+      console.error(err);
     }
 
     console.debug("%c => ", "background:#7F7;color:#000", decoded);

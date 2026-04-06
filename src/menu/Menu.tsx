@@ -367,25 +367,69 @@ const tabs: Tab[] = [
     },
   },
   {
+    // freaky
     name: "𝓕𝓻𝓮𝓪𝓴𝔂",
     body: () => {
       const [vibrator, setVibrator] = useSketchConfig("vibrator");
       const [autoSpawn, setAutoSpawn] = useSketchConfig("autoSpawn");
 
+      // New AI Auto-Reply Configs
+      // const [aiReply, setAiReply] = useSketchConfig("aiReply");
+      // const [aiEndpoint, setAiEndpoint] = useSketchConfig("aiEndpoint");
+      // const [aiKey, setAiKey] = useSketchConfig("aiKey");
+      // const [aiPrompt, setAiPrompt] = useSketchConfig("aiPrompt");
+      // const [aiModel, setAiModel] = useSketchConfig("aiModel");
+
       return (
-        <HeadlessSet>
-          <Switch
-            title="Vibrator"
-            description="Prevents being kicked for AFK"
-            defaultChecked={vibrator}
-            onChange={(event) => setVibrator(event.currentTarget.checked)}
-          />
-          <Switch
-            title="Auto Spawn"
-            defaultChecked={autoSpawn}
-            onChange={(event) => setAutoSpawn(event.currentTarget.checked)}
-          />
-        </HeadlessSet>
+        <>
+          <HeadlessSet>
+            <Switch
+              title="Vibrator"
+              description="Prevents being kicked for AFK"
+              defaultChecked={vibrator}
+              onChange={(event) => setVibrator(event.currentTarget.checked)}
+            />
+            <Switch
+              title="Auto Spawn"
+              defaultChecked={autoSpawn}
+              onChange={(event) => setAutoSpawn(event.currentTarget.checked)}
+            />
+          </HeadlessSet>
+
+          {/*<Set title="AI Auto-Responder">
+            <Switch
+              title="Enable AI Reply"
+              description="Automatically respond to player chat messages"
+              defaultChecked={aiReply}
+              onChange={(event) => setAiReply(event.currentTarget.checked)}
+            />
+            <Text
+              title="API Endpoint"
+              description="The URL for the chat completions endpoint"
+              defaultValue={aiEndpoint}
+              onChange={(event) => setAiEndpoint(event.currentTarget.value)}
+            />
+            <Text
+              title="API Key"
+              description="Your API key (without Bearer prefix)"
+              defaultValue={aiKey}
+              onChange={(event) => setAiKey(event.currentTarget.value)}
+              type="password"
+            />
+            <Text
+              title="Model Name"
+              description="The specific AI model to use (e.g., gpt-4o)"
+              defaultValue={aiModel}
+              onChange={(event) => setAiModel(event.currentTarget.value)}
+            />
+            <Text
+              title="System Prompt"
+              description="Instructions to define the AI's personality"
+              defaultValue={aiPrompt}
+              onChange={(event) => setAiPrompt(event.currentTarget.value)}
+            />
+          </Set>*/}
+        </>
       );
     },
   },

@@ -636,11 +636,11 @@ beforeGame.push(() => {
  * and it's not the localPlayer
  * menuPlayer can be undefined when the player isn't signed in
  */
-let menuPlayer: Player | undefined;
+// let menuPlayer: Player | undefined;
 
-export function getMenuPlayer() {
-  return menuPlayer;
-}
+// export function getMenuPlayer() {
+//   return menuPlayer;
+// }
 
 // hook helper func that returns the list of skins that the target plr has
 // function helper(player, unkown)
@@ -714,35 +714,37 @@ const fakeObj = function (this: any, a: any) {
 
 const descs = Object.getOwnPropertyDescriptors(Object);
 
-descs.defineProperty.value = ((o: Player, k: string, a: PropertyDescriptor) => {
-  // console.log(o, k, a);
-  if (k === "isServer") {
-    const { get } = a;
-    a.get = function () {
-      return sprayingFakeServer || get!.call(this);
-    };
-  }
+// descs.defineProperty.value = ((o: Player, k: string, a: PropertyDescriptor) => {
+//   // console.log(o, k, a);
+//   if (k === "isServer") {
+//     const { get } = a;
+//     a.get = function () {
+//       return sprayingFakeServer || get!.call(this);
+//     };
+//   }
 
-  if (k === "inventory" && typeof o === "object" && o !== null && o.id === -1) {
-    defineProperty(o, "init", {
-      configurable: true,
-      set: (init) => {
-        // console.trace("set init", init);
-        delete (o as any).init;
-        o.init = function (...args) {
-          const menuSig = [0, 0, 0, "preview", false];
-          if (menuSig.every((v, i) => args[i] === v)) {
-            // console.trace("IM THE MENU PLAYER");
-            menuPlayer = o;
-          }
-          return init.call(this, ...args);
-        };
-      },
-    });
-  }
+//   if (k === "inventory" && typeof o === "object" && o !== null && o.id === -1) {
+//     console.log({a}, "got cll");
+// debugger;
+//     defineProperty(o, "init", {
+//       configurable: true,
+//       set: (init) => {
+//         // console.trace("set init", init);
+//         delete (o as any).init;
+//         o.init = function (...args) {
+//           const menuSig = [0, 0, 0, "preview", false];
+//           if (menuSig.every((v, i) => args[i] === v)) {
+//             // console.trace("IM THE MENU PLAYER");
+//             menuPlayer = o;
+//           }
+//           return init.call(this, ...args);
+//         };
+//       },
+//     });
+//   }
 
-  return defineProperty(o, k, a);
-}) as any;
+//   return defineProperty(o, k, a);
+// }) as any;
 
 // console.log(descs);
 
@@ -793,7 +795,7 @@ if (isDevelopment) {
     getGame,
     getRender,
     getLocalPlayer,
-    getMenuPlayer,
+    // getMenuPlayer,
     getOverlay,
     getConfig,
     getGameConfig,

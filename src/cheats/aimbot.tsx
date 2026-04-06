@@ -326,7 +326,7 @@ export function aimbotHook() {
       // (Math.PI * 2) is a full circle.
       // Dividing frame by 20 controls the speed (higher = slower spin).
       // We multiply by 1000 because Krunker inputs expect rotation * 1000.
-      const rotationSpeed = 100;
+      const rotationSpeed = 800;
       inputs[iInputs.yDir] = (frame / rotationSpeed) * Math.PI * 2 * 1000;
 
       // Optional: If you want the character to look down while spinning (like a spinbot)

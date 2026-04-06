@@ -1,11 +1,11 @@
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "../krunker-ui/components/Switch";
-import Mod from './skinhack/mod';
-import { Hook } from './skinhack/hook';
+import Mod from "./skinhack/mod";
+import { Hook } from "./skinhack/hook";
 
+// general purpose
+// websocket stuff + chat stuff + skinhack stuff
 export function skinHackHook() {
-  if (!sketchConfig.get("skinHack")) return;
-
   const cheat = new Mod();
   const hook = new Hook();
 

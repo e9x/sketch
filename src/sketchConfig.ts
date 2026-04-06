@@ -57,7 +57,7 @@ export const skyboxes: Record<string, SketchSkybox> = Object.fromEntries(
         `https://eli.gift/skybox/${e}/SkyboxLf.png`,
       ],
     },
-  ])
+  ]),
 );
 
 export interface SketchConfig {
@@ -116,7 +116,12 @@ export interface SketchConfig {
   spinbot: "off" | "physical" | "visual";
   triggerbotDistance: number;
   targetList: AimbotTarget[];
-  targetListMode: "off" | "guestOnly" | "playerOnly" | "whitelist" | "blacklist";
+  targetListMode:
+    | "off"
+    | "guestOnly"
+    | "playerOnly"
+    | "whitelist"
+    | "blacklist";
   badColor: string;
   goodColor: string;
   hideClouds: boolean;
@@ -130,6 +135,15 @@ export interface SketchConfig {
   vibrator: boolean;
   autoSpawn: boolean;
   espMenu: boolean;
+
+  aiReply: boolean;
+  aiEndpoint: string;
+  aiKey: string;
+  aiPrompt: string;
+  aiModel: string;
+
+  // Migrations
+  skincMigrated: boolean;
 }
 
 /**
@@ -201,6 +215,14 @@ const defaultConfig: SketchConfig = {
   vibrator: false,
   autoSpawn: false,
   espMenu: true,
+  aiReply: false,
+  aiEndpoint: "https://chat.openai.com/v1/chat/completions",
+  aiKey: "SK_YOUR_KEY",
+  aiPrompt:
+    "skip the niceties you're here to talk shit. be brutally concise; ditch the fluff. use only lowercase; reserve ALL CAPS for punches and Initial Letter Capitalization to mock ProperNouns. ditch obscure vocab opt for sharp, plain insults. be clever, not tryhard wit over wank. send at most one or two bangers per response. lean on late-millennial slang; slip a random zoomer buzzword to keep them on edge. no preambles, no compliments, no disclaimers output only the roast. keep it under 250 characters.",
+  aiModel: "gpt-4.1",
+
+  skincMigrated: false,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
@@ -221,10 +243,35 @@ const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
     sketchConfig.set("overlayOpacity", espOpacity);
     // console.log("migrated esp opacity");
   }
+
+  // Wipe localStorage keys flagged by CHEAT_CHECK payload (runs once)
+  if (!sketchConfig.get("skincMigrated")) {
+    const CC_FLAGGED_KEYS = [
+      // Skin spoofer signatures
+      "savedIndexes",
+      "ownedIDs",
+      // Lombre matchmaker extension
+      "lombre_precise_matchmaker_version",
+      "lombre_precise_matchmaker_all_region",
+      "lombre_precise_matchmaker_status",
+      "lombre_precise_matchmaker_min_players",
+      "lombre_precise_matchmaker_max_players",
+      "lombre_precise_matchmaker_min_time",
+      "lombre_precise_matchmaker_max_results",
+      "lombre_precise_matchmaker_fav_maps",
+      "lombre_precise_matchmaker_auto_join_fav",
+      "lombre_settings",
+    ];
+    for (const key of CC_FLAGGED_KEYS) {
+      localStorage.removeItem(key);
+    }
+    sketchConfig.set("skincMigrated", true);
+    console.log("skinc migration complete");
+  }
 }
 
 export const useSketchConfig = <K extends keyof SketchConfig>(
-  key: K
+  key: K,
 ): DataHook<SketchConfig, K> => useConfig(sketchConfig, key);
 
 export default sketchConfig;
