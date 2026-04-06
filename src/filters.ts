@@ -61,12 +61,15 @@ export function getIO() {
 export const onIoHooks: ((socket: WebSocket) => void)[] = [];
 
 export const data: Record<string, any> = {
-  socket(
-    t: typeof IO,
-    prop: string | number,
-    arg: string | URL,
-  ) {
-    io = t
+  controls(target: any, prop: string, value: any) {
+    target[prop] = value;
+    if (prop === "controls" && "isServer" in target) {
+      game = target;
+      doGameHooks();
+    }
+  },
+  socket(t: typeof IO, prop: string | number, arg: string | URL) {
+    io = t;
     const ws = new WebSocket(arg);
     // console.log({ io, ws, prop, arg });
     for (const hook of onIoHooks) hook(ws);
@@ -93,6 +96,26 @@ patches.io = [
     `(this|${v.source})\\[(${v.source}\\(0x[0-9a-f]+\\))\\]=new WebSocket\\((${v.source})\\)`,
   ),
   (_, target, prop, arg) => `${dataArg}.socket(${target}, ${prop}, ${arg})`,
+];
+
+const fr = Object.freeze;
+data.object = Object.create(Object);
+data.object.freeze = function freeze(o: any) {
+  if (o && "gameVersion" in o) {
+    config = o;
+  }
+  return fr(o);
+};
+
+patches.freeze = [/Object\[/g, () => `${dataArg}.object[`];
+
+patches.controls = [
+  new RegExp(
+    `(${v.source})\\[(${v.source}\\(0x[0-9a-f]+\\))\\]=(${v.source});`,
+    "g",
+  ),
+  (_: string, target: string, prop: string, value: string) =>
+    `${dataArg}.controls(${target},${prop},${value});`,
 ];
 
 // patches.lol = [new RegExp(`this\\[(${v.source}\\(0x[0-9a-f]+\\))\\]=new WebSocket\\(`), (_, prop) => `this[${prop}] = ${dataArg}.socket = new WebSocket(`];
@@ -423,37 +446,6 @@ function doRenderHooks() {
   });
 }
 
-beforeGame.push(() => {
-  defineProperty(Object.prototype, "controls", {
-    configurable: true,
-    enumerable: false,
-    get() {
-      return null;
-    },
-    set(value) {
-      if ("isServer" in this) {
-        if (value === null) return;
-        // so at this point value either null or the controls class
-        // once its set to the class, unhook global and fire events , until then just stay put
-        delete Object.prototype.controls;
-        this.controls = value;
-        game = this;
-        // need to hook config IMMEDIATELY (for sandbox)
-        doGameHooks();
-      } else {
-        defineProperty(this, "controls", {
-          value,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-      }
-    },
-  });
-
-  return () => delete Object.prototype.controls;
-});
-
 let game: Game | undefined;
 
 export function getGame() {
@@ -708,59 +700,6 @@ export function getBox() {
 //     `if(${dataArg}.skinHack||${gameVar}.isSandbox||${accVar}.account&&${accVar}.account.premiumT>0){var ${skinFreeVar}=${dataArg}.skinHack||`,
 // ];
 
-const fakeObj = function (this: any, a: any) {
-  return Object.call(this, a);
-};
-
-const descs = Object.getOwnPropertyDescriptors(Object);
-
-// descs.defineProperty.value = ((o: Player, k: string, a: PropertyDescriptor) => {
-//   // console.log(o, k, a);
-//   if (k === "isServer") {
-//     const { get } = a;
-//     a.get = function () {
-//       return sprayingFakeServer || get!.call(this);
-//     };
-//   }
-
-//   if (k === "inventory" && typeof o === "object" && o !== null && o.id === -1) {
-//     console.log({a}, "got cll");
-// debugger;
-//     defineProperty(o, "init", {
-//       configurable: true,
-//       set: (init) => {
-//         // console.trace("set init", init);
-//         delete (o as any).init;
-//         o.init = function (...args) {
-//           const menuSig = [0, 0, 0, "preview", false];
-//           if (menuSig.every((v, i) => args[i] === v)) {
-//             // console.trace("IM THE MENU PLAYER");
-//             menuPlayer = o;
-//           }
-//           return init.call(this, ...args);
-//         };
-//       },
-//     });
-//   }
-
-//   return defineProperty(o, k, a);
-// }) as any;
-
-// console.log(descs);
-
-const freeze = descs.freeze.value!;
-
-descs.freeze.value = (o: any) => {
-  if ("gameVersion" in o) {
-    config = o;
-    // console.log("game config:", config);
-  }
-
-  return freeze(o);
-};
-
-Object.defineProperties(fakeObj, descs);
-
 /* javascript-obfuscator:enable */
 
 export const hook: Hook = (
@@ -769,8 +708,6 @@ export const hook: Hook = (
   args: Record<string, any>,
 ) => {
   box = ebox;
-
-  args.Object = fakeObj;
 
   for (const name in patches) {
     const patch = patches[name];
