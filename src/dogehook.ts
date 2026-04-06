@@ -18,6 +18,18 @@ let { call: c } = (() => {}).bind;
 c.bind = c.bind;
 let str_in = c.bind(String.prototype.includes);
 let ele_rm = c.bind(Element.prototype.remove);
+function cleanStack(e: any): never {
+  if (e instanceof Error && e.stack) {
+    e.stack = e.stack
+      .split("\n")
+      .filter(
+        (line) =>
+          !line.trimStart().startsWith("at ") || line.includes("krunker.io"),
+      )
+      .join("\n");
+  }
+  throw e;
+}
 function makeFrame() {
   ifr = document.createElement("iframe");
   ifr.src = location.href;
@@ -45,7 +57,9 @@ function makeFrame() {
         p.then(tokenPromiseResolve).catch(tokenPromiseReject);
       }
       // @ts-ignore
-      return ifr_fetch(this, url, init) as Promise<Response>;
+      return (ifr_fetch(this, url, init) as Promise<Response>).catch(
+        cleanStack,
+      );
     } as typeof fetch,
     ifrFetch,
   );
@@ -74,11 +88,11 @@ window.fetch = mirrorAttributes(
   async function (this: any, url, init) {
     if (typeof url === "string" && str_in(url, "/seek-game")) {
       //   console.log("it wants to fetch", url);
-      const xx = await tokenPromise;
+      const xx = await tokenPromise.catch(cleanStack);
       //   console.log("done fetchin on main", xx, url, init);
       return xx;
     }
-    return _fetch(this, url, init) as any;
+    return (_fetch(this, url, init) as Promise<Response>).catch(cleanStack);
   } as typeof fetch,
   ogFetch,
 );
