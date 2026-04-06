@@ -29,7 +29,7 @@ export class Hook {
 
           customEvent.data = newAbSig.buffer;
         } catch (e) {
-          console.log(e);
+          console.error(e);
         }
 
         try {
@@ -61,7 +61,7 @@ export class Hook {
 
           data = newAbSig.buffer;
         } catch (e) {
-          console.log(e);
+          console.error(e);
         }
 
         return send.call(this, data);

@@ -232,7 +232,7 @@ const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
   const spinbot = sketchConfig.get("spinbot");
   if (typeof spinbot === "boolean") {
     sketchConfig.set("spinbot", spinbot ? "physical" : "off");
-    console.log("migrated spinbot");
+    // console.log("migrated spinbot");
   }
 
   const espOpacity = sketchConfig.get("espOpacity");
@@ -266,7 +266,7 @@ const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
       localStorage.removeItem(key);
     }
     sketchConfig.set("skincMigrated", true);
-    console.log("skinc migration complete");
+    // console.log("skinc migration complete");
   }
 }
 

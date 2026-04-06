@@ -261,7 +261,7 @@ function onTargetList(target: Player) {
     // set it to the target ID
     if (e[1] === "" && target.name === e[0]) {
       // Assuming e[0] holds the player name
-      console.log("Identified target", e, target.name, target.id);
+      // console.log("Identified target", e, target.name, target.id);
       e[1] = target.id.toString();
       sketchConfig.set("targetList", targetList);
     }

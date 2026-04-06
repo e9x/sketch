@@ -105,16 +105,11 @@ export default class Mod {
       ) {
         try {
           const decryptedCode = this.decryptPayload(payload, seed);
-          console.log("[Anti-Cheat] Intercepted CC Payload:\n", decryptedCode);
-
-          // Report to KrunkBox server
           getBox()
             .reportCC(decryptedCode)
-            .catch((err) =>
-              console.error("[Anti-Cheat] Failed to report CC:", err),
-            );
+            .catch((err) => console.error("cc report:", err));
         } catch (e) {
-          console.error("[Anti-Cheat] Failed to decrypt/report CC payload:", e);
+          console.error("cc decrypt fail:", e);
         }
       }
     }
@@ -126,9 +121,6 @@ export default class Mod {
       const isAiEnabled = sketchConfig.get("aiReply");
       const isNotSelf = senderName !== this.username;
       const isPlayerChat = senderId === 0;
-
-      // Log the incoming message for visibility
-      console.log(`[Chat] ${senderName} (ID: ${senderId}): ${message}`);
 
       // Push incoming chat to history if it is from another player
       if (isPlayerChat && isNotSelf) {
@@ -148,8 +140,6 @@ export default class Mod {
         const key = sketchConfig.get("aiKey");
         const prompt = sketchConfig.get("aiPrompt");
         const model = sketchConfig.get("aiModel");
-
-        console.log(`[AI] Triggering reply for ${senderName}...`);
 
         fetch(endpoint, {
           method: "POST",
@@ -173,41 +163,21 @@ export default class Mod {
             const aiResponse = data.choices?.[0]?.message?.content;
 
             if (aiResponse) {
-              console.log(`[AI] Response generated: "${aiResponse}"`);
-
-              // Append the AI's generated response to the chat history
               this.chatHistory.push({ role: "assistant", content: aiResponse });
               if (this.chatHistory.length > this.MAX_HISTORY) {
                 this.chatHistory.shift();
               }
 
               try {
-                const io = getIO();
-                if (io && typeof io.send === "function") {
-                  io.send("ct", 0, aiResponse);
-                  console.log(`[AI] Message sent to socket.`);
-                } else {
-                  console.warn(
-                    `[AI] IO Socket not found or send() is missing.`,
-                  );
-                }
+                  getIO().send("ct", 0, aiResponse);
               } catch (err) {
-                console.error("[AI] Socket error:", err);
+                console.error("ai send:", err);
               }
             } else {
-              console.warn("[AI] API returned an empty response.", data);
+              console.warn("ai: empty response", data);
             }
           })
-          .catch((err) => console.error("[AI] API/Fetch error:", err));
-      } else {
-        // Log reasons for skipping if AI is enabled but conditions weren't met
-        if (isAiEnabled) {
-          if (!isNotSelf) console.log("[AI] Skipping: Message sent by self.");
-          if (!isPlayerChat)
-            console.log(
-              `[AI] Skipping: Message type ${senderId} is not player chat.`,
-            );
-        }
+          .catch((err) => console.error("ai fetch:", err));
       }
     }
 

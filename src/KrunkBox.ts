@@ -42,7 +42,7 @@ export default class KrunkBox {
 
       if (!res.ok) {
         // server error, try again in some
-        console.log("Server error, trying again in 3s");
+        // console.log("Server error, trying again in 3s");
         await sleep(3e3);
         continue;
       }

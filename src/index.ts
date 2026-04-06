@@ -102,7 +102,7 @@ async function main() {
 
     // needs to reload to use token
     if (!game) {
-      console.log("refresh to utilize token");
+      // console.log("refresh to utilize token");
       return;
     }
 
