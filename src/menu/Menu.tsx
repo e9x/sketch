@@ -374,11 +374,11 @@ const tabs: Tab[] = [
       const [autoSpawn, setAutoSpawn] = useSketchConfig("autoSpawn");
 
       // New AI Auto-Reply Configs
-      // const [aiReply, setAiReply] = useSketchConfig("aiReply");
-      // const [aiEndpoint, setAiEndpoint] = useSketchConfig("aiEndpoint");
-      // const [aiKey, setAiKey] = useSketchConfig("aiKey");
-      // const [aiPrompt, setAiPrompt] = useSketchConfig("aiPrompt");
-      // const [aiModel, setAiModel] = useSketchConfig("aiModel");
+      const [aiReply, setAiReply] = useSketchConfig("aiReply");
+      const [aiEndpoint, setAiEndpoint] = useSketchConfig("aiEndpoint");
+      const [aiKey, setAiKey] = useSketchConfig("aiKey");
+      const [aiPrompt, setAiPrompt] = useSketchConfig("aiPrompt");
+      const [aiModel, setAiModel] = useSketchConfig("aiModel");
 
       return (
         <>
@@ -396,7 +396,7 @@ const tabs: Tab[] = [
             />
           </HeadlessSet>
 
-          {/*<Set title="AI Auto-Responder">
+          <Set title="AI Auto-Responder">
             <Switch
               title="Enable AI Reply"
               description="Automatically respond to player chat messages"
@@ -428,7 +428,7 @@ const tabs: Tab[] = [
               defaultValue={aiPrompt}
               onChange={(event) => setAiPrompt(event.currentTarget.value)}
             />
-          </Set>*/}
+          </Set>
         </>
       );
     },
