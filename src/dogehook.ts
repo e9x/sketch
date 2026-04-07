@@ -1,7 +1,9 @@
-import { mirrorAttributes } from "./hook";
+import { hookContext, mirrorAttributes } from "./hook";
 import { getExposedWindow } from "./consts";
 
 const window = getExposedWindow();
+
+hookContext(window);
 
 let tokenPromiseResolve: (res: Response) => void;
 let tokenPromiseReject: (e: any) => void;
