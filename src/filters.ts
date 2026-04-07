@@ -716,8 +716,7 @@ export const hook: Hook = (
       ran = true;
       return patch[1](...args);
     });
-    //if (isDevelopment)
-    console.log("patching", name, "worked:", ran);
+    if (isDevelopment) console.log("patching", name, "worked:", ran);
   }
 
   args[dataArg] = data;
