@@ -124,6 +124,7 @@ export interface SketchConfig {
     | "blacklist";
   badColor: string;
   goodColor: string;
+  espWallDarkness: number;
   hideClouds: boolean;
 
   // LEGACY:
@@ -208,6 +209,7 @@ const defaultConfig: SketchConfig = {
   targetListMode: "off",
   badColor: "#ff0000",
   goodColor: "#00ff00",
+  espWallDarkness: 0.7,
   hideClouds: false,
   mouseLockX: 0,
   mouseLockY: 0,

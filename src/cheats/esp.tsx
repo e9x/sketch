@@ -220,8 +220,9 @@ function initMaterials() {
       colors.enemyWall.set(colors.enemy);
       colors.teamWall.set(colors.team);
 
-      colors.enemyWall.addScalar(-0.3);
-      colors.teamWall.addScalar(-0.3);
+      const wallDarkness = sketchConfig.get("espWallDarkness");
+      colors.enemyWall.multiplyScalar(wallDarkness);
+      colors.teamWall.multiplyScalar(wallDarkness);
 
       mesh.enemy.color.set(colors.enemy);
       mesh.enemyWall.color.set(colors.enemyWall);
@@ -494,6 +495,7 @@ export function ESPMenu() {
   const [goodColor, setGoodColor] = useSketchConfig("goodColor");
   const [newNametags, setNewNametags] = useSketchConfig("newNametags");
   const [espMenu, setEspMenu] = useSketchConfig("espMenu");
+  const [espWallDarkness, setEspWallDarkness] = useSketchConfig("espWallDarkness");
 
   return (
     <>
@@ -552,6 +554,17 @@ export function ESPMenu() {
         defaultValue={overlayOpacity}
         onChange={(event) =>
           setOverlayOpacity(event.currentTarget.valueAsNumber)
+        }
+        min={0}
+        max={1}
+        step={0.05}
+      />
+      <Slider
+        title="Wall Color Darkness"
+        description="0 = black, 1 = no darkening"
+        defaultValue={espWallDarkness}
+        onChange={(event) =>
+          setEspWallDarkness(event.currentTarget.valueAsNumber)
         }
         min={0}
         max={1}
