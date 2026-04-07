@@ -118,7 +118,7 @@ async function main() {
     for (const bg of beforeGame) bg();
     game.init();
     for (const ag of afterGame) ag();
-    sketchButton();
+    if (sketchConfig.get("menuButton")) sketchButton();
 
     setTimeout(() => {
       setInterval(() => {

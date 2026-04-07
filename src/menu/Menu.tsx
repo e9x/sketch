@@ -171,6 +171,8 @@ const tabs: Tab[] = [
             <Switch
               title="Menu Button"
               defaultChecked={menuButton}
+              attention
+              description="Will require reloading the page if you are enabling the menu button after a reload."
               onChange={(event) => {
                 if (menuKey === -1) {
                   event.currentTarget.checked = false;
