@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "preact/hooks";
-import { iInputs } from "../consts";
+import { iInputs, isDevelopment } from "../consts";
+import { console } from "../crashout";
 import {
   canISeeEnt,
   getConfig,
@@ -599,7 +600,7 @@ export function aimbotHook() {
       try {
         window.SSpinbot(inputs, iInputs, sketchConfig);
       } catch (err) {
-        console.error(err);
+        if (isDevelopment) console.error(err);
       }
       return;
     }
@@ -700,7 +701,7 @@ export function AimbotMenu() {
             .map((player) => [player.name, player.id.toString()]),
         );
       } catch (err) {
-        console.error(err);
+        if (isDevelopment) console.error(err);
       }
     };
     callback();

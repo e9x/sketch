@@ -1,4 +1,5 @@
 import { apiURL, isDevelopment } from "./consts";
+import { console } from "./crashout";
 import { GM_fetch, sleep } from "./util";
 
 /**
@@ -60,7 +61,7 @@ export default class KrunkBox {
         },
         body: JSON.stringify({ currentVersion, supportedGame }),
       }).catch((err) => {
-        console.error("Bro", err);
+        if (isDevelopment) console.error("Bro", err);
       });
 
       if (res?.status === 425) {

@@ -1,4 +1,5 @@
 import tokenConfig from "./tokenConfig";
+import { console } from "./crashout";
 import KrunkBox from "./KrunkBox";
 import {
   isDevelopment,
@@ -118,7 +119,7 @@ async function main() {
     for (const bg of beforeGame) bg();
     game.init();
     for (const ag of afterGame) ag();
-    if (sketchConfig.get("menuButton")) sketchButton();
+    sketchButton();
 
     setTimeout(() => {
       setInterval(() => {

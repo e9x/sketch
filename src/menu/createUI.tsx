@@ -1,3 +1,5 @@
+import { isDevelopment } from "../consts";
+import { console } from "../crashout";
 import { keyListeners } from "../keys";
 import sketchConfig from "../sketchConfig";
 import Menu from "./Menu";
@@ -24,7 +26,7 @@ function sketchWindow() {
   try {
     showWindow(1);
   } catch (err) {
-    console.error("show win", err);
+    if (isDevelopment) console.error("show win", err);
   }
   windows[0] = old0;
 }
@@ -40,16 +42,18 @@ export function updateSketchMenuButton() {
 }
 
 export async function sketchButton() {
-  const menuItemContainer =
-    document.querySelector<HTMLDivElement>("#menuItemContainer");
+  if (sketchConfig.get("menuButton")) {
+    const menuItemContainer =
+      document.querySelector<HTMLDivElement>("#menuItemContainer");
     // const id = "sketchMenu";
-  const id = "m" + Math.random().toString(36).slice(2);
-  if (menuItemContainer)
-    menuItemContainer.innerHTML += `<div class="menuItem" onmouseenter="playTick()" onclick="playSelect()" id="${id}"><span class="material-icons-outlined menBtnIcn" style="color: #fbff00">edit</span><div class="menuItemTitle">Sketch</div></div>`;
-  sketchMenuButton = document.getElementById(id) as HTMLDivElement;
-  sketchMenuButton.removeAttribute("id");
-  sketchMenuButton.addEventListener("click", sketchWindow);
-  updateSketchMenuButton();
+    const id = "m" + Math.random().toString(36).slice(2);
+    if (menuItemContainer)
+      menuItemContainer.innerHTML += `<div class="menuItem" onmouseenter="playTick()" onclick="playSelect()" id="${id}"><span class="material-icons-outlined menBtnIcn" style="color: #fbff00">edit</span><div class="menuItemTitle">Sketch</div></div>`;
+    sketchMenuButton = document.getElementById(id) as HTMLDivElement;
+    sketchMenuButton.removeAttribute("id");
+    sketchMenuButton.addEventListener("click", sketchWindow);
+    updateSketchMenuButton();
+  }
 
   keyListeners.push((event, code, down) => {
     const menuKey = sketchConfig.get("menuKey");

@@ -1,4 +1,5 @@
-import { isNode } from "./consts";
+import { isDevelopment, isNode } from "./consts";
+import { console } from "./crashout";
 
 export function sleep(ms: number) {
   return new Promise<void>((resolve) => setTimeout(() => resolve(), ms));
@@ -35,7 +36,7 @@ export function waitFor<T>(
           return true;
         }
       } catch (err) {
-        console.error(err);
+        if (isDevelopment) console.error(err);
       }
     };
 

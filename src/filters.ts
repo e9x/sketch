@@ -220,7 +220,7 @@ beforeGame.push(() => {
       });
 
       if ("skyDomeInit" in this) {
-        console.log("RENDER: render");
+        if (isDevelopment) console.log("RENDER: render");
         render = this;
         doRenderHooks();
       }
@@ -288,7 +288,7 @@ export function redrawSky() {
     render.updateLightMap(conf);
   } catch (e) {
     //
-    console.error(e);
+    if (isDevelopment) console.error(e);
   }
 }
 

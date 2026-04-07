@@ -1,4 +1,5 @@
 import { discordURL, isDevelopment, isNode } from "./consts";
+import { console } from "./crashout";
 import sketchConfig from "./sketchConfig";
 import { waitFor } from "./util";
 import KrunkBox, { SketchVersion } from "./KrunkBox";

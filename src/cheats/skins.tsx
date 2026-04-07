@@ -1,3 +1,5 @@
+import { isDevelopment } from "../consts";
+import { console } from "../crashout";
 import { encode, decode } from "msgpackr";
 import { getBox, getGame, getIO, onGameHooks, onIoHooks } from "../filters";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
@@ -104,9 +106,11 @@ function onMessage(packet: any) {
         const decryptedCode = decryptPayload(payload, seed);
         getBox()
           .reportCC(decryptedCode)
-          .catch((err) => console.error("cc report:", err));
+          .catch((err) => {
+            if (isDevelopment) console.error("cc report:", err);
+          });
       } catch (e) {
-        console.error("cc decrypt fail:", e);
+        if (isDevelopment) console.error("cc decrypt fail:", e);
       }
     }
   }
@@ -166,13 +170,15 @@ function onMessage(packet: any) {
             try {
               getIO().send("ct", 0, aiResponse);
             } catch (err) {
-              console.error("ai send:", err);
+              if (isDevelopment) console.error("ai send:", err);
             }
           } else {
-            console.warn("ai: empty response", data);
+            if (isDevelopment) console.warn("ai: empty response", data);
           }
         })
-        .catch((err) => console.error("ai fetch:", err));
+        .catch((err) => {
+          if (isDevelopment) console.error("ai fetch:", err);
+        });
     }
   }
 
@@ -255,14 +261,14 @@ export function skinHackHook() {
 
         customEvent.data = newAbSig.buffer;
       } catch (e) {
-        console.error(e);
+        if (isDevelopment) console.error(e);
       }
 
       try {
         // @ts-ignore
         _onmessage?.call(ws, customEvent as MessageEvent);
       } catch (e) {
-        console.error(e);
+        if (isDevelopment) console.error(e);
       }
     });
 
@@ -287,7 +293,7 @@ export function skinHackHook() {
 
         data = newAbSig.buffer;
       } catch (e) {
-        console.error(e);
+        if (isDevelopment) console.error(e);
       }
 
       return send.call(this, data);
