@@ -102,7 +102,6 @@ function onMessage(packet: any) {
     const payload = packet[3];
 
     // console.trace(packet);
-    // alert("NIGGER");
     // console.log("EVAL>",  decryptPayload(payload, seed));
     // getIO().socket.close();
 
