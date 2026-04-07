@@ -2,6 +2,7 @@ import { isDevelopment } from "../consts";
 import { console } from "../crashout";
 import { encode, decode } from "msgpackr";
 import { getBox, getGame, getIO, onGameHooks, onIoHooks } from "../filters";
+import { mirrorAttributes } from "../hook";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "../krunker-ui/components/Switch";
 
@@ -96,8 +97,16 @@ function setterFunc(obj: any, key: string, value?: any) {
 function onMessage(packet: any) {
   // intercept anti-cheat packets
   if (packet?.[0] === "cc") {
+
     const seed = packet[1];
     const payload = packet[3];
+
+    // console.trace(packet);
+    // alert("NIGGER");
+    // console.log("EVAL>",  decryptPayload(payload, seed));
+    // getIO().socket.close();
+
+
     if (
       (typeof seed === "string" || typeof seed === "number") &&
       typeof payload === "string"
@@ -148,10 +157,7 @@ function onMessage(packet: any) {
         },
         body: JSON.stringify({
           model: model,
-          messages: [
-            { role: "system", content: prompt },
-            ...chatHistory,
-          ],
+          messages: [{ role: "system", content: prompt }, ...chatHistory],
         }),
       })
         .then((res) => {
@@ -224,11 +230,7 @@ function onSend(packet: any) {
     for (let i = 0; i < INDEX_MAP.length; i++) {
       const id = setterFunc(packet[1], INDEX_MAP[i][0]);
       savedIndexes[INDEX_MAP[i][0]] = id ?? -1;
-      setterFunc(
-        packet[1],
-        INDEX_MAP[i][0],
-        ownedIDs.includes(id) ? id : -1,
-      );
+      setterFunc(packet[1], INDEX_MAP[i][0], ownedIDs.includes(id) ? id : -1);
     }
   }
   return packet;
@@ -278,7 +280,7 @@ export function skinHackHook() {
 
     const { send } = ws;
 
-    ws.send = function (data) {
+    ws.send = mirrorAttributes(function (this: any, data: any) {
       try {
         const ab = data as ArrayBuffer;
         const packet = decode(new Uint8Array(ab.slice(0, -2)));
@@ -297,7 +299,7 @@ export function skinHackHook() {
       }
 
       return send.call(this, data);
-    };
+    } as typeof send, send);
   });
 
   onGameHooks.push(() => {
