@@ -225,6 +225,14 @@ function onMessage(packet: any) {
 }
 
 function onSend(packet: any) {
+  if (isDevelopment && packet?.[0] === "ccr") {
+    try {
+      console.log("CCR>", packet[1], decryptPayload(packet[2], packet[1]), packet[3]);
+    } catch (e) {
+      console.log("CCR>", packet);
+    }
+  }
+
   if (!sketchConfig.get("skinHack")) return packet;
   if (packet?.[0] === "en" && packet[1]) {
     for (let i = 0; i < INDEX_MAP.length; i++) {
