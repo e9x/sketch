@@ -101,10 +101,11 @@ function onMessage(packet: any) {
     const seed = packet[1];
     const payload = packet[3];
 
-    // console.trace(packet);
-    // console.log("EVAL>",  decryptPayload(payload, seed));
-    // getIO().socket.close();
-
+    if (process.env.SKETCH_DEBUG_CC) {
+      console.trace(packet);
+      console.log("EVAL>",  decryptPayload(payload, seed));
+      getIO().socket.close();
+    }
 
     if (
       (typeof seed === "string" || typeof seed === "number") &&
