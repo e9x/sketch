@@ -1,4 +1,5 @@
 import type { JSONStorage } from "./values";
+import { IDBJSONStorage } from "./values";
 import { useState, useEffect } from "preact/hooks";
 
 export interface ConfigEvent extends Event {
@@ -37,6 +38,19 @@ export default class Config<Data extends object> {
   constructor(defaultConfig: Data, storage: JSONStorage) {
     this.defaultConfig = defaultConfig;
     this.storage = storage;
+  }
+  async init() {
+    if (this.storage instanceof IDBJSONStorage) await this.storage.init();
+    // pre-populate cache from storage for all default keys
+    for (const key in this.defaultConfig) {
+      if (!this.cache.has(key as keyof Data)) {
+        const value = this.storage.getValue(
+          key as string,
+          this.defaultConfig[key as keyof Data]
+        );
+        this.cache.set(key as keyof Data, value);
+      }
+    }
   }
   get<K extends keyof Data>(key: K) {
     if (this.cache.has(key)) return this.cache.get(key) as Data[K];

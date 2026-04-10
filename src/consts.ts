@@ -1,4 +1,4 @@
-import { FSJSONStorage, GMJSONStorage } from "./values";
+import { FSJSONStorage, GMJSONStorage, IDBJSONStorage, type JSONStorage } from "./values";
 
 export const apiURL = process.env.SKETCH_API_URL || "";
 if (!apiURL) throw new TypeError("Invalid SKETCH_API_URL");
@@ -26,13 +26,24 @@ try {
   isNode = false;
 }
 
-export function getStorage() {
+const hasGM = true; // typeof GM_info !== "undefined";
+
+function createStorage(): JSONStorage {
+  if (hasGM) return new GMJSONStorage();
   if (isNode)
     return new FSJSONStorage(
       require("path").join(require("os").homedir(), ".photoshop.sketch")
     );
-  else return new GMJSONStorage();
+  return new IDBJSONStorage("glensargent");
 }
+
+const storage = createStorage();
+
+export function getStorage() {
+  return storage;
+}
+
+export { hasGM };
 
 export function getExposedWindow() {
   return (isNode ? window : unsafeWindow) as typeof globalThis;

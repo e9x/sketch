@@ -33,7 +33,7 @@ export function setAttributes<To extends Function>(to: To, from: Attributes) {
 export function mirrorAttributes<To extends Function, From extends Function>(
   to: To,
   from: From,
-  isConstructor = false
+  isConstructor = false,
 ) {
   setAttributes(to, {
     string: from.toString(),
@@ -66,7 +66,7 @@ export function mirrorAttributes<To extends Function, From extends Function>(
 export function setNativeFunction<T extends Function>(
   f: T,
   name: string,
-  attributes: Attributes = {}
+  attributes: Attributes = {},
 ) {
   setAttributes(f, {
     string: `function ${name}() { [native code] }`,
@@ -89,7 +89,7 @@ export type NativeDescriptorMap = {
 export function nativeDescriptor(
   propertyKey: string,
   descriptor: PropertyDescriptor,
-  attributes: { [K in NativeMethodDescriptor]?: Attributes } = {}
+  attributes: { [K in NativeMethodDescriptor]?: Attributes } = {},
 ) {
   for (const key of ["value", "get", "set"] as NativeMethodDescriptor[]) {
     if (!(key in descriptor)) continue;
@@ -116,14 +116,14 @@ export type HookConstruct = (...args: string[]) => Function;
 export interface HookOptions {
   newFunction?: (
     args: string[],
-    construct: HookConstruct
+    construct: HookConstruct,
   ) => ReturnType<HookConstruct>;
 }
 
 export function hookContext(
   context: typeof globalThis,
   extra?: (context: typeof globalThis) => void,
-  hookContentWindows = true
+  hookContentWindows = true,
 ) {
   if (hookedContexts.has(context)) return;
 
@@ -133,7 +133,7 @@ export function hookContext(
   // need to be very careful
   const { toString } = context.Function.prototype;
   const toStringCall = toString.call.bind(toString) as (
-    arg0: Function
+    arg0: Function,
   ) => string;
 
   const getFuncString = functionStrings.get.bind(functionStrings);
@@ -143,7 +143,7 @@ export function hookContext(
     toString(this: Function) {
       if (typeof this !== "function") {
         const error = new TypeError(
-          "Function.prototype.toString requires that 'this' be a Function"
+          "Function.prototype.toString requires that 'this' be a Function",
         );
 
         // ({t:Function.prototype.toString}.t())
@@ -155,7 +155,7 @@ export function hookContext(
         if (error.stack)
           error.stack = error.stack.replace(
             /^ {4}at (.*?) \(eval at .*?\)$/m,
-            "    at $1 (<anonymous>)"
+            "    at $1 (<anonymous>)",
           );
 
         throw error;
@@ -184,7 +184,7 @@ export function hookContext(
     const getContentWindow = (
       Object.getOwnPropertyDescriptor(
         context.HTMLIFrameElement.prototype,
-        "contentWindow"
+        "contentWindow",
       ) as {
         configurable: true;
         enumerable: true;
@@ -224,9 +224,34 @@ export function hookContext(
             throw error;
           }
         },
-      })
+      }),
     );
   }
 
   if (extra) extra(context);
+
+  // Hook indexedDB.open to intercept attempts to open our DB name
+  const idbProto = context.IDBFactory.prototype;
+  const origOpen = idbProto.open;
+
+  const hookedOpen = {
+    open(this: IDBFactory, name: string, version?: number) {
+      // if something tries to open our db name, give it a decoy
+      if (name === "glensargent") {
+        try {
+          return origOpen.call(this, "TwTglensargent", version);
+        } catch (err) {
+          if (err instanceof Error && err.stack)
+            err.stack = err.stack.replace(/ {4}at .*?\n/m, "");
+          throw err;
+        }
+      }
+      return version !== undefined
+        ? origOpen.call(this, name, version)
+        : origOpen.call(this, name);
+    },
+  }.open;
+
+  mirrorAttributes(hookedOpen, origOpen);
+  idbProto.open = hookedOpen as typeof IDBFactory.prototype.open;
 }

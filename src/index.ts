@@ -1,4 +1,4 @@
-import tokenConfig from "./tokenConfig";
+import tokenConfig, { initTokenConfig } from "./tokenConfig";
 import { console } from "./crashout";
 import KrunkBox from "./KrunkBox";
 import {
@@ -10,7 +10,7 @@ import {
 import { afterGame, beforeGame, hook } from "./filters";
 import { getInit } from "./inject";
 import { gameLoad } from "./dogehook";
-import sketchConfig from "./sketchConfig";
+import sketchConfig, { initSketchConfig } from "./sketchConfig";
 import { begToken, showUpdated, showFutile, panic } from "./anxiety";
 import { sketchButton } from "./menu/createUI";
 import "./cheats";
@@ -18,7 +18,6 @@ import "./cheats";
 const loadGameNormally = () => {};
 
 if (isKrunker) {
-  checkHash();
   main().catch((err) => {
     if (sketchConfig.get("silentFail")) return;
     panic(err.stack);
@@ -31,8 +30,10 @@ else {
     // console.log("found key in url");
     // steal it and redirect to krunkar
     const key = location.pathname.slice(sauce + "/key/".length);
-    tokenConfig.set("keyFromUrl", key);
-    location.href = "https://krunker.io/";
+    initTokenConfig().then(() => {
+      tokenConfig.set("keyFromUrl", key);
+      location.href = "https://krunker.io/";
+    });
   }
 }
 
@@ -59,6 +60,11 @@ function checkHash() {
 declare function enterGame(): void;
 
 async function main() {
+  await initSketchConfig();
+  await initTokenConfig();
+
+  checkHash();
+
   const version = await KrunkBox.sketchVersion(sketchVersion, supportedGame);
 
   if (version.outdated) {

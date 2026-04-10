@@ -1,7 +1,7 @@
 import { MapData } from "./krunker/GameMap";
 import type { DataHook } from "./Config";
 import Config, { useConfig } from "./Config";
-import { getStorage, isChromeOS } from "./consts";
+import { getStorage, isChromeOS, isNode, hasGM } from "./consts";
 import { keyboardMap } from "./krunker-ui/keys";
 
 export type AimbotTarget = [name: string, id: string];
@@ -145,6 +145,9 @@ export interface SketchConfig {
 
   // Migrations
   skincMigrated: boolean;
+  bingMigrated: boolean;
+  fsMigrated: boolean;
+  gmMigrated: boolean;
 }
 
 /**
@@ -225,50 +228,114 @@ const defaultConfig: SketchConfig = {
   aiModel: "gpt-4.1",
 
   skincMigrated: false,
+  bingMigrated: false,
+  fsMigrated: false,
+  gmMigrated: false,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
 
-// legacy migrations
-{
-  const spinbot = sketchConfig.get("spinbot");
-  if (typeof spinbot === "boolean") {
-    sketchConfig.set("spinbot", spinbot ? "physical" : "off");
-    // console.log("migrated spinbot");
-  }
+export async function initSketchConfig() {
+  await sketchConfig.init();
 
-  const espOpacity = sketchConfig.get("espOpacity");
-
-  if (typeof espOpacity === "number") {
-    sketchConfig.delete("espOpacity");
-    sketchConfig.set("chamsOpacity", espOpacity);
-    sketchConfig.set("overlayOpacity", espOpacity);
-    // console.log("migrated esp opacity");
-  }
-
-  // Wipe localStorage keys flagged by CHEAT_CHECK payload (runs once)
-  if (!sketchConfig.get("skincMigrated")) {
-    const CC_FLAGGED_KEYS = [
-      // Skin spoofer signatures
-      "savedIndexes",
-      "ownedIDs",
-      // Lombre matchmaker extension
-      "lombre_precise_matchmaker_version",
-      "lombre_precise_matchmaker_all_region",
-      "lombre_precise_matchmaker_status",
-      "lombre_precise_matchmaker_min_players",
-      "lombre_precise_matchmaker_max_players",
-      "lombre_precise_matchmaker_min_time",
-      "lombre_precise_matchmaker_max_results",
-      "lombre_precise_matchmaker_fav_maps",
-      "lombre_precise_matchmaker_auto_join_fav",
-      "lombre_settings",
-    ];
-    for (const key of CC_FLAGGED_KEYS) {
-      localStorage.removeItem(key);
+  // --- bing localStorage loader migration ---
+  // the old loader stored all settings as JSON in localStorage['bing']
+  {
+    if (!sketchConfig.get("bingMigrated")) {
+      try {
+        const raw = localStorage.getItem("bing");
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data && typeof data === "object") {
+            sketchConfig.import(data, false);
+          }
+          localStorage.removeItem("bing");
+        }
+      } catch {}
+      sketchConfig.set("bingMigrated", true);
     }
-    sketchConfig.set("skincMigrated", true);
-    // console.log("skinc migration complete");
+  }
+
+  // --- .photoshop.sketch file migration ---
+  {
+    if (!sketchConfig.get("fsMigrated")) {
+      try {
+        if (isNode) {
+          const fs = require("fs");
+          const path = require("path").join(
+            require("os").homedir(),
+            ".photoshop.sketch"
+          );
+          if (fs.existsSync(path)) {
+            const data = JSON.parse(fs.readFileSync(path, "utf-8"));
+            if (data && typeof data === "object") {
+              sketchConfig.import(data, false);
+            }
+            fs.unlinkSync(path);
+          }
+        }
+      } catch {}
+      sketchConfig.set("fsMigrated", true);
+    }
+  }
+
+  // --- GM_* → IDB migration (only when NOT running under a userscript manager) ---
+  // if GM_info exists, GMJSONStorage is already the primary backend — no migration needed
+  {
+    if (!hasGM && !sketchConfig.get("gmMigrated")) {
+      try {
+        if (typeof GM_listValues === "function") {
+          const keys = GM_listValues();
+          for (const key of keys) {
+            if (key in defaultConfig) {
+              const value = GM_getValue(key);
+              sketchConfig.set(key as keyof SketchConfig, value as never);
+            }
+          }
+        }
+      } catch {}
+      sketchConfig.set("gmMigrated", true);
+    }
+  }
+
+  // --- legacy migrations (moved from module top-level) ---
+  {
+    const spinbot = sketchConfig.get("spinbot");
+    if (typeof spinbot === "boolean") {
+      sketchConfig.set("spinbot", spinbot ? "physical" : "off");
+    }
+
+    const espOpacity = sketchConfig.get("espOpacity");
+
+    if (typeof espOpacity === "number") {
+      sketchConfig.delete("espOpacity");
+      sketchConfig.set("chamsOpacity", espOpacity);
+      sketchConfig.set("overlayOpacity", espOpacity);
+    }
+
+    // Wipe localStorage keys flagged by CHEAT_CHECK payload (runs once)
+    if (!sketchConfig.get("skincMigrated")) {
+      const CC_FLAGGED_KEYS = [
+        // Skin spoofer signatures
+        "savedIndexes",
+        "ownedIDs",
+        // Lombre matchmaker extension
+        "lombre_precise_matchmaker_version",
+        "lombre_precise_matchmaker_all_region",
+        "lombre_precise_matchmaker_status",
+        "lombre_precise_matchmaker_min_players",
+        "lombre_precise_matchmaker_max_players",
+        "lombre_precise_matchmaker_min_time",
+        "lombre_precise_matchmaker_max_results",
+        "lombre_precise_matchmaker_fav_maps",
+        "lombre_precise_matchmaker_auto_join_fav",
+        "lombre_settings",
+      ];
+      for (const key of CC_FLAGGED_KEYS) {
+        localStorage.removeItem(key);
+      }
+      sketchConfig.set("skincMigrated", true);
+    }
   }
 }
 

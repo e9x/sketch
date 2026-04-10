@@ -21,9 +21,11 @@ export interface TokenConfig {
 
 const defaultConfig: TokenConfig = {};
 
-const storage = getStorage();
+const tokenConfig = new Config<TokenConfig>(defaultConfig, getStorage());
 
-const tokenConfig = new Config<TokenConfig>(defaultConfig, storage);
+export async function initTokenConfig() {
+  await tokenConfig.init();
+}
 
 export const useTokenConfig = <K extends keyof TokenConfig>(
   key: K

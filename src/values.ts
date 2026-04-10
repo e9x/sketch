@@ -66,3 +66,63 @@ export class GMJSONStorage implements JSONStorage {
     return GM_listValues();
   }
 }
+
+const IDB_STORE = "kv";
+const IDB_VERSION = 1;
+
+export class IDBJSONStorage implements JSONStorage {
+  private dbName: string;
+  private cache = new Map<string, unknown>();
+  private idb: IDBDatabase | null = null;
+  constructor(dbName: string) {
+    this.dbName = dbName;
+  }
+  async init(): Promise<void> {
+    const realName = "TwT" + this.dbName;
+    this.idb = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open(realName, IDB_VERSION);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE))
+          db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    // bulk-read all keys into cache
+    const tx = this.idb.transaction(IDB_STORE, "readonly");
+    const store = tx.objectStore(IDB_STORE);
+    const allKeys = await idbReq<IDBValidKey[]>(store.getAllKeys());
+    const allValues = await idbReq<unknown[]>(store.getAll());
+    for (let i = 0; i < allKeys.length; i++)
+      this.cache.set(allKeys[i] as string, allValues[i]);
+  }
+  setValue(name: string, value: any): void {
+    this.cache.set(name, value);
+    if (this.idb) {
+      const tx = this.idb.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).put(value, name);
+    }
+  }
+  getValue<TValue>(name: string, defaultValue?: TValue): TValue {
+    if (!this.cache.has(name)) return defaultValue!;
+    return this.cache.get(name) as TValue;
+  }
+  deleteValue(name: string): void {
+    this.cache.delete(name);
+    if (this.idb) {
+      const tx = this.idb.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).delete(name);
+    }
+  }
+  listValues(): string[] {
+    return Array.from(this.cache.keys());
+  }
+}
+
+function idbReq<T>(req: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
