@@ -38,7 +38,7 @@ let sketchMenuButton: HTMLDivElement | undefined;
  */
 export function updateSketchMenuButton() {
   if (!sketchMenuButton) return;
-  sketchMenuButton!.style.display = "";
+  sketchMenuButton.style.display = sketchConfig.get("menuButton") ? "" : "none";
 }
 
 export async function sketchButton() {
