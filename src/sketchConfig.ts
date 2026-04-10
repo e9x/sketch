@@ -3,6 +3,7 @@ import type { DataHook } from "./Config";
 import Config, { useConfig } from "./Config";
 import { getStorage, isChromeOS, isNode, hasGM } from "./consts";
 import { keyboardMap } from "./krunker-ui/keys";
+import tokenConfig from "./tokenConfig";
 
 export type AimbotTarget = [name: string, id: string];
 
@@ -290,6 +291,12 @@ export async function initSketchConfig() {
             if (key in defaultConfig) {
               const value = GM_getValue(key);
               sketchConfig.set(key as keyof SketchConfig, value as never);
+            }
+          }
+          // also migrate token data
+          for (const key of ["token", "diyToken", "keyFromUrl"] as const) {
+            if (keys.includes(key)) {
+              tokenConfig.set(key, GM_getValue(key));
             }
           }
         }

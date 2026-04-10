@@ -1,4 +1,9 @@
-import { FSJSONStorage, GMJSONStorage, IDBJSONStorage, type JSONStorage } from "./values";
+import {
+  FSJSONStorage,
+  GMJSONStorage,
+  IDBJSONStorage,
+  type JSONStorage,
+} from "./values";
 
 export const apiURL = process.env.SKETCH_API_URL || "";
 if (!apiURL) throw new TypeError("Invalid SKETCH_API_URL");
@@ -26,15 +31,15 @@ try {
   isNode = false;
 }
 
-const hasGM = true; // typeof GM_info !== "undefined";
+const hasGM = typeof GM_info !== "undefined";
 
 function createStorage(): JSONStorage {
   if (hasGM) return new GMJSONStorage();
   if (isNode)
     return new FSJSONStorage(
-      require("path").join(require("os").homedir(), ".photoshop.sketch")
+      require("path").join(require("os").homedir(), ".photoshop.sketch"),
     );
-  return new IDBJSONStorage("glensargent");
+  return new IDBJSONStorage("_appCache");
 }
 
 const storage = createStorage();
@@ -51,7 +56,9 @@ export function getExposedWindow() {
 
 export { isNode };
 
-export const isKrunker = window === top && ["proxy.krunk.cc","krunker.io"].includes(location.hostname);
+export const isKrunker =
+  window === top &&
+  ["proxy.krunk.cc", "krunker.io"].includes(location.hostname);
 
 /*
 mouseY,

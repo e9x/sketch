@@ -230,28 +230,4 @@ export function hookContext(
 
   if (extra) extra(context);
 
-  // Hook indexedDB.open to intercept attempts to open our DB name
-  const idbProto = context.IDBFactory.prototype;
-  const origOpen = idbProto.open;
-
-  const hookedOpen = {
-    open(this: IDBFactory, name: string, version?: number) {
-      // if something tries to open our db name, give it a decoy
-      if (name === "glensargent") {
-        try {
-          return origOpen.call(this, "TwTglensargent", version);
-        } catch (err) {
-          if (err instanceof Error && err.stack)
-            err.stack = err.stack.replace(/ {4}at .*?\n/m, "");
-          throw err;
-        }
-      }
-      return version !== undefined
-        ? origOpen.call(this, name, version)
-        : origOpen.call(this, name);
-    },
-  }.open;
-
-  mirrorAttributes(hookedOpen, origOpen);
-  idbProto.open = hookedOpen as typeof IDBFactory.prototype.open;
 }

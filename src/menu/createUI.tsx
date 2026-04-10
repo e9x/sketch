@@ -38,11 +38,10 @@ let sketchMenuButton: HTMLDivElement | undefined;
  */
 export function updateSketchMenuButton() {
   if (!sketchMenuButton) return;
-  sketchMenuButton.style.display = sketchConfig.get("menuButton") ? "" : "none";
+  sketchMenuButton!.style.display = "";
 }
 
 export async function sketchButton() {
-  if (sketchConfig.get("menuButton")) {
     const menuItemContainer =
       document.querySelector<HTMLDivElement>("#menuItemContainer");
     // const id = "sketchMenu";
@@ -53,7 +52,6 @@ export async function sketchButton() {
     sketchMenuButton.removeAttribute("id");
     sketchMenuButton.addEventListener("click", sketchWindow);
     updateSketchMenuButton();
-  }
 
   keyListeners.push((event, code, down) => {
     const menuKey = sketchConfig.get("menuKey");

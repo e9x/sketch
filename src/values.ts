@@ -67,42 +67,68 @@ export class GMJSONStorage implements JSONStorage {
   }
 }
 
-const IDB_STORE = "kv";
+const IDB_STORE = "entries";
+const IDB_KEY = "_";
 const IDB_VERSION = 1;
 
 export class IDBJSONStorage implements JSONStorage {
   private dbName: string;
   private cache = new Map<string, unknown>();
   private idb: IDBDatabase | null = null;
+  private flushQueued = false;
   constructor(dbName: string) {
     this.dbName = dbName;
   }
   async init(): Promise<void> {
-    const realName = "TwT" + this.dbName;
-    this.idb = await new Promise<IDBDatabase>((resolve, reject) => {
-      const req = indexedDB.open(realName, IDB_VERSION);
-      req.onupgradeneeded = () => {
-        const db = req.result;
-        if (!db.objectStoreNames.contains(IDB_STORE))
-          db.createObjectStore(IDB_STORE);
-      };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-    // bulk-read all keys into cache
+    this.idb = await openIDB(this.dbName, IDB_VERSION);
+    // read single blob
     const tx = this.idb.transaction(IDB_STORE, "readonly");
-    const store = tx.objectStore(IDB_STORE);
-    const allKeys = await idbReq<IDBValidKey[]>(store.getAllKeys());
-    const allValues = await idbReq<unknown[]>(store.getAll());
-    for (let i = 0; i < allKeys.length; i++)
-      this.cache.set(allKeys[i] as string, allValues[i]);
+    const raw = await idbReq<string | undefined>(tx.objectStore(IDB_STORE).get(IDB_KEY));
+    if (raw) {
+      try {
+        const entries: Record<string, unknown> = JSON.parse(atob(raw));
+        for (const [k, v] of Object.entries(entries)) this.cache.set(k, v);
+      } catch {}
+    }
+    // migrate from legacy "TwTglensargent" db if it exists
+    await this.migrateLegacy();
+  }
+  private async migrateLegacy(): Promise<void> {
+    try {
+      const dbs = await indexedDB.databases();
+      if (!dbs.some((d) => d.name === "TwTglensargent")) return;
+      const old = await openIDB("TwTglensargent", 1);
+      const tx = old.transaction("kv", "readonly");
+      const store = tx.objectStore("kv");
+      const keys = await idbReq<IDBValidKey[]>(store.getAllKeys());
+      const vals = await idbReq<unknown[]>(store.getAll());
+      for (let i = 0; i < keys.length; i++) {
+        if (!this.cache.has(keys[i] as string))
+          this.cache.set(keys[i] as string, vals[i]);
+      }
+      old.close();
+      this.flush();
+      // delete legacy db
+      indexedDB.deleteDatabase("TwTglensargent");
+    } catch {}
+  }
+  private flush(): void {
+    if (!this.idb) return;
+    const blob = btoa(JSON.stringify(Object.fromEntries(this.cache)));
+    const tx = this.idb.transaction(IDB_STORE, "readwrite");
+    tx.objectStore(IDB_STORE).put(blob, IDB_KEY);
+  }
+  private queueFlush(): void {
+    if (this.flushQueued) return;
+    this.flushQueued = true;
+    queueMicrotask(() => {
+      this.flushQueued = false;
+      this.flush();
+    });
   }
   setValue(name: string, value: any): void {
     this.cache.set(name, value);
-    if (this.idb) {
-      const tx = this.idb.transaction(IDB_STORE, "readwrite");
-      tx.objectStore(IDB_STORE).put(value, name);
-    }
+    this.queueFlush();
   }
   getValue<TValue>(name: string, defaultValue?: TValue): TValue {
     if (!this.cache.has(name)) return defaultValue!;
@@ -110,10 +136,7 @@ export class IDBJSONStorage implements JSONStorage {
   }
   deleteValue(name: string): void {
     this.cache.delete(name);
-    if (this.idb) {
-      const tx = this.idb.transaction(IDB_STORE, "readwrite");
-      tx.objectStore(IDB_STORE).delete(name);
-    }
+    this.queueFlush();
   }
   listValues(): string[] {
     return Array.from(this.cache.keys());
@@ -122,6 +145,19 @@ export class IDBJSONStorage implements JSONStorage {
 
 function idbReq<T>(req: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function openIDB(name: string, version: number): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(name, version);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE))
+        db.createObjectStore(IDB_STORE);
+    };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
