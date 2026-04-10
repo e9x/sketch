@@ -19,6 +19,7 @@ const loadGameNormally = () => {};
 
 if (isKrunker) {
   main().catch((err) => {
+    if (isDevelopment) console.error(err);
     if (sketchConfig.get("silentFail")) return;
     panic(err.stack);
   });

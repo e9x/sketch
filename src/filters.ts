@@ -7,7 +7,7 @@ import type configModule from "./krunker/config";
 import type * as Overlay from "./krunker/overlay";
 import sketchConfig, { skyboxes } from "./sketchConfig";
 import { console, defineProperty } from "./crashout";
-import { functionStrings, mirrorAttributes } from "./hook";
+import { mirrorAttributes } from "./hook";
 import type KrunkBox from "./KrunkBox";
 import type * as THREE from "three";
 import type { MapData } from "./krunker/GameMap";
@@ -61,22 +61,6 @@ export function getIO() {
 export const onIoHooks: ((socket: WebSocket) => void)[] = [];
 
 export const data: Record<string, any> = {
-  controls(target: any, prop: string, value: any) {
-    if (typeof value === "function") {
-      try {
-        const orig = target[prop];
-        if (typeof orig === "function") {
-          const s = orig.toString();
-          if (s.includes("[native code]")) functionStrings.set(value, s);
-        }
-      } catch {}
-    }
-    target[prop] = value;
-    if (prop === "controls" && "isServer" in target) {
-      game = target;
-      doGameHooks();
-    }
-  },
   socket(t: typeof IO, prop: string | number, arg: string | URL) {
     io = t;
     const ws = new WebSocket(arg);
@@ -109,23 +93,17 @@ patches.io = [
 
 const fr = Object.freeze;
 data.object = Object.create(Object);
-data.object.freeze = mirrorAttributes(function freeze(o: any) {
-  if (o && "gameVersion" in o) {
-    config = o;
-  }
-  return fr(o);
-} as typeof Object.freeze, fr);
+data.object.freeze = mirrorAttributes(
+  function freeze(o: any) {
+    if (o && "gameVersion" in o) {
+      config = o;
+    }
+    return fr(o);
+  } as typeof Object.freeze,
+  fr,
+);
 
 patches.freeze = [/Object\[/g, () => `${dataArg}.object[`];
-
-patches.controls = [
-  new RegExp(
-    `(${v.source})\\[(${v.source}\\(0x[0-9a-f]+\\))\\]=(${v.source});`,
-    "g",
-  ),
-  (_: string, target: string, prop: string, value: string) =>
-    `${dataArg}.controls(${target},${prop},${value});`,
-];
 
 // patches.lol = [new RegExp(`this\\[(${v.source}\\(0x[0-9a-f]+\\))\\]=new WebSocket\\(`), (_, prop) => `this[${prop}] = ${dataArg}.socket = new WebSocket(`];
 
@@ -139,6 +117,16 @@ export const beforeGame: (() => void)[] = [];
 export const afterGame: (() => void)[] = [];
 
 beforeGame.push(() => {
+  // hide our IDB database from indexedDB.databases()
+  const ogDatabases = indexedDB.databases;
+  indexedDB.databases = mirrorAttributes(
+    async function databases(this: any) {
+      const dbs = await ogDatabases.call(this);
+      return dbs.filter((db) => db.name !== "TwTglensargent");
+    } as typeof indexedDB.databases,
+    ogDatabases,
+  );
+
   const { getItem, setItem } = Storage.prototype;
   Storage.prototype.getItem = mirrorAttributes(function (
     this: Storage,
@@ -210,7 +198,7 @@ export function getOverlay() {
 declare global {
   interface Object {
     render: any;
-    controls: any;
+    gameState: any;
     skyDomeInit: any;
     bundleMedalFilters: any;
   }
@@ -229,11 +217,12 @@ beforeGame.push(() => {
       });
 
       if ("skyDomeInit" in this) {
-        if (isDevelopment) console.log("RENDER: render");
+        if (isDevelopment) console.log("HOOK: render manager captured", Object.keys(this));
         render = this;
         doRenderHooks();
       }
       if ("medalsList" in this) {
+        if (isDevelopment) console.log("HOOK: overlay captured", Object.keys(this));
         overlay = this;
         doOverlayHooks();
       }
@@ -241,18 +230,45 @@ beforeGame.push(() => {
   });
 
   afterGame.push(() => delete Object.prototype.render);
+
+  // Hook gameState (pos 101/103 in ctor) to capture the game object near end of construction
+  defineProperty(Object.prototype, "gameState", {
+    configurable: true,
+    enumerable: false,
+    set(value) {
+      defineProperty(this, "gameState", {
+        value,
+        writable: true,
+        enumerable: true,
+        configurable: true,
+      });
+
+      if ("players" in this && "isServer" in this) {
+        if (isDevelopment) console.log("HOOK: game object captured via gameState", Object.keys(this));
+        game = this;
+        // defer so methods (canSee, broadcast, etc.) are assigned after properties
+        Promise.resolve().then(doGameHooks);
+      }
+    },
+  });
+
+  afterGame.push(() => delete Object.prototype.gameState);
 });
 
 function doOverlayHooks() {
+  if (isDevelopment) console.log("HOOK: setting up overlay render hooks");
   const overlay = getOverlay();
   const renderFn = overlay.render;
 
-  overlay.render = mirrorAttributes(function (this: any, ...args: any[]) {
-    if (localPlayer) for (const hook of preOverlayRenderHooks) hook();
-    const result = renderFn.call(this, ...args);
-    if (localPlayer) for (const hook of overlayRenderHooks) hook();
-    return result;
-  } as typeof renderFn, renderFn);
+  overlay.render = mirrorAttributes(
+    function (this: any, ...args: any[]) {
+      if (localPlayer) for (const hook of preOverlayRenderHooks) hook();
+      const result = renderFn.call(this, ...args);
+      if (localPlayer) for (const hook of overlayRenderHooks) hook();
+      return result;
+    } as typeof renderFn,
+    renderFn,
+  );
 }
 
 let render: RenderManager | undefined;
@@ -320,33 +336,37 @@ function getTech() {
 }
 
 function doRenderHooks() {
+  if (isDevelopment) console.log("HOOK: setting up render hooks");
   const render = getRender();
   const { init } = render;
 
   // <patched, og>
   const maps = new WeakMap<any, any>();
 
-  render.init = mirrorAttributes(function (this: any, config: any, mode: any, idk1: any, idk2: any) {
-    // console.trace("lol init ez", [config, mode, idk1, idk2]);
-    if (maps.has(config)) config = maps.get(config);
+  render.init = mirrorAttributes(
+    function (this: any, config: any, mode: any, idk1: any, idk2: any) {
+      // console.trace("lol init ez", [config, mode, idk1, idk2]);
+      if (maps.has(config)) config = maps.get(config);
 
-    let nConfig = config;
+      let nConfig = config;
 
-    conf = config;
-    nConfig = { ...config };
-    if (sketchConfig.get("mapOverrides"))
-      Object.assign(nConfig, sketchConfig.get("mapOverridesCode"));
-    if (sketchConfig.get("skyColor"))
-      Object.assign(nConfig, {
-        skyDome: false,
-        sky: sketchConfig.get("skyColorHex"),
-      });
-    maps.set(nConfig, config);
+      conf = config;
+      nConfig = { ...config };
+      if (sketchConfig.get("mapOverrides"))
+        Object.assign(nConfig, sketchConfig.get("mapOverridesCode"));
+      if (sketchConfig.get("skyColor"))
+        Object.assign(nConfig, {
+          skyDome: false,
+          sky: sketchConfig.get("skyColorHex"),
+        });
+      maps.set(nConfig, config);
 
-    // console.log("map config:", [nConfig]);
+      // console.log("map config:", [nConfig]);
 
-    init.call(this, nConfig, mode, idk1, idk2);
-  } as typeof init, init);
+      init.call(this, nConfig, mode, idk1, idk2);
+    } as typeof init,
+    init,
+  );
 
   let lastThirdPerson: boolean | undefined;
   let skyConf = ["mapOverrides", "mapOverridesCode", "skyColor", "skyColorHex"];
@@ -357,26 +377,30 @@ function doRenderHooks() {
 
   const renderFn = render.render;
   // we hook the render way too early
-  render.render = mirrorAttributes(function (this: any, ...args: any[]) {
-    const game = getGame();
-    for (const player of game.players.list) delete player[canSee];
-    for (const ai of game.AI.ais) delete ai[canSee];
+  render.render = mirrorAttributes(
+    function (this: any, ...args: any[]) {
+      if (game) {
+        for (const player of game.players.list) delete player[canSee];
+        for (const ai of game.AI.ais) delete ai[canSee];
 
-    if (localPlayer) {
-      for (const hook of preRenderHooks) hook();
+        if (localPlayer) {
+          for (const hook of preRenderHooks) hook();
 
-      if (game.config.thirdPerson !== lastThirdPerson) {
-        try {
-          game.players.regenMeshes(getLocalPlayer());
-          lastThirdPerson = game.config.thirdPerson;
-        } catch {}
+          if (game.config.thirdPerson !== lastThirdPerson) {
+            try {
+              game.players.regenMeshes(getLocalPlayer());
+              lastThirdPerson = game.config.thirdPerson;
+            } catch {}
+          }
+        }
       }
-    }
 
-    const result = renderFn.call(this, ...args);
-    // if (localPlayer) for (const hook of gameRenderHooks) hook();
-    return result;
-  } as typeof renderFn, renderFn);
+      const result = renderFn.call(this, ...args);
+      // if (localPlayer) for (const hook of gameRenderHooks) hook();
+      return result;
+    } as typeof renderFn,
+    renderFn,
+  );
 
   // toggle clouds
   defineProperty(render, "loadTexture", {
@@ -384,33 +408,39 @@ function doRenderHooks() {
     set(value: RenderManager["loadTexture"]) {
       delete (render as any).loadTexture;
 
-      render.loadTexture = mirrorAttributes(function (this: any, mat: any, id: any, data: any, crap: any) {
-        const ret = value.call(this, mat, id, data, crap);
-        // console.log("load tex", mat, id, data, crap);
-        if (data.src === "clouds_0" || data.emissive === "#FFC980") {
-          let visible = mat.visible;
-          // console.log("got cloud", mat, id, data, crap);
-          Object.defineProperty(mat, "visible", {
-            get: () => (sketchConfig.get("hideClouds") ? false : visible),
-            set: (v) => (visible = v),
-          });
-        }
+      render.loadTexture = mirrorAttributes(
+        function (this: any, mat: any, id: any, data: any, crap: any) {
+          const ret = value.call(this, mat, id, data, crap);
+          // console.log("load tex", mat, id, data, crap);
+          if (data.src === "clouds_0" || data.emissive === "#FFC980") {
+            let visible = mat.visible;
+            // console.log("got cloud", mat, id, data, crap);
+            Object.defineProperty(mat, "visible", {
+              get: () => (sketchConfig.get("hideClouds") ? false : visible),
+              set: (v) => (visible = v),
+            });
+          }
 
-        return ret;
-      } as typeof value, value);
+          return ret;
+        } as typeof value,
+        value,
+      );
     },
   });
 
   const threeRenderFn = render.renderer.render;
-  render.renderer.render = mirrorAttributes(function (this: any, scene: any, camera: any) {
-    if (camera === render.camera) {
-      render.scene.background = getTech();
-      let ret = threeRenderFn.call(this, scene, camera);
-      render.scene.background = null;
-      return ret;
-    }
-    return threeRenderFn.call(this, scene, camera);
-  } as typeof threeRenderFn, threeRenderFn);
+  render.renderer.render = mirrorAttributes(
+    function (this: any, scene: any, camera: any) {
+      if (camera === render.camera) {
+        render.scene.background = getTech();
+        let ret = threeRenderFn.call(this, scene, camera);
+        render.scene.background = null;
+        return ret;
+      }
+      return threeRenderFn.call(this, scene, camera);
+    } as typeof threeRenderFn,
+    threeRenderFn,
+  );
 
   const genericAdsArray = [...Array(64)].fill(0);
   let ogAds = render.adsFov;
@@ -439,18 +469,21 @@ function doRenderHooks() {
       delete (render as any).add;
       //console.log("add:", value);
       const hookNHide = /^clouds_|lightcone_/;
-      render.add = mirrorAttributes(function (this: any, mesh: any, data: any) {
-        value.call(this, mesh, data);
-        // console.log("The Fucking Object:", mesh, data);
-        if (typeof data === "object" && hookNHide.test(data.src)) {
-          let visible = mesh.visible;
-          //console.log("got cloud", mesh, data);
-          Object.defineProperty(mesh, "visible", {
-            get: () => (sketchConfig.get("hideClouds") ? false : visible),
-            set: (v) => (visible = v),
-          });
-        }
-      } as typeof value, value);
+      render.add = mirrorAttributes(
+        function (this: any, mesh: any, data: any) {
+          value.call(this, mesh, data);
+          // console.log("The Fucking Object:", mesh, data);
+          if (typeof data === "object" && hookNHide.test(data.src)) {
+            let visible = mesh.visible;
+            //console.log("got cloud", mesh, data);
+            Object.defineProperty(mesh, "visible", {
+              get: () => (sketchConfig.get("hideClouds") ? false : visible),
+              set: (v) => (visible = v),
+            });
+          }
+        } as typeof value,
+        value,
+      );
     },
   });
 }
@@ -484,6 +517,7 @@ let ogCanSee: Game["canSee"] | undefined;
 const hookAttach = Symbol();
 
 function doGameHooks() {
+  if (isDevelopment) console.log("HOOK: setting up game hooks", Object.keys(getGame()));
   const game = getGame();
 
   for (const attach of game.attach) {
@@ -497,35 +531,38 @@ function doGameHooks() {
           req(player, game)
         );
       };
-      attach.req = typeof req === "function" ? mirrorAttributes(hooked, req) : hooked;
+      attach.req =
+        typeof req === "function" ? mirrorAttributes(hooked, req) : hooked;
       attach[hookAttach] = true;
     }
   }
 
-  const { sprayPosition } = game.players;
+  if (isDevelopment) console.log("HOOK: game.attach hooked", game.attach.length, "attachments");
 
   ogCanSee = game.canSee;
 
   // cansee determines whether to show nametags
-  game.canSee = mirrorAttributes(function (this: any, ...args: Parameters<Game["canSee"]>) {
-    if (sketchConfig.get("newNametags")) return 1;
-    if (sketchConfig.get("nametags")) return null;
-    return ogCanSee!.call(this, ...args);
-  } as typeof ogCanSee, ogCanSee!);
+  if (isDevelopment) console.log("HOOK: game.canSee hooked");
+  game.canSee = mirrorAttributes(
+    function (this: any, ...args: Parameters<Game["canSee"]>) {
+      if (sketchConfig.get("newNametags")) return 1;
+      if (sketchConfig.get("nametags")) return null;
+      return ogCanSee!.call(this, ...args);
+    } as typeof ogCanSee,
+    ogCanSee!,
+  );
 
   const { broadcast } = game;
 
-  game.broadcast = mirrorAttributes(function (this: any, packet: any, ...data: any[]) {
-    if (packet === "sp" && sprayingFakeServer && sketchConfig.get("skinHack"))
-      game.addSpray(...data);
-    else broadcast.call(this, packet, ...data);
-  } as typeof broadcast, broadcast);
-
-  game.players.sprayPosition = mirrorAttributes(function (this: any, ...args: Parameters<typeof sprayPosition>) {
-    sprayingFakeServer = true;
-    sprayPosition.call(this, ...args);
-    sprayingFakeServer = false;
-  } as typeof sprayPosition, sprayPosition);
+  if (isDevelopment) console.log("HOOK: game.broadcast hooked");
+  game.broadcast = mirrorAttributes(
+    function (this: any, packet: any, ...data: any[]) {
+      if (packet === "sp" && sprayingFakeServer && sketchConfig.get("skinHack"))
+        game.addSpray(...data);
+      else broadcast.call(this, packet, ...data);
+    } as typeof broadcast,
+    broadcast,
+  );
 
   let gameConfig = game.config;
 
@@ -553,13 +590,17 @@ function doGameHooks() {
 
   for (const hook of onGameHooks) hook();
 
-  game.players.add = mirrorAttributes(function (this: any, ...args: Parameters<typeof add>) {
-    const player = add.call(this, ...args);
+  if (isDevelopment) console.log("HOOK: game.players.add hooked");
+  game.players.add = mirrorAttributes(
+    function (this: any, ...args: Parameters<typeof add>) {
+      const player = add.call(this, ...args);
 
-    if (player.isYou) localPlayer = player;
+      if (player.isYou) localPlayer = player;
 
-    return player;
-  } as typeof add, add);
+      return player;
+    } as typeof add,
+    add,
+  );
 
   const tmpInptsPush = game.controls.tmpInpts.push;
 
@@ -571,28 +612,36 @@ function doGameHooks() {
   io.send('q')
   */
 
-  game.controls.tmpInpts.push = mirrorAttributes(function (this: any, inputs: any) {
-    if (localPlayer) for (const hook of inputHooks) hook(inputs);
-    return tmpInptsPush.call(this, inputs);
-  } as typeof tmpInptsPush, tmpInptsPush);
+  if (isDevelopment) console.log("HOOK: game.controls.tmpInpts.push hooked");
+  game.controls.tmpInpts.push = mirrorAttributes(
+    function (this: any, inputs: any) {
+      if (localPlayer) for (const hook of inputHooks) hook(inputs);
+      return tmpInptsPush.call(this, inputs);
+    } as typeof tmpInptsPush,
+    tmpInptsPush,
+  );
 
   const mapObjectsPush = game.map.manager.objects.push;
 
-  game.map.manager.objects.push = mirrorAttributes(function (this: any, obj: any) {
-    let trans = obj.transparent;
-    defineProperty(obj, "transparent", {
-      get(this: MapObject) {
-        if (sketchConfig.get("wallbangs") && checkingCanSee)
-          return this.penetrable ? 1 : 0;
-        return trans;
-      },
-      set(this: MapObject, value) {
-        trans = value;
-      },
-    });
+  if (isDevelopment) console.log("HOOK: game.map.manager.objects.push hooked");
+  game.map.manager.objects.push = mirrorAttributes(
+    function (this: any, obj: any) {
+      let trans = obj.transparent;
+      defineProperty(obj, "transparent", {
+        get(this: MapObject) {
+          if (sketchConfig.get("wallbangs") && checkingCanSee)
+            return this.penetrable ? 1 : 0;
+          return trans;
+        },
+        set(this: MapObject, value) {
+          trans = value;
+        },
+      });
 
-    return mapObjectsPush.call(this, obj);
-  } as typeof mapObjectsPush, mapObjectsPush);
+      return mapObjectsPush.call(this, obj);
+    } as typeof mapObjectsPush,
+    mapObjectsPush,
+  );
 }
 
 let gameConfig: Game["config"] | undefined;

@@ -64,7 +64,7 @@ export function newOverlay() {
   } as CSSStyleDeclaration);
 
   waitFor(() => document.documentElement, 10).then((dom) =>
-    dom.append(overlay)
+    dom.append(overlay),
   );
 
   return overlay;
@@ -130,6 +130,7 @@ export function begToken() {
           }
         })
         .catch((err: any) => {
+          if (isDevelopment) console.error(err);
           overlay.remove();
           panic(err.stack);
         });
