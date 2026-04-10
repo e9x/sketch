@@ -15,6 +15,7 @@ import {
   entityAlive,
   isEnemy,
   pos2D,
+  playerPos,
   getXDire,
   getDir,
   getCurrentReload,
@@ -143,11 +144,14 @@ function playerAimPoint(player: Player) {
 
   // 3. Select the visible point closest to the center of the screen (most precise)
   const bestPoint = visiblePoints
-    .map((point) => ({
-      point,
-      screen: pos2D(point),
-      dist: center.distanceTo(pos2D(point)),
-    }))
+    .map((point) => {
+      const screen = pos2D(point);
+      return {
+        point,
+        screen,
+        dist: center.distanceTo(screen),
+      };
+    })
     .sort((a, b) => a.dist - b.dist)[0];
 
   return bestPoint.point;
@@ -237,6 +241,13 @@ function validTarget(target: Player | AI) {
 
   if (!isEnemy(target)) return false;
 
+  return true;
+}
+
+/**
+ * Expensive visibility check - separated so cheap filters can run first
+ */
+function isTargetVisible(target: Player | AI) {
   if (!canISeeEnt(target)) return false;
 
   return true;
@@ -347,18 +358,16 @@ export function aimbotHook() {
 
     const overlay = getOverlay();
 
-    if (drawFOV && !isInMenus()) {
-      overlay.ctx.save();
-      overlay.ctx.scale(overlay.scale, overlay.scale);
-      const { THREE } = getGame();
-      const overlaySize = getOverlaySizeScaled();
-      const center = new THREE.Vector2(
-        overlaySize.width / 2,
-        overlaySize.height / 2,
-      );
-      drawAimbotCircle(overlay.ctx, center, fovRadius);
-      overlay.ctx.restore();
-    }
+    overlay.ctx.save();
+    overlay.ctx.scale(overlay.scale, overlay.scale);
+    const overlaySize = getOverlaySizeScaled();
+    const { THREE } = getGame();
+    const center = new THREE.Vector2(
+      overlaySize.width / 2,
+      overlaySize.height / 2,
+    );
+    drawAimbotCircle(overlay.ctx, center, fovRadius);
+    overlay.ctx.restore();
   });
 
   keyListeners.push((event, code, down) => {
@@ -453,7 +462,9 @@ export function aimbotHook() {
 
     if (
       targetPlayer &&
-      (!validTarget(targetPlayer) || !game.players.list.includes(targetPlayer))
+      (!validTarget(targetPlayer) ||
+        !isTargetVisible(targetPlayer) ||
+        !game.players.list.includes(targetPlayer))
     )
       targetPlayer = undefined;
 
@@ -484,23 +495,40 @@ export function aimbotHook() {
       const render = getRender();
       const fovCheck = sketchConfig.get("fovCheck");
 
-      const found = (
-        game.players.list
+      const candidates = game.players.list
+        .filter(validTarget)
+        .filter(onTargetList);
 
-          .filter(validTarget)
-          .filter(onTargetList)
-          .map((player) => ({ player, point: playerAimPoint(player) }))
-          .filter(({ point }) => point && validPoint(point, center)) as {
-          player: Player;
-          point: THREE.Vector3;
-        }[]
-      )
-        .map(({ player, point }) => ({
-          player,
-          screen: pos2D(point),
-          point,
-          inFrustum: fovCheck ? false : render.frustum.containsPoint(point),
-        }))
+      // pre-filter: skip players whose body position is outside the FOV circle
+      // this avoids expensive raycasts for players that can't be selected
+      let filtered = candidates;
+      if (fovCheck) {
+        const fovRadius = sketchConfig.get("fovRadius");
+        filtered = candidates.filter((player) => {
+          const screen = pos2D(playerPos(player));
+          // use generous margin so we don't miss edge cases
+          return center.distanceTo(screen) <= fovRadius * 2;
+        });
+      }
+
+      // only now do the expensive visibility raycast on the remaining candidates
+      const visible = filtered.filter(isTargetVisible);
+
+      const found = visible
+        .map((player) => {
+          const point = playerAimPoint(player);
+          if (!point || !validPoint(point, center)) return null;
+          const screen = pos2D(point);
+          return {
+            player,
+            point,
+            screen,
+            inFrustum: fovCheck ? false : render.frustum.containsPoint(point),
+          };
+        })
+        .filter(
+          (e): e is NonNullable<typeof e> => e !== null,
+        )
         .sort((p1, p2) => {
           const distComparison =
             p1.screen.distanceTo(center) - p2.screen.distanceTo(center);

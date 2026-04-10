@@ -7,9 +7,7 @@ import {
   getRender,
   inputHooks,
 } from "../filters";
-import { getPlayerMeshes, isEnemy } from "../krunkerUtil";
-import type { OBB } from "../lib/obb";
-import { createOBB } from "../lib/obb";
+import { isEnemy } from "../krunkerUtil";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { BindHolder, Bind } from "../krunker-ui/components/Bind";
 import { Slider } from "../krunker-ui/components/Slider";
@@ -32,8 +30,9 @@ export function triggerbotHook() {
   let didShoot = false;
 
   let raycaster: THREE.Raycaster | undefined;
-
-  let obb: OBB | undefined;
+  let direction: THREE.Vector3 | undefined;
+  let position: THREE.Vector3 | undefined;
+  let box: THREE.Box3 | undefined;
 
   inputHooks.push((inputs) => {
     triggerbotWantsShoot = false;
@@ -60,13 +59,14 @@ export function triggerbotHook() {
       else {
         const render = getRender();
 
-        const direction = new game.THREE.Vector3();
-        const position = new game.THREE.Vector3();
+        if (!direction) direction = new game.THREE.Vector3();
+        if (!position) position = new game.THREE.Vector3();
 
         render.camera.getWorldDirection(direction);
         render.camera.getWorldPosition(position);
 
         if (!raycaster) raycaster = new game.THREE.Raycaster();
+        if (!box) box = new game.THREE.Box3();
 
         raycaster.set(position, direction);
 
@@ -80,14 +80,13 @@ export function triggerbotHook() {
             const height = player.height - (player.crouchVal * config.crouchDst);
             const radius = 1.5; // Standard Krunker player radius padding
 
-            const box = new game.THREE.Box3();
-            box.min.set(player.x - radius, player.y, player.z - radius);
-            box.max.set(player.x + radius, player.y + height, player.z + radius);
+            box!.min.set(player.x - radius, player.y, player.z - radius);
+            box!.max.set(player.x + radius, player.y + height, player.z + radius);
 
-            box.expandByScalar(triggerbotDistance);
+            box!.expandByScalar(triggerbotDistance);
 
             // Just intersect the Box3 directly. No OBB needed.
-            const hit = raycaster.ray.intersectsBox(box);
+            const hit = raycaster.ray.intersectsBox(box!);
 
             if (hit) {
               shoot = true;

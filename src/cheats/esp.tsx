@@ -137,10 +137,11 @@ function playerBox(entity: Player | AI) {
 
     return new PlayerRectBounds(xMin, xMax, yMin, yMax);
   } else {
-    if (!getRender().frustum.containPoint(playerPos(entity))) return;
+    const pos = playerPos(entity);
+    if (!getRender().frustum.containPoint(pos)) return;
 
-    const minHeight = pos2D(playerPos(entity));
-    const maxHeight = pos2D(playerPos(entity), entity.height);
+    const minHeight = pos2D(pos);
+    const maxHeight = pos2D(pos, entity.height);
     const height = ~~(minHeight.y - maxHeight.y);
     const width = ~~(height * 0.6);
 
@@ -186,6 +187,12 @@ function initMaterials() {
       transparent: true,
       fog: false,
       depthTest: false,
+      stencilWrite: true,
+      stencilFunc: game.THREE.NotEqualStencilFunc,
+      stencilRef: 1,
+      stencilZPass: game.THREE.ReplaceStencilOp,
+      stencilZFail: game.THREE.ReplaceStencilOp,
+      stencilFail: game.THREE.ReplaceStencilOp,
     });
 
   const mesh: Materials<THREE.MeshBasicMaterial> = {
@@ -204,15 +211,38 @@ function initMaterials() {
     teamWall: genericColor(),
   };
 
+  let lastBadColor = "";
+  let lastGoodColor = "";
+  let lastWallDarkness = -1;
+  let lastChamsOpacity = -1;
+
   const materials = {
     mesh,
     colors,
     updated: false,
     update: () => {
+      const badColor = sketchConfig.get("badColor");
+      const goodColor = sketchConfig.get("goodColor");
+      const wallDarkness = sketchConfig.get("espWallDarkness");
+      const chamsOpacity = sketchConfig.get("chamsOpacity");
+
+      if (
+        badColor === lastBadColor &&
+        goodColor === lastGoodColor &&
+        wallDarkness === lastWallDarkness &&
+        chamsOpacity === lastChamsOpacity
+      )
+        return;
+
+      lastBadColor = badColor;
+      lastGoodColor = goodColor;
+      lastWallDarkness = wallDarkness;
+      lastChamsOpacity = chamsOpacity;
+
       materials.updated = true;
 
-      const enemyHex = parseInt(sketchConfig.get("badColor").slice(1), 16);
-      const teamHex = parseInt(sketchConfig.get("goodColor").slice(1), 16);
+      const enemyHex = parseInt(badColor.slice(1), 16);
+      const teamHex = parseInt(goodColor.slice(1), 16);
 
       colors.enemy.set(enemyHex);
       colors.team.set(teamHex);
@@ -220,7 +250,6 @@ function initMaterials() {
       colors.enemyWall.set(colors.enemy);
       colors.teamWall.set(colors.team);
 
-      const wallDarkness = sketchConfig.get("espWallDarkness");
       colors.enemyWall.multiplyScalar(wallDarkness);
       colors.teamWall.multiplyScalar(wallDarkness);
 
@@ -229,7 +258,6 @@ function initMaterials() {
       mesh.team.color.set(colors.team);
       mesh.teamWall.color.set(colors.teamWall);
 
-      const chamsOpacity = sketchConfig.get("chamsOpacity");
       mesh.enemy.opacity = chamsOpacity;
       mesh.enemyWall.opacity = chamsOpacity;
       mesh.team.opacity = chamsOpacity;
@@ -363,8 +391,17 @@ export function espHook() {
 
     overlay.ctx.scale(overlay.scale, overlay.scale);
 
-    for (const entity of [...game.players.list, ...game.AI.ais]) {
+    const overlaySize = getOverlaySizeScaled();
+
+    const entities = game.AI.ais.length
+      ? (game.players.list as (Player | AI)[]).concat(game.AI.ais)
+      : game.players.list;
+
+    for (const entity of entities) {
       if (!canESP(entity)) continue;
+
+      const entityColor =
+        "#" + getEntityMaterial(entity, materials.colors).getHexString();
 
       if (tracers) {
         let tracerPoint: THREE.Vector2;
@@ -383,13 +420,11 @@ export function espHook() {
           tracerPoint.y *= innerHeight / overlay.scale;
         }
 
-        overlay.ctx.strokeStyle =
-          "#" + getEntityMaterial(entity, materials.colors).getHexString();
+        overlay.ctx.strokeStyle = entityColor;
         overlay.ctx.lineWidth = 1.5;
 
         overlay.ctx.globalAlpha = overlayOpacity;
         overlay.ctx.beginPath();
-        const overlaySize = getOverlaySizeScaled();
         overlay.ctx.moveTo(overlaySize.width / 2, overlaySize.height / 2);
         overlay.ctx.lineTo(tracerPoint.x, tracerPoint.y);
         overlay.ctx.stroke();
@@ -437,8 +472,7 @@ export function espHook() {
 
       if (boxes) {
         overlay.ctx.globalAlpha = overlayOpacity;
-        overlay.ctx.strokeStyle =
-          "#" + getEntityMaterial(entity, materials.colors).getHexString();
+        overlay.ctx.strokeStyle = entityColor;
         overlay.ctx.lineWidth = 1.5;
         overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
         overlay.ctx.globalAlpha = 1;
