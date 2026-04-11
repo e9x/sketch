@@ -123,6 +123,30 @@ function getSpoofDisplayName(): string {
   return sketchConfig.get("displayNameSpoof").trim();
 }
 
+function applyLocalChatNameSpoofs(packet: any) {
+  if (!username) return;
+
+  const spoofName = getSpoofDisplayName();
+  if (!spoofName) return;
+
+  if (packet?.[0] === "ch" || packet?.[0] === "tch") {
+    // Packet shape: [type, senderType, senderName, message, ...]
+    if (packet[2] === username) packet[2] = spoofName;
+    return;
+  }
+
+  if (packet?.[0] === "chi") {
+    // Packet shape: ["chi", senderType, senderName|null, [i18nKey, ...args], ...]
+    // Join/leave messages carry player names in i18n args.
+    const args = packet[3];
+    if (!Array.isArray(args)) return;
+
+    for (let i = 1; i < args.length; i++) {
+      if (args[i] === username) args[i] = spoofName;
+    }
+  }
+}
+
 function applyLocalPlayerListSpoofs(packet: any) {
   if (packet?.[0] !== "0" || !packet?.[1] || !username) return;
 
@@ -190,7 +214,8 @@ function onMessage(packet: any) {
     const [, senderId, senderName, message] = packet;
 
     const isAiEnabled = sketchConfig.get("aiReply");
-    const isNotSelf = senderName !== username;
+    const spoofName = getSpoofDisplayName();
+    const isNotSelf = senderName !== username && (!spoofName || senderName !== spoofName);
     const isPlayerChat = senderId === 0;
 
     if (isPlayerChat && isNotSelf) {
@@ -265,6 +290,9 @@ function onMessage(packet: any) {
 
   // Rewrite local fields in player list updates even when skinHack is disabled.
   applyLocalPlayerListSpoofs(packet);
+
+  // Keep incoming chat/join messages visually aligned with display-name spoof.
+  applyLocalChatNameSpoofs(packet);
 
   // skin hack: spoof inventory + player skin data
   if (!sketchConfig.get("skinHack")) return packet;
