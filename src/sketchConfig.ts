@@ -52,6 +52,7 @@ const skyboxSources: Array<[key: string, folder: string, name: string]> = [
   ["jew", "jew", "Jew"],
   ["jew2", "jew2", "Jew2"],
   ["nigga", "nigga", "Nigga"],
+  ["max", "max", "Sexy Femboy"],
   [
     "mountainyNight",
     "136465089093652_Mountainy_night_time_skybox",
