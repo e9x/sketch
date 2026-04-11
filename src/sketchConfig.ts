@@ -155,6 +155,8 @@ export interface SketchConfig {
     | "blacklist";
   badColor: string;
   goodColor: string;
+  espRainbowEnemy: boolean;
+  espRainbowFriendly: boolean;
   espWallDarkness: number;
   hideClouds: boolean;
 
@@ -245,6 +247,8 @@ const defaultConfig: SketchConfig = {
   targetListMode: "off",
   badColor: "#ff0000",
   goodColor: "#00ff00",
+  espRainbowEnemy: false,
+  espRainbowFriendly: false,
   espWallDarkness: 0.7,
   hideClouds: false,
   mouseLockX: 0,

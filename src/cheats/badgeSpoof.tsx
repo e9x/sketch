@@ -19,13 +19,81 @@ let rainbowLoopStarted = false;
 let configWatcherStarted = false;
 let rainbowObserverStarted = false;
 let rainbowRefreshQueued = false;
+let uiRefreshQueued = false;
 const randomSuffix = Math.random().toString(36).slice(2, 10);
 const rainbowMarkerAttr = `data-r_${randomSuffix}`;
 let lastRainbowTag = "";
+export let sharedRainbowHexColor = "#fb4a4a";
 
 type AnyObj = Record<PropertyKey, any>;
 
+function hueToSharedRainbowHex(hueDeg: number) {
+  const s = 0.96;
+  const l = 0.62;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const hue = ((hueDeg % 360) + 360) % 360;
+  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const m = l - c / 2;
+
+  let r = 0;
+  let g = 0;
+  let b = 0;
+
+  if (hue < 60) {
+    r = c;
+    g = x;
+  } else if (hue < 120) {
+    r = x;
+    g = c;
+  } else if (hue < 180) {
+    g = c;
+    b = x;
+  } else if (hue < 240) {
+    g = x;
+    b = c;
+  } else if (hue < 300) {
+    r = x;
+    b = c;
+  } else {
+    r = c;
+    b = x;
+  }
+
+  const toHex = (value: number) =>
+    Math.round((value + m) * 255)
+      .toString(16)
+      .padStart(2, "0");
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
 function refreshGameUI() {
+  try {
+    // Menu labels are separate from scoreboard widgets; patch them directly.
+    const menuPlayer = getMenuPlayer() as AnyObj | undefined;
+    const localPlayer = getLocalPlayer() as AnyObj | undefined;
+    const resolvedName =
+      (menuPlayer?.alias as string | undefined) ||
+      (menuPlayer?.name as string | undefined) ||
+      (localPlayer?.alias as string | undefined) ||
+      (localPlayer?.name as string | undefined) ||
+      "";
+
+    if (resolvedName) {
+      const menuNameIds = [
+        "menuAccountUsername",
+        "menuUsername",
+        "menuAccountName",
+        "menuUserName",
+      ];
+
+      for (const id of menuNameIds) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = resolvedName;
+      }
+    }
+  } catch {}
+
   try {
     const w = getExposedWindow() as any;
     // windows[22] is the in-game player list panel; searchPlayers() rebuilds its innerHTML
@@ -41,6 +109,16 @@ function refreshGameUI() {
       w.switchLeaderboard(visible);
     }
   } catch {}
+}
+
+function queueGameUIRefresh() {
+  if (uiRefreshQueued) return;
+  uiRefreshQueued = true;
+
+  requestAnimationFrame(() => {
+    uiRefreshQueued = false;
+    refreshGameUI();
+  });
 }
 
 function isOnEndScreen() {
@@ -227,13 +305,15 @@ function applySpoofsNow() {
 
 
 function updateRainbowSpanColors() {
+  const now = Date.now();
+  const cycleMs = 4800;
+  const baseHue = ((now % cycleMs) / cycleMs) * 360;
+  sharedRainbowHexColor = hueToSharedRainbowHex(baseHue);
+
   const spans = document.querySelectorAll<HTMLElement>(
     `span[${rainbowMarkerAttr}="1"]`,
   );
   if (!spans.length) return;
-
-  const now = Date.now();
-  const cycleMs = 4800;
 
   for (let i = 0; i < spans.length; i++) {
     const span = spans[i];
@@ -457,6 +537,7 @@ export function BadgeSpoofMenu() {
         onChange={(event) => {
           setDisplayNameSpoof(event.currentTarget.value);
           applySpoofsNow();
+          queueGameUIRefresh();
         }}
       />
     </>

@@ -24,6 +24,7 @@ import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "../krunker-ui/components/Switch";
 import type * as THREE from "three";
 import { Slider } from "../krunker-ui/components/Slider";
+import { sharedRainbowHexColor } from "./badgeSpoof";
 
 // nametags is handled in index.ts
 // see get nametags() { ... }
@@ -216,6 +217,9 @@ function initMaterials() {
 
   let lastBadColor = "";
   let lastGoodColor = "";
+  let lastRainbowColor = "";
+  let lastRainbowEnemy = false;
+  let lastRainbowFriendly = false;
   let lastWallDarkness = -1;
   let lastChamsOpacity = -1;
 
@@ -226,12 +230,18 @@ function initMaterials() {
     update: () => {
       const badColor = sketchConfig.get("badColor");
       const goodColor = sketchConfig.get("goodColor");
+      const rainbowEnemy = sketchConfig.get("espRainbowEnemy");
+      const rainbowFriendly = sketchConfig.get("espRainbowFriendly");
+      const rainbowColor = sharedRainbowHexColor;
       const wallDarkness = sketchConfig.get("espWallDarkness");
       const chamsOpacity = sketchConfig.get("chamsOpacity");
 
       if (
         badColor === lastBadColor &&
         goodColor === lastGoodColor &&
+        rainbowEnemy === lastRainbowEnemy &&
+        rainbowFriendly === lastRainbowFriendly &&
+        rainbowColor === lastRainbowColor &&
         wallDarkness === lastWallDarkness &&
         chamsOpacity === lastChamsOpacity
       )
@@ -239,13 +249,19 @@ function initMaterials() {
 
       lastBadColor = badColor;
       lastGoodColor = goodColor;
+      lastRainbowEnemy = rainbowEnemy;
+      lastRainbowFriendly = rainbowFriendly;
+      lastRainbowColor = rainbowColor;
       lastWallDarkness = wallDarkness;
       lastChamsOpacity = chamsOpacity;
 
       materials.updated = true;
 
-      const enemyHex = parseInt(badColor.slice(1), 16);
-      const teamHex = parseInt(goodColor.slice(1), 16);
+      const sharedHex = parseInt(rainbowColor.slice(1), 16);
+      const enemyHex = rainbowEnemy ? sharedHex : parseInt(badColor.slice(1), 16);
+      const teamHex = rainbowFriendly
+        ? sharedHex
+        : parseInt(goodColor.slice(1), 16);
 
       colors.enemy.set(enemyHex);
       colors.team.set(teamHex);
@@ -595,6 +611,10 @@ export function ESPMenu() {
   const [healthBars, setHealthBars] = useSketchConfig("healthBars");
   const [badColor, setBadColor] = useSketchConfig("badColor");
   const [goodColor, setGoodColor] = useSketchConfig("goodColor");
+  const [espRainbowEnemy, setEspRainbowEnemy] = useSketchConfig("espRainbowEnemy");
+  const [espRainbowFriendly, setEspRainbowFriendly] = useSketchConfig(
+    "espRainbowFriendly",
+  );
   const [newNametags, setNewNametags] = useSketchConfig("newNametags");
   const [espMenu, setEspMenu] = useSketchConfig("espMenu");
   const [espWallDarkness, setEspWallDarkness] = useSketchConfig("espWallDarkness");
@@ -682,6 +702,18 @@ export function ESPMenu() {
         min={0}
         max={1}
         step={0.05}
+      />
+      <Switch
+        title="Gaybow Enemy Colors 🌈"
+        description="Uses badge spoof rainbow color for hostile ESP colors"
+        defaultChecked={espRainbowEnemy}
+        onChange={(event) => setEspRainbowEnemy(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Gaybow Friendly Colors 🌈"
+        description="Uses badge spoof rainbow color for friendly ESP colors"
+        defaultChecked={espRainbowFriendly}
+        onChange={(event) => setEspRainbowFriendly(event.currentTarget.checked)}
       />
       <ColorPicker
         title="Hostile player color"
