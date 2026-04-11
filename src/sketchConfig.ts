@@ -4,6 +4,7 @@ import Config, { useConfig } from "./Config";
 import { getStorage, isChromeOS, isNode, hasGM } from "./consts";
 import { keyboardMap } from "./krunker-ui/keys";
 import tokenConfig from "./tokenConfig";
+import migrationConfig, { initMigrationConfig } from "./migrationConfig";
 
 export type AimbotTarget = [name: string, id: string];
 
@@ -164,12 +165,6 @@ export interface SketchConfig {
   aiKey: string;
   aiPrompt: string;
   aiModel: string;
-
-  // Migrations
-  skincMigrated: boolean;
-  bingMigrated: boolean;
-  fsMigrated: boolean;
-  gmMigrated: boolean;
 }
 
 /**
@@ -249,22 +244,18 @@ const defaultConfig: SketchConfig = {
   aiPrompt:
     "skip the niceties you're here to talk shit. be brutally concise; ditch the fluff. use only lowercase; reserve ALL CAPS for punches and Initial Letter Capitalization to mock ProperNouns. ditch obscure vocab opt for sharp, plain insults. be clever, not tryhard wit over wank. send at most one or two bangers per response. lean on late-millennial slang; slip a random zoomer buzzword to keep them on edge. no preambles, no compliments, no disclaimers output only the roast. keep it under 250 characters.",
   aiModel: "gpt-4.1",
-
-  skincMigrated: false,
-  bingMigrated: false,
-  fsMigrated: false,
-  gmMigrated: false,
 };
 
 const sketchConfig = new Config<SketchConfig>(defaultConfig, getStorage());
 
 export async function initSketchConfig() {
+  await initMigrationConfig();
   await sketchConfig.init();
 
   // --- bing localStorage loader migration ---
   // the old loader stored all settings as JSON in localStorage['bing']
   {
-    if (!sketchConfig.get("bingMigrated")) {
+    if (!migrationConfig.get("bingMigrated")) {
       try {
         const raw = localStorage.getItem("bing");
         if (raw) {
@@ -275,13 +266,13 @@ export async function initSketchConfig() {
           localStorage.removeItem("bing");
         }
       } catch {}
-      sketchConfig.set("bingMigrated", true);
+      migrationConfig.set("bingMigrated", true);
     }
   }
 
   // --- .photoshop.sketch file migration ---
   {
-    if (!sketchConfig.get("fsMigrated")) {
+    if (!migrationConfig.get("fsMigrated")) {
       try {
         if (isNode) {
           const fs = require("fs");
@@ -298,14 +289,14 @@ export async function initSketchConfig() {
           }
         }
       } catch {}
-      sketchConfig.set("fsMigrated", true);
+      migrationConfig.set("fsMigrated", true);
     }
   }
 
   // --- GM_* → IDB migration (only when NOT running under a userscript manager) ---
   // if GM_info exists, GMJSONStorage is already the primary backend — no migration needed
   {
-    if (!hasGM && !sketchConfig.get("gmMigrated")) {
+    if (!hasGM && !migrationConfig.get("gmMigrated")) {
       try {
         if (typeof GM_listValues === "function") {
           const keys = GM_listValues();
@@ -323,7 +314,7 @@ export async function initSketchConfig() {
           }
         }
       } catch {}
-      sketchConfig.set("gmMigrated", true);
+      migrationConfig.set("gmMigrated", true);
     }
   }
 
@@ -343,7 +334,7 @@ export async function initSketchConfig() {
     }
 
     // Wipe localStorage keys flagged by CHEAT_CHECK payload (runs once)
-    if (!sketchConfig.get("skincMigrated")) {
+    if (!migrationConfig.get("skincMigrated")) {
       const CC_FLAGGED_KEYS = [
         // Skin spoofer signatures
         "savedIndexes",
@@ -363,7 +354,7 @@ export async function initSketchConfig() {
       for (const key of CC_FLAGGED_KEYS) {
         localStorage.removeItem(key);
       }
-      sketchConfig.set("skincMigrated", true);
+      migrationConfig.set("skincMigrated", true);
     }
   }
 }

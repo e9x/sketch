@@ -185,6 +185,10 @@ function initMaterials() {
   const genericMesh = () =>
     new game.THREE.MeshBasicMaterial({
       transparent: true,
+      blending: game.THREE.CustomBlending,
+      blendEquation: game.THREE.MaxEquation,
+      blendSrc: game.THREE.SrcAlphaFactor,
+      blendDst: game.THREE.OneMinusSrcAlphaFactor,
       fog: false,
       depthTest: false,
       depthWrite: false,
@@ -344,7 +348,15 @@ export function espHook() {
           const twin = mesh.clone(false);
           mesh.parent!.add(twin);
           twin[hook] = true;
-          twin.renderOrder = 10000;
+
+          // Draw nearest cham fragments first so shared stencil keeps the visible layer stable.
+          const renderOrderPos = new game.THREE.Vector3();
+          Object.defineProperty(twin, "renderOrder", {
+            get: () => {
+              mesh.getWorldPosition(renderOrderPos);
+              return 10000 + render.camera.position.distanceToSquared(renderOrderPos);
+            },
+          });
 
           twin.matrixAutoUpdate = false;
           twin.matrixWorldAutoUpdate = false;
