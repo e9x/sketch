@@ -110,7 +110,8 @@ export interface SketchConfig {
   chams: boolean;
   overlayOpacity: number;
   chamsOpacity: number;
-  tracers: boolean;
+  tracersEnemy: boolean;
+  tracersFriendly: boolean;
   tracerThickness: number;
   forceAuto: boolean;
   recoilControl: boolean;
@@ -134,6 +135,8 @@ export interface SketchConfig {
   fakeClanTag: string;
   displayNameSpoofEnabled: boolean;
   displayNameSpoof: string;
+  fakePremiumEnabled: boolean;
+  fakeVipStatusEnabled: boolean;
   keybindOverlay: boolean;
   healthBars: boolean;
   adblock: boolean;
@@ -162,6 +165,7 @@ export interface SketchConfig {
 
   // LEGACY:
   espOpacity?: number;
+  tracers?: boolean;
 
   mouseLockX: number;
   mouseLockY: number;
@@ -207,7 +211,8 @@ const defaultConfig: SketchConfig = {
   chams: false,
   overlayOpacity: 1,
   chamsOpacity: 0.6,
-  tracers: false,
+  tracersEnemy: false,
+  tracersFriendly: false,
   tracerThickness: 1.5,
   forceAuto: false,
   recoilControl: false,
@@ -231,6 +236,8 @@ const defaultConfig: SketchConfig = {
   fakeClanTag: "DEV",
   displayNameSpoofEnabled: false,
   displayNameSpoof: "DEV",
+  fakePremiumEnabled: false,
+  fakeVipStatusEnabled: false,
   keybindOverlay: false,
   healthBars: false,
   adblock: true,
@@ -400,6 +407,13 @@ export async function initSketchConfig() {
       sketchConfig.delete("espOpacity");
       sketchConfig.set("chamsOpacity", espOpacity);
       sketchConfig.set("overlayOpacity", espOpacity);
+    }
+
+    const legacyTracers = sketchConfig.get("tracers");
+    if (typeof legacyTracers === "boolean") {
+      sketchConfig.set("tracersEnemy", legacyTracers);
+      sketchConfig.set("tracersFriendly", legacyTracers);
+      sketchConfig.delete("tracers");
     }
 
     // Wipe localStorage keys flagged by CHEAT_CHECK payload (runs once)

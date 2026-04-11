@@ -436,11 +436,13 @@ export function espHook() {
     const boxes = sketchConfig.get("boxes");
     const healthBars = sketchConfig.get("healthBars");
     const newNametags = sketchConfig.get("newNametags");
-    const tracers = sketchConfig.get("tracers");
+    const tracersEnemy = sketchConfig.get("tracersEnemy");
+    const tracersFriendly = sketchConfig.get("tracersFriendly");
     const tracerThickness = sketchConfig.get("tracerThickness");
 
     // const { globalAlpha } = overlay.ctx;
-    const willRender = tracers || newNametags || boxes || healthBars;
+    const willRender =
+      tracersEnemy || tracersFriendly || newNametags || boxes || healthBars;
 
     if (!willRender || isInMenus()) return;
 
@@ -480,7 +482,9 @@ export function espHook() {
           .multiplyScalar(sketchConfig.get("espWallDarkness"))
           .getHexString();
 
-      if (tracers) {
+      const drawTracer = isEnemy(entity) ? tracersEnemy : tracersFriendly;
+
+      if (drawTracer) {
         let tracerPoint: THREE.Vector2;
         const bottom = playerPos(entity);
 
@@ -606,7 +610,8 @@ export function ESPMenu() {
   // make it also apply to all the other esp crap
   const [overlayOpacity, setOverlayOpacity] = useSketchConfig("overlayOpacity");
   const [chamsOpacity, setChamsOpacity] = useSketchConfig("chamsOpacity");
-  const [tracers, setTracers] = useSketchConfig("tracers");
+  const [tracersEnemy, setTracersEnemy] = useSketchConfig("tracersEnemy");
+  const [tracersFriendly, setTracersFriendly] = useSketchConfig("tracersFriendly");
   const [tracerThickness, setTracerThickness] = useSketchConfig("tracerThickness");
   const [healthBars, setHealthBars] = useSketchConfig("healthBars");
   const [badColor, setBadColor] = useSketchConfig("badColor");
@@ -659,10 +664,16 @@ export function ESPMenu() {
         onChange={(event) => setBoxes(event.currentTarget.checked)}
       />
       <Switch
-        title="Tracers"
-        description="Draws a line between your camera and other players"
-        defaultChecked={tracers}
-        onChange={(event) => setTracers(event.currentTarget.checked)}
+        title="Enemy Tracers"
+        description="Draws a line to enemy players"
+        defaultChecked={tracersEnemy}
+        onChange={(event) => setTracersEnemy(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Friendly Tracers"
+        description="Draws a line to friendly players"
+        defaultChecked={tracersFriendly}
+        onChange={(event) => setTracersFriendly(event.currentTarget.checked)}
       />
       <Slider
         title="Tracer Thickness"

@@ -97,12 +97,14 @@ function setterFunc(obj: any, key: string, value?: any) {
 // Account packet indexes used by setData() in current game build.
 const ACCOUNT_CLAN_INDEX = 7;
 const ACCOUNT_FEATURED_INDEX = 9;
+const ACCOUNT_PREMIUM_INDEX = 19;
 const ACCOUNT_EMAIL_VERIFIED_INDEX = 43;
 
 // Player list packet indexes (packet "0") for local player chunk.
 const PLAYER_NAME_INDEX = 5;
 const PLAYER_CLAN_INDEX = 11;
 const PLAYER_FEATURED_INDEX = 25;
+const PLAYER_PREMIUM_INDEX = 27;
 
 function applyLocalAccountSpoofs(data: any) {
   if (!Array.isArray(data)) return;
@@ -110,6 +112,10 @@ function applyLocalAccountSpoofs(data: any) {
   if (sketchConfig.get("fakeClanTagEnabled")) {
     const tag = sketchConfig.get("fakeClanTag").trim();
     if (tag) data[ACCOUNT_CLAN_INDEX] = tag;
+  }
+
+  if (sketchConfig.get("fakePremiumEnabled") || sketchConfig.get("fakeVipStatusEnabled")) {
+    data[ACCOUNT_PREMIUM_INDEX] = 1;
   }
 
   if (!sketchConfig.get("badgeSpoofVerified")) return;
@@ -168,6 +174,10 @@ function applyLocalPlayerListSpoofs(packet: any) {
 
     if (verified) {
       playerChunk[PLAYER_FEATURED_INDEX] = 1;
+    }
+
+    if (sketchConfig.get("fakePremiumEnabled") || sketchConfig.get("fakeVipStatusEnabled")) {
+      playerChunk[PLAYER_PREMIUM_INDEX] = 1;
     }
 
     if (spoofName) {

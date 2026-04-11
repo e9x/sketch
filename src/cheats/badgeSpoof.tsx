@@ -20,12 +20,47 @@ let configWatcherStarted = false;
 let rainbowObserverStarted = false;
 let rainbowRefreshQueued = false;
 let uiRefreshQueued = false;
+let nameSyncMonitorStarted = false;
 const randomSuffix = Math.random().toString(36).slice(2, 10);
 const rainbowMarkerAttr = `data-r_${randomSuffix}`;
 let lastRainbowTag = "";
 export let sharedRainbowHexColor = "#fb4a4a";
 
 type AnyObj = Record<PropertyKey, any>;
+const VIP_BADGE_ID = 18;
+
+function isPlaceholderName(value: unknown) {
+  return typeof value === "string" && value.trim().toLowerCase() === "preview";
+}
+
+function pickRealName(...values: Array<unknown>) {
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const trimmed = value.trim();
+    if (!trimmed || isPlaceholderName(trimmed)) continue;
+    return trimmed;
+  }
+  return "";
+}
+
+function getVipBadgeIndex() {
+  try {
+    const game = getGame() as AnyObj;
+    const badges = game?.badges as AnyObj[] | undefined;
+    if (Array.isArray(badges)) {
+      const found = badges.find((badge) => badge?.id === VIP_BADGE_ID);
+      if (found) {
+        const explicitIndex = Number(found.index);
+        if (Number.isInteger(explicitIndex) && explicitIndex >= 0) return explicitIndex;
+      }
+
+      const pos = badges.findIndex((badge) => badge?.id === VIP_BADGE_ID);
+      if (pos >= 0) return pos;
+    }
+  } catch {}
+
+  return -1;
+}
 
 function hueToSharedRainbowHex(hueDeg: number) {
   const s = 0.96;
@@ -67,17 +102,39 @@ function hueToSharedRainbowHex(hueDeg: number) {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-function refreshGameUI() {
+function getResolvedDisplayName() {
   try {
-    // Menu labels are separate from scoreboard widgets; patch them directly.
+    const spoofEnabled = sketchConfig.get("displayNameSpoofEnabled");
+    const spoofed = sketchConfig.get("displayNameSpoof").trim();
+    const hideOnEnd = sketchConfig.get("badgeSpoofHideEndScreen") && isOnEndScreen();
+    if (spoofEnabled && spoofed && !hideOnEnd) return spoofed;
+  } catch {}
+
+  try {
     const menuPlayer = getMenuPlayer() as AnyObj | undefined;
     const localPlayer = getLocalPlayer() as AnyObj | undefined;
-    const resolvedName =
-      (menuPlayer?.alias as string | undefined) ||
-      (menuPlayer?.name as string | undefined) ||
-      (localPlayer?.alias as string | undefined) ||
-      (localPlayer?.name as string | undefined) ||
-      "";
+    const localAccount = localPlayer?.account as AnyObj | undefined;
+    const menuAccount = menuPlayer?.account as AnyObj | undefined;
+
+    return pickRealName(
+      localAccount?.alias,
+      localPlayer?.alias,
+      localAccount?.name,
+      localPlayer?.name,
+      menuAccount?.alias,
+      menuPlayer?.alias,
+      menuAccount?.name,
+      menuPlayer?.name,
+    );
+  } catch {
+    return "";
+  }
+}
+
+function syncDisplayNameUI() {
+  try {
+    // Menu labels are separate from scoreboard widgets; patch them directly.
+    const resolvedName = getResolvedDisplayName();
 
     if (resolvedName) {
       const menuNameIds = [
@@ -93,6 +150,10 @@ function refreshGameUI() {
       }
     }
   } catch {}
+}
+
+function refreshGameUI() {
+  syncDisplayNameUI();
 
   try {
     const w = getExposedWindow() as any;
@@ -156,6 +217,34 @@ function defineSpoofedProperty(
   });
 }
 
+function defineVipTierProperty(target: AnyObj, forceWhen: () => boolean) {
+  if (!target || typeof target !== "object") return;
+
+  const existing = Object.getOwnPropertyDescriptor(target, "BP");
+  let backing = target.BP;
+
+  if (existing && existing.configurable === false) return;
+
+  Object.defineProperty(target, "BP", {
+    configurable: true,
+    enumerable: existing?.enumerable ?? true,
+    get() {
+      if (!forceWhen()) return backing;
+
+      const current =
+        backing && typeof backing === "object" ? (backing as AnyObj) : ({} as AnyObj);
+      const tier = Number(current.tier) || 0;
+      return {
+        ...current,
+        tier: Math.max(1, tier),
+      };
+    },
+    set(value) {
+      backing = value;
+    },
+  });
+}
+
 function installLocks(player: Player) {
   const p = player as AnyObj;
   const hideOnEndScreen = () => sketchConfig.get("badgeSpoofHideEndScreen") && isOnEndScreen();
@@ -166,6 +255,8 @@ function installLocks(player: Player) {
   const fakeNameValue = () => sketchConfig.get("displayNameSpoof").trim();
   const fakeNameActive = () => fakeNameEnabled() && fakeNameValue().length > 0 && !hideOnEndScreen();
   const verifiedActive = () => sketchConfig.get("badgeSpoofVerified") && !hideOnEndScreen();
+  const vipActive = () => sketchConfig.get("fakeVipStatusEnabled") && !hideOnEndScreen();
+  const premiumActive = () => (sketchConfig.get("fakePremiumEnabled") || vipActive()) && !hideOnEndScreen();
 
   if (!p[badgeLock]) {
     p[badgeLock] = true;
@@ -184,6 +275,22 @@ function installLocks(player: Player) {
       () => verifiedActive(),
     );
 
+    defineSpoofedProperty(
+      p,
+      "premiumT",
+      () => 1,
+      () => premiumActive(),
+    );
+
+    defineSpoofedProperty(
+      p,
+      "badgeIndex",
+      () => getVipBadgeIndex(),
+      () => vipActive() && getVipBadgeIndex() >= 0,
+    );
+
+    defineVipTierProperty(p, () => vipActive());
+
     defineSpoofedProperty(p, "clan", () => fakeClanValue(), () => fakeClanActive());
     defineSpoofedProperty(p, "name", () => fakeNameValue(), () => fakeNameActive());
     defineSpoofedProperty(p, "alias", () => fakeNameValue(), () => fakeNameActive());
@@ -191,12 +298,6 @@ function installLocks(player: Player) {
       p,
       "fakeName",
       () => fakeNameValue(),
-      () => fakeNameActive(),
-    );
-    defineSpoofedProperty(
-      p,
-      "getName",
-      () => () => fakeNameValue(),
       () => fakeNameActive(),
     );
   }
@@ -220,6 +321,15 @@ function installLocks(player: Player) {
     () => true,
     () => verifiedActive(),
   );
+
+  defineSpoofedProperty(
+    account,
+    "premiumT",
+    () => 1,
+    () => premiumActive(),
+  );
+
+  defineVipTierProperty(account, () => vipActive());
 
   defineSpoofedProperty(
     account,
@@ -264,15 +374,47 @@ function forceApplySpoofs(player: Player) {
       (player as AnyObj).name = displayName;
       (player as AnyObj).alias = displayName;
       (player as AnyObj).fakeName = displayName;
-      if (typeof (player as AnyObj).getName === "function") {
-        (player as AnyObj).getName = () => displayName;
-      }
       if (account) {
         account.name = displayName;
         account.alias = displayName;
       }
     }
   }
+
+  if ((sketchConfig.get("fakePremiumEnabled") || sketchConfig.get("fakeVipStatusEnabled")) && !onEnd) {
+    (player as AnyObj).premiumT = 1;
+    const showBadges = (player as AnyObj).showBadges;
+    if (showBadges && typeof showBadges === "object") {
+      showBadges.premium = true;
+    }
+    if (account) account.premiumT = 1;
+  }
+
+  if (sketchConfig.get("fakeVipStatusEnabled") && !onEnd) {
+    const vipBadgeIndex = getVipBadgeIndex();
+
+    const ensureVipTier = (obj: AnyObj | undefined) => {
+      if (!obj) return;
+      const bp = obj.BP && typeof obj.BP === "object" ? (obj.BP as AnyObj) : {};
+      const tier = Number(bp.tier) || 0;
+      obj.BP = {
+        ...bp,
+        tier: Math.max(1, tier),
+      };
+    };
+
+    ensureVipTier(player as AnyObj);
+    ensureVipTier(account);
+
+    if (vipBadgeIndex >= 0) {
+      (player as AnyObj).badgeIndex = vipBadgeIndex;
+      const showBadges = (player as AnyObj).showBadges;
+      if (showBadges && typeof showBadges === "object") {
+        showBadges.custom = true;
+      }
+    }
+  }
+
 }
 
 function applySpoofsNow() {
@@ -408,6 +550,14 @@ function startRainbowLoop() {
 export function badgeSpoofHook() {
   startRainbowLoop();
 
+  if (!nameSyncMonitorStarted) {
+    nameSyncMonitorStarted = true;
+    setInterval(() => {
+      applySpoofsNow();
+      syncDisplayNameUI();
+    }, 120);
+  }
+
   if (!configWatcherStarted) {
     configWatcherStarted = true;
     sketchConfig.configTarget.addEventListener("change", () => {
@@ -447,6 +597,7 @@ export function badgeSpoofHook() {
 
     installLocks(player);
     forceApplySpoofs(player);
+    syncDisplayNameUI();
   });
 
   // Apply once right away so toggles/text changes are reflected without waiting for game updates.
@@ -470,6 +621,12 @@ export function BadgeSpoofMenu() {
   );
   const [displayNameSpoof, setDisplayNameSpoof] = useSketchConfig(
     "displayNameSpoof",
+  );
+  const [fakePremiumEnabled, setFakePremiumEnabled] = useSketchConfig(
+    "fakePremiumEnabled",
+  );
+  const [fakeVipStatusEnabled, setFakeVipStatusEnabled] = useSketchConfig(
+    "fakeVipStatusEnabled",
   );
 
   return (
@@ -527,6 +684,26 @@ export function BadgeSpoofMenu() {
         onChange={(event) => {
           setDisplayNameSpoofEnabled(event.currentTarget.checked);
           applySpoofsNow();
+        }}
+      />
+      <Switch
+        title="Fake Premium"
+        description="Forces premiumT on local/menu account"
+        defaultChecked={fakePremiumEnabled}
+        onChange={(event) => {
+          setFakePremiumEnabled(event.currentTarget.checked);
+          applySpoofsNow();
+          queueGameUIRefresh();
+        }}
+      />
+      <Switch
+        title="Fake VIP Status"
+        description="Forces VIP tier status via BP tier"
+        defaultChecked={fakeVipStatusEnabled}
+        onChange={(event) => {
+          setFakeVipStatusEnabled(event.currentTarget.checked);
+          applySpoofsNow();
+          queueGameUIRefresh();
         }}
       />
       <Text
