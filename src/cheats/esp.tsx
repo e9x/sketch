@@ -187,9 +187,12 @@ function initMaterials() {
       transparent: true,
       fog: false,
       depthTest: false,
+      depthWrite: false,
       stencilWrite: true,
       stencilFunc: game.THREE.NotEqualStencilFunc,
-      stencilRef: 1,
+      stencilRef: CHAM_STENCIL_REF,
+      stencilWriteMask: 0xff,
+      stencilFuncMask: 0xff,
       stencilZPass: game.THREE.ReplaceStencilOp,
       stencilZFail: game.THREE.ReplaceStencilOp,
       stencilFail: game.THREE.ReplaceStencilOp,
@@ -281,6 +284,8 @@ const getMaterials = () => {
 
 const espMat = Symbol();
 const hook = Symbol();
+const CHAM_STENCIL_REF = 0x7f;
+let lastChamStencilClearFrame = -1;
 
 declare module "three" {
   interface Mesh {
@@ -339,9 +344,19 @@ export function espHook() {
           const twin = mesh.clone(false);
           mesh.parent!.add(twin);
           twin[hook] = true;
+          twin.renderOrder = 10000;
 
           twin.matrixAutoUpdate = false;
           twin.matrixWorldAutoUpdate = false;
+
+          twin.onBeforeRender = (renderer) => {
+            const frame = renderer.info.render.frame;
+            if (frame === lastChamStencilClearFrame) return;
+
+            // Reset stencil once per frame so cham fragments are written only once per pixel.
+            renderer.clear(false, false, true);
+            lastChamStencilClearFrame = frame;
+          };
 
           Object.defineProperty(twin, "matrixWorld", {
             get: () => mesh.matrixWorld,

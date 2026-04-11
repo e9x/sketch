@@ -204,7 +204,8 @@ export function canShoot(aimTime: number) {
 
 export function isInMenus() {
   if (sketchConfig.get("espMenu")) return false;
-  return document.getElementById("uiBase")?.classList.contains("onMenu");
+  const l = document.getElementById("uiBase");
+  return l?.classList.contains("onMenu") || l?.classList.contains("onEndScrn");
 }
 
 /**
