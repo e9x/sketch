@@ -4,6 +4,75 @@ import { Switch } from "../krunker-ui/components/Switch";
 import { getKeyName } from "../krunker-ui/keys";
 import { isInMenus } from "../krunkerUtil";
 
+const OVERLAY_TOP_TIMER_GAP = 12;
+
+let cachedTopAnchor = 0;
+let isTopAnchorDirty = true;
+let topHudObserver: MutationObserver | null = null;
+let observedTopHudEl: HTMLElement | null = null;
+
+function invalidateTopAnchor() {
+  isTopAnchorDirty = true;
+}
+
+function ensureTopHudObserver() {
+  if (typeof document === "undefined" || typeof MutationObserver === "undefined") return;
+
+  const topHudEl = document.getElementById("topLeftBottom") as HTMLElement | null;
+  if (!topHudEl) return;
+
+  if (observedTopHudEl === topHudEl && topHudObserver) return;
+
+  if (topHudObserver) topHudObserver.disconnect();
+
+  topHudObserver = new MutationObserver(() => {
+    invalidateTopAnchor();
+  });
+  topHudObserver.observe(topHudEl, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    characterData: true,
+  });
+
+  observedTopHudEl = topHudEl;
+  invalidateTopAnchor();
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("resize", invalidateTopAnchor, { passive: true });
+}
+
+function getTopHudAnchorY() {
+  if (typeof document === "undefined") return 0;
+  ensureTopHudObserver();
+  if (!isTopAnchorDirty) return cachedTopAnchor;
+
+  const topLeftBottomEl =
+    observedTopHudEl ??
+    (document.getElementById("topLeftBottom") as HTMLElement | null);
+  if (!topLeftBottomEl) return 0;
+
+  let bottom = topLeftBottomEl.getBoundingClientRect().bottom;
+  for (const el of topLeftBottomEl.querySelectorAll<HTMLElement>("*")) {
+    if (el.offsetParent === null) continue;
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) continue;
+    if (rect.bottom > bottom) bottom = rect.bottom;
+  }
+
+  cachedTopAnchor = Math.round(bottom + OVERLAY_TOP_TIMER_GAP);
+  isTopAnchorDirty = false;
+  return cachedTopAnchor;
+}
+
+function getTopHudAnchorCanvasY(overlay: ReturnType<typeof getOverlay>) {
+  const viewportY = getTopHudAnchorY();
+  const canvasRect = overlay.canvas.getBoundingClientRect();
+  // convert viewport pixels to overlay logical units (ctx is scaled by overlay.scale)
+  return Math.round((viewportY - canvasRect.top) / overlay.scale);
+}
+
 export function keybindOverlayHook() {
   overlayRenderHooks.push(() => {
     if (sketchConfig.get("keybindOverlay") && !isInMenus()) {
@@ -33,8 +102,6 @@ export function keybindOverlayHook() {
       const overlay = getOverlay();
       overlay.ctx.scale(overlay.scale, overlay.scale);
 
-      const height = overlay.canvas.height / overlay.scale;
-
       const keyHeight = 48;
       const keyHeightGap = 8;
 
@@ -46,7 +113,7 @@ export function keybindOverlayHook() {
         keyHeightGap * (keybinds.length - 1) +
         boxPadding;
       const boxX = 10;
-      const boxY = height / 2 - boxHeight / 2 - boxHeight / 2 - 10;
+      const boxY = getTopHudAnchorCanvasY(overlay);
       overlay.ctx.fillStyle = "#202020e2";
       overlay.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
 
