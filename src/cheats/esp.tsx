@@ -349,6 +349,14 @@ export function espHook() {
           Object.defineProperty(entity.objInstances, "visible", {
             configurable: true,
             get: () => {
+              // Menu player models can get stuck hidden if the cham visibility
+              // lock competes with menu scene toggles. Preserve menu visibility.
+              if (isInMenus()) {
+                if (visibleDescriptor?.get)
+                  return visibleDescriptor.get.call(entity.objInstances);
+                return true;
+              }
+
               if (espMat in entity) return true;
               if (visibleDescriptor?.get)
                 return visibleDescriptor.get.call(entity.objInstances);
