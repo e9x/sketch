@@ -44,18 +44,38 @@ export interface SketchSkybox {
   faces: string[];
 }
 
+const skyboxSources: Array<[key: string, folder: string, name: string]> = [
+  ["galaxy", "galaxy", "Galaxy"],
+  ["lean", "lean", "Lean"],
+  ["night", "night", "Night"],
+  ["sunset", "sunset", "Sunset"],
+  ["jew", "jew", "Jew"],
+  ["jew2", "jew2", "Jew2"],
+  ["nigga", "nigga", "Nigga"],
+  ["classicRoblox", "339406852_Classic_Roblox_Sky_SKYBOX", "Classic Roblox Sky"],
+  [
+    "mountainyNight",
+    "136465089093652_Mountainy_night_time_skybox",
+    "Mountainy Night Time Skybox",
+  ],
+  ["rain", "1064861992_Rain_Skybox", "Rain Skybox"],
+  ["poisonFog", "1864979969_Poison_Fog_Skybox", "Poison Fog Skybox"],
+  ["space", "15619750970_Space_Skybox", "Space Skybox"],
+  ["purpleNebula", "230057997_Purple_Nebula_Skybox", "Purple Nebula Skybox"],
+];
+
 export const skyboxes: Record<string, SketchSkybox> = Object.fromEntries(
-  ["galaxy", "lean", "night", "sunset", "jew", "jew2", "nigga"].map((e) => [
-    e,
+  skyboxSources.map(([key, folder, name]) => [
+    key,
     {
-      name: e[0].toUpperCase() + e.slice(1),
+      name,
       faces: [
-        `https://eli.gift/skybox/${e}/SkyboxFt.png`,
-        `https://eli.gift/skybox/${e}/SkyboxBk.png`,
-        `https://eli.gift/skybox/${e}/SkyboxUp.png`,
-        `https://eli.gift/skybox/${e}/SkyboxDn.png`,
-        `https://eli.gift/skybox/${e}/SkyboxRt.png`,
-        `https://eli.gift/skybox/${e}/SkyboxLf.png`,
+        `https://eli.gift/skybox/${folder}/SkyboxFt.png`,
+        `https://eli.gift/skybox/${folder}/SkyboxBk.png`,
+        `https://eli.gift/skybox/${folder}/SkyboxUp.png`,
+        `https://eli.gift/skybox/${folder}/SkyboxDn.png`,
+        `https://eli.gift/skybox/${folder}/SkyboxRt.png`,
+        `https://eli.gift/skybox/${folder}/SkyboxLf.png`,
       ],
     },
   ]),
