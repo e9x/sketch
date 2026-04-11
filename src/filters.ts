@@ -324,7 +324,186 @@ export function redrawSky() {
   }
 }
 
+function hexToRgb(hex: string) {
+  const clean = hex.trim().replace(/^#/, "");
+  if (clean.length === 3) {
+    const r = parseInt(clean[0] + clean[0], 16);
+    const g = parseInt(clean[1] + clean[1], 16);
+    const b = parseInt(clean[2] + clean[2], 16);
+    if ([r, g, b].some((v) => Number.isNaN(v))) return null;
+    return { r, g, b };
+  }
+
+  if (clean.length !== 6) return null;
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  if ([r, g, b].some((v) => Number.isNaN(v))) return null;
+  return { r, g, b };
+}
+
+function rgbToHsl(r: number, g: number, b: number) {
+  const rn = r / 255;
+  const gn = g / 255;
+  const bn = b / 255;
+  const max = Math.max(rn, gn, bn);
+  const min = Math.min(rn, gn, bn);
+  const delta = max - min;
+
+  let h = 0;
+  const l = (max + min) / 2;
+  const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+
+  if (delta !== 0) {
+    if (max === rn) h = ((gn - bn) / delta) % 6;
+    else if (max === gn) h = (bn - rn) / delta + 2;
+    else h = (rn - gn) / delta + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+
+  return { h, s, l };
+}
+
+function hslToRgb(h: number, s: number, l: number) {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const hp = h / 60;
+  const x = c * (1 - Math.abs((hp % 2) - 1));
+
+  let r1 = 0;
+  let g1 = 0;
+  let b1 = 0;
+
+  if (hp >= 0 && hp < 1) {
+    r1 = c;
+    g1 = x;
+  } else if (hp < 2) {
+    r1 = x;
+    g1 = c;
+  } else if (hp < 3) {
+    g1 = c;
+    b1 = x;
+  } else if (hp < 4) {
+    g1 = x;
+    b1 = c;
+  } else if (hp < 5) {
+    r1 = x;
+    b1 = c;
+  } else {
+    r1 = c;
+    b1 = x;
+  }
+
+  const m = l - c / 2;
+  return {
+    r: Math.round((r1 + m) * 255),
+    g: Math.round((g1 + m) * 255),
+    b: Math.round((b1 + m) * 255),
+  };
+}
+
+function shiftHexHue(hex: string, hueDelta: number) {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+
+  const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  const h = ((hsl.h + hueDelta) % 360 + 360) % 360;
+  const shifted = hslToRgb(h, hsl.s, hsl.l);
+
+  const toHex = (n: number) => n.toString(16).padStart(2, "0");
+  return `#${toHex(shifted.r)}${toHex(shifted.g)}${toHex(shifted.b)}`;
+}
+
+function shiftOverrideColors(value: unknown, hueDelta: number): unknown {
+  if (typeof value === "string") {
+    return /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(value)
+      ? shiftHexHue(value, hueDelta)
+      : value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => shiftOverrideColors(item, hueDelta));
+  }
+
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = shiftOverrideColors(v, hueDelta);
+    }
+    return out;
+  }
+
+  return value;
+}
+
 const loadedSkyboxes: Record<string, THREE.Texture> = {};
+const hueSkyboxes: Record<string, THREE.Texture> = {};
+const hueSkyboxesLoading = new Set<string>();
+
+function normalizeHue(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return ((Math.round(value) % 360) + 360) % 360;
+}
+
+async function toHueCanvas(face: CanvasImageSource, hueDeg: number) {
+  const width = (face as any).naturalWidth || (face as any).videoWidth || (face as any).width;
+  const height = (face as any).naturalHeight || (face as any).videoHeight || (face as any).height;
+  if (!width || !height) throw new Error("invalid skybox face size");
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("2d context unavailable");
+
+  ctx.filter = `hue-rotate(${hueDeg}deg)`;
+  ctx.drawImage(face, 0, 0, width, height);
+  ctx.filter = "none";
+
+  return canvas;
+}
+
+function warmHueSkybox(
+  skyboxKey: string,
+  hueDeg: number,
+  baseTexture: THREE.Texture,
+) {
+  const hueKey = `${skyboxKey}:${hueDeg}`;
+  if (hueSkyboxes[hueKey] || hueSkyboxesLoading.has(hueKey)) return;
+  hueSkyboxesLoading.add(hueKey);
+
+  const render = getRender();
+  const THREE = render.THREE;
+  const base = baseTexture as any;
+  const faces = Array.isArray(base.image) ? base.image : [];
+  if (faces.length !== 6) {
+    hueSkyboxesLoading.delete(hueKey);
+    return;
+  }
+
+  Promise.all(faces.map((face: CanvasImageSource) => toHueCanvas(face, hueDeg)))
+    .then((canvases) => {
+      const tex = new THREE.CubeTexture(canvases as any);
+      tex.needsUpdate = true;
+
+      // Keep key texture settings aligned with the original loaded cube texture.
+      (tex as any).mapping = (base as any).mapping;
+      (tex as any).magFilter = (base as any).magFilter;
+      (tex as any).minFilter = (base as any).minFilter;
+      (tex as any).generateMipmaps = (base as any).generateMipmaps;
+      if ("colorSpace" in base) (tex as any).colorSpace = (base as any).colorSpace;
+      if ("encoding" in base) (tex as any).encoding = (base as any).encoding;
+
+      hueSkyboxes[hueKey] = tex as unknown as THREE.Texture;
+    })
+    .catch(() => {
+      // Ignore hue transform failures and keep using base skybox.
+    })
+    .finally(() => {
+      hueSkyboxesLoading.delete(hueKey);
+    });
+}
+
 function getTech() {
   const skybox = sketchConfig.get("skybox");
   if (skybox === "off") return null;
@@ -339,6 +518,15 @@ function getTech() {
     tech = textureLoader.load(s.faces);
     loadedSkyboxes[skybox] = tech;
   }
+
+  const hue = normalizeHue(sketchConfig.get("skyboxHue"));
+  if (hue === 0) return tech;
+
+  const hueKey = `${skybox}:${hue}`;
+  const hueTech = hueSkyboxes[hueKey];
+  if (hueTech) return hueTech;
+
+  warmHueSkybox(skybox, hue, tech);
   return tech;
 }
 
@@ -359,8 +547,15 @@ function doRenderHooks() {
 
       conf = config;
       nConfig = { ...config };
-      if (sketchConfig.get("mapOverrides"))
-        Object.assign(nConfig, sketchConfig.get("mapOverridesCode"));
+      if (sketchConfig.get("mapOverrides")) {
+        const overridesHue = normalizeHue(sketchConfig.get("mapOverridesHue"));
+        const overrides = sketchConfig.get("mapOverridesCode");
+        const adjusted =
+          overridesHue === 0
+            ? overrides
+            : (shiftOverrideColors(overrides, overridesHue) as MapData);
+        Object.assign(nConfig, adjusted);
+      }
       if (sketchConfig.get("skyColor"))
         Object.assign(nConfig, {
           skyDome: false,
@@ -376,7 +571,7 @@ function doRenderHooks() {
   );
 
   let lastThirdPerson: boolean | undefined;
-  let skyConf = ["mapOverrides", "mapOverridesCode", "skyColor", "skyColorHex"];
+  let skyConf = ["mapOverrides", "mapOverridesCode", "mapOverridesHue", "skyColor", "skyColorHex", "skyboxHue"];
   sketchConfig.configTarget.addEventListener("change", (e) => {
     if (typeof e.configKey === "string" && skyConf.includes(e.configKey))
       redrawSky();

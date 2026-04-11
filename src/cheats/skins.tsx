@@ -1,8 +1,7 @@
 import { isDevelopment } from "../consts";
 import { console } from "../crashout";
-import { encode, decode } from "msgpackr";
-import { getBox, getGame, getIO, onGameHooks, onIoHooks } from "../filters";
-import { mirrorAttributes } from "../hook";
+import { getBox, getGame, getIO, onGameHooks } from "../filters";
+import { onMessageTransformers, onSendTransformers } from "./wsHook";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "../krunker-ui/components/Switch";
 
@@ -364,69 +363,8 @@ function onSend(packet: any) {
 
 // hooks into the websocket to intercept + modify packets
 export function skinHackHook() {
-  onIoHooks.push((ws) => {
-    let _onmessage:
-      | null
-      | (((this: WebSocket, ev: MessageEvent) => any) | null) = null;
-
-    ws.addEventListener("message", (ev) => {
-      const customEvent = {
-        isTrusted: true,
-        data: ev.data,
-      };
-
-      try {
-        const ab = ev.data as ArrayBuffer;
-        const packet = decode(new Uint8Array(ab.slice(0, -2)));
-        const sig = ab.slice(-2);
-
-        const newPack = onMessage(packet);
-        const newPackEnc = new Uint8Array(encode(newPack));
-        const newAbSig = new Uint8Array(newPackEnc.byteLength + 2);
-
-        newAbSig.set(newPackEnc);
-        newAbSig.set(new Uint8Array(sig), newPackEnc.byteLength);
-
-        customEvent.data = newAbSig.buffer;
-      } catch (e) {
-        if (isDevelopment) console.error(e);
-      }
-
-      try {
-        // @ts-ignore
-        _onmessage?.call(ws, customEvent as MessageEvent);
-      } catch (e) {
-        if (isDevelopment) console.error(e);
-      }
-    });
-
-    Object.defineProperty(ws, "onmessage", {
-      set: (v) => (_onmessage = v),
-    });
-
-    const { send } = ws;
-
-    ws.send = mirrorAttributes(function (this: any, data: any) {
-      try {
-        const ab = data as ArrayBuffer;
-        const packet = decode(new Uint8Array(ab.slice(0, -2)));
-        const sig = ab.slice(-2);
-
-        const newPack = onSend(packet);
-        const newPackEnc = new Uint8Array(encode(newPack));
-        const newAbSig = new Uint8Array(newPackEnc.byteLength + 2);
-
-        newAbSig.set(newPackEnc);
-        newAbSig.set(new Uint8Array(sig), newPackEnc.byteLength);
-
-        data = newAbSig.buffer;
-      } catch (e) {
-        if (isDevelopment) console.error(e);
-      }
-
-      return send.call(this, data);
-    } as typeof send, send);
-  });
+  onMessageTransformers.push(onMessage);
+  onSendTransformers.push(onSend);
 
   onGameHooks.push(() => {
     skins = getGame().store.skins;

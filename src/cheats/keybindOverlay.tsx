@@ -46,7 +46,7 @@ export function keybindOverlayHook() {
         keyHeightGap * (keybinds.length - 1) +
         boxPadding;
       const boxX = 10;
-      const boxY = height / 2 - boxHeight / 2;
+      const boxY = height / 2 - boxHeight / 2 - boxHeight / 2 - 10;
       overlay.ctx.fillStyle = "#202020e2";
       overlay.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
 
@@ -66,7 +66,7 @@ export function keybindOverlayHook() {
         const rowY = contentY + i * (keyHeight + keyHeightGap);
 
         overlay.ctx.fillStyle = "#a5a5a5";
-
+        overlay.ctx.textAlign = "left";
         overlay.ctx.fillText(
           keybinds[i].name,
           contentX,

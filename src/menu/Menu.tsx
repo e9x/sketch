@@ -5,6 +5,7 @@ import { BhopMenu } from "../cheats/bhop";
 import { ESPMenu } from "../cheats/esp";
 import { KeybindOverlayMenu } from "../cheats/keybindOverlay";
 import { SkinHackMenu } from "../cheats/skins";
+import { SpectatorsMenu } from "../cheats/spectators";
 import { WatermarkMenu } from "../cheats/watermark";
 import { discordURL, docsURL, sketchVersion } from "../consts";
 import { getActiveMap } from "../filters";
@@ -24,6 +25,7 @@ import { Settings, Tab } from "../krunker-ui/settings";
 import { Text } from "../krunker-ui/components/Text";
 import { Select } from "../krunker-ui/components/Select";
 import { Button } from "../krunker-ui/components/Button";
+import { Slider } from "../krunker-ui/components/Slider";
 import { waitFor } from "../util";
 import { MapData } from "../krunker/GameMap";
 import { rageConfig } from "../presets/rage";
@@ -253,7 +255,10 @@ const tabs: Tab[] = [
       const [mapOverrides, setMapOverrides] = useSketchConfig("mapOverrides");
       const [mapOverridesCode, setMapOverridesCode] =
         useSketchConfig("mapOverridesCode");
+      const [mapOverridesHue, setMapOverridesHue] =
+        useSketchConfig("mapOverridesHue");
       const [skybox, setSkybox] = useSketchConfig("skybox");
+      const [skyboxHue, setSkyboxHue] = useSketchConfig("skyboxHue");
       const [hideClouds, setHideClouds] = useSketchConfig("hideClouds");
 
       let activ: MapData | undefined;
@@ -266,6 +271,7 @@ const tabs: Tab[] = [
           <HeadlessSet>
             <SkinHackMenu />
             <BadgeSpoofMenu />
+            <SpectatorsMenu />
             <Switch
               title="Disable ADS FOV multiplier"
               defaultChecked={noAdsFovMlt}
@@ -291,6 +297,17 @@ const tabs: Tab[] = [
                 </option>
               ))}
             </Select>
+            <Slider
+              title="Skybox Hue"
+              description="Hue rotation for custom skybox textures"
+              min={0}
+              max={360}
+              step={1}
+              defaultValue={skyboxHue}
+              onChange={(event) => {
+                setSkyboxHue(event.currentTarget.valueAsNumber || 0);
+              }}
+            />
             <Text
               title="Map Overrides"
               description="If the overrides should take effect"
@@ -310,6 +327,17 @@ const tabs: Tab[] = [
                   setMapOverridesCode(p);
                   event.currentTarget.value = JSON.stringify(p);
                 }
+              }}
+            />
+            <Slider
+              title="Map Overrides Hue"
+              description="Hue rotation for map override colors"
+              min={0}
+              max={360}
+              step={1}
+              defaultValue={mapOverridesHue}
+              onChange={(event) => {
+                setMapOverridesHue(event.currentTarget.valueAsNumber || 0);
               }}
             />
             <Switch

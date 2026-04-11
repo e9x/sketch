@@ -69,6 +69,11 @@ const skyboxSources: Array<[key: string, folder: string, name: string]> = [
     "71056550510292_Cloud_Skybox_Atmospheric_Aesthetic_Pbr_Blur",
     "Cloud Atmospheric Blur Skybox",
   ],
+  [
+    "cloudyRealistic",
+    "108995333026041_Skybox_Cloudy_Realistic_Aesthetic_Pbr_Fun",
+    "Cloudy Realistic Skybox",
+  ],
 ];
 
 export const skyboxes: Record<string, SketchSkybox> = Object.fromEntries(
@@ -150,7 +155,9 @@ export interface SketchConfig {
   skyColorHex: string;
   mapOverrides: boolean;
   mapOverridesCode: MapData;
+  mapOverridesHue: number;
   skybox: string;
+  skyboxHue: number;
   watermark: boolean;
   spinbot: "off" | "physical" | "visual";
   triggerbotDistance: number;
@@ -184,6 +191,7 @@ export interface SketchConfig {
   aiKey: string;
   aiPrompt: string;
   aiModel: string;
+  spectatorsOverlay: boolean;
 }
 
 /**
@@ -251,7 +259,9 @@ const defaultConfig: SketchConfig = {
   skyColorHex: "#000",
   mapOverrides: false,
   mapOverridesCode: lean,
+  mapOverridesHue: 0,
   skybox: "off",
+  skyboxHue: 0,
   watermark: false,
   spinbot: "off",
   triggerbotDistance: 0.5,
@@ -270,6 +280,7 @@ const defaultConfig: SketchConfig = {
   autoSpawn: false,
   espMenu: true,
   aiReply: false,
+  spectatorsOverlay: false,
   aiEndpoint: "https://chat.openai.com/v1/chat/completions",
   aiKey: "SK_YOUR_KEY",
   aiPrompt:

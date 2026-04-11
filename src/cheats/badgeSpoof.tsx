@@ -19,14 +19,11 @@ let sharedRainbowLoopStarted = false;
 let configWatcherStarted = false;
 let clanTagObserverStarted = false;
 let clanTagRefreshQueued = false;
-let leaderboardColorHookStarted = false;
 let uiRefreshQueued = false;
 let nameSyncMonitorStarted = false;
 const randomSuffix = Math.random().toString(36).slice(2, 10);
 const clanFixAttr = `data-cf_${randomSuffix}`;
-const colorTraceAttr = `data-ct_${randomSuffix}`;
 export let sharedRainbowHexColor = "#fb4a4a";
-const trackedStyleOwners = new WeakMap<CSSStyleDeclaration, HTMLElement>();
 
 type AnyObj = Record<PropertyKey, any>;
 const VIP_BADGE_ID = 18;
@@ -500,119 +497,12 @@ function findOwnLeaderboardNameNodes() {
   return matched;
 }
 
-function trackStyleOwner(node: HTMLElement) {
-  trackedStyleOwners.set(node.style, node);
-}
-
-function findColorStyleOwner(styleDecl: CSSStyleDeclaration) {
-  return trackedStyleOwners.get(styleDecl) ?? null;
-}
-
-function isTrackedLeaderboardColorTarget(node: HTMLElement) {
-  if (node.hasAttribute(colorTraceAttr)) return true;
-
-  return Boolean(
-    node.closest(
-      ".leaderItem, .newLeaderItem, .leaderName, .leaderNameF, .leaderNameM, .newLeaderName, .newLeaderNameF, .newLeaderNameM",
-    ),
-  );
-}
-
-function markTrackedLeaderboardNodes() {
-  const nodes = document.querySelectorAll<HTMLElement>(
-    ".leaderItem, .newLeaderItem, .leaderName, .leaderNameF, .leaderNameM, .newLeaderName, .newLeaderNameF, .newLeaderNameM",
-  );
-
-  for (const node of nodes) {
-    node.setAttribute(colorTraceAttr, "1");
-    trackStyleOwner(node);
-  }
-}
-
-let lastColorTrace = "";
-let lastColorTraceAt = 0;
-
-function traceLeaderboardColorWrite(
-  kind: string,
-  styleDecl: CSSStyleDeclaration,
-  value: string,
-  priority?: string,
-) {
-  const owner = findColorStyleOwner(styleDecl);
-  if (!owner || !isTrackedLeaderboardColorTarget(owner)) return;
-  if (owner.hasAttribute(clanFixAttr)) return;
-
-  const text = owner.textContent?.replace(/\s+/g, " ").trim() ?? "";
-  const signature = [
-    kind,
-    owner.tagName,
-    owner.className,
-    value,
-    priority ?? "",
-    text,
-  ].join("|");
-  const now = Date.now();
-
-  if (signature === lastColorTrace && now - lastColorTraceAt < 250) {
-    if (owner.closest(".leaderNameM, .newLeaderNameM")) queueClanTagFix();
-    return;
-  }
-
-  lastColorTrace = signature;
-  lastColorTraceAt = now;
-
-  console.debug("[badgeSpoof/color]", {
-    kind,
-    value,
-    priority: priority ?? "",
-    tag: owner.tagName,
-    className: owner.className,
-    text,
-    style: owner.getAttribute("style") ?? "",
-  });
-
-  if (owner.closest(".leaderNameM, .newLeaderNameM")) {
-    queueClanTagFix();
-  }
-}
-
-function startLeaderboardColorHook() {
-  if (leaderboardColorHookStarted) return;
-  leaderboardColorHookStarted = true;
-
-  const setProperty = CSSStyleDeclaration.prototype.setProperty;
-  CSSStyleDeclaration.prototype.setProperty = function (name, value, priority) {
-    if (name === "color") {
-      traceLeaderboardColorWrite("setProperty", this, String(value), priority);
-    }
-
-    return setProperty.call(this, name, value, priority);
-  };
-
-  const colorDesc = Object.getOwnPropertyDescriptor(CSSStyleDeclaration.prototype, "color");
-  if (colorDesc?.set || colorDesc?.get) {
-    Object.defineProperty(CSSStyleDeclaration.prototype, "color", {
-      configurable: true,
-      enumerable: colorDesc.enumerable ?? true,
-      get() {
-        return colorDesc.get?.call(this);
-      },
-      set(value: string) {
-        traceLeaderboardColorWrite("setter", this, String(value));
-        colorDesc.set?.call(this, value);
-      },
-    });
-  }
-}
-
 function fixOwnClanTagsInDom() {
   const hideOnEnd = sketchConfig.get("badgeSpoofHideEndScreen") && isOnEndScreen();
   const fakeTag = sketchConfig.get("fakeClanTag").trim();
   const shouldForceTag = sketchConfig.get("fakeClanTagEnabled") && fakeTag.length > 0 && !hideOnEnd;
   const ownNodes = findOwnLeaderboardNameNodes();
   if (!ownNodes.length) return;
-
-  markTrackedLeaderboardNodes();
 
   for (const node of ownNodes) {
     let clanSpan = Array.from(node.querySelectorAll<HTMLSpanElement>("span")).find(
@@ -629,11 +519,9 @@ function fixOwnClanTagsInDom() {
     if (!clanSpan) {
       clanSpan = document.createElement("span");
       clanSpan.setAttribute(clanFixAttr, "1");
-      trackStyleOwner(clanSpan);
       node.appendChild(clanSpan);
     }
 
-    trackStyleOwner(clanSpan);
     clanSpan.textContent = ` [${fakeTag}]`;
     clanSpan.style.setProperty("color", sharedRainbowHexColor, "important");
   }
@@ -678,7 +566,6 @@ function startClanTagObserver() {
 
 export function badgeSpoofHook() {
   startSharedRainbowColorLoop();
-  startLeaderboardColorHook();
   startClanTagObserver();
 
   if (!nameSyncMonitorStarted) {
