@@ -52,7 +52,6 @@ const skyboxSources: Array<[key: string, folder: string, name: string]> = [
   ["jew", "jew", "Jew"],
   ["jew2", "jew2", "Jew2"],
   ["nigga", "nigga", "Nigga"],
-  ["classicRoblox", "339406852_Classic_Roblox_Sky_SKYBOX", "Classic Roblox Sky"],
   [
     "mountainyNight",
     "136465089093652_Mountainy_night_time_skybox",
