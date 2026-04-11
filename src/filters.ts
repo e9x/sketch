@@ -151,25 +151,8 @@ beforeGame.push(() => {
     ogDatabases,
   );
 
-  const { getItem, setItem } = Storage.prototype;
-  Storage.prototype.getItem = mirrorAttributes(function (
-    this: Storage,
-    key: string,
-  ) {
-    // catch fingerprinting crap
-    let value = getItem.call(this, key);
-    //console.log([key, value]);
-    if (key === "conUID_") {
-      // console.log("conUID blocked 👀");
-      value = null;
-    }
-    return value;
-  }, getItem);
+  const { setItem } = Storage.prototype;
 
-  // analytics: collect account name + id
-  /*          (ee = new HI(a, t, null)),
-          saveVal("krunker_id", a),
-          saveVal("krunker_username", t),*/
   let loginFrame: string | undefined;
   Storage.prototype.setItem = mirrorAttributes(function (
     this: Storage,
@@ -188,10 +171,10 @@ beforeGame.push(() => {
     }
 
     // catch fingerprinting crap
-    if (key === "conUID_") {
+    // if (key === "conUID_") {
       // console.log("conUID blocked 👀");
-      return;
-    }
+      // return;
+    // }
 
     setItem.call(this, key, value);
   }, setItem);
