@@ -31,7 +31,6 @@ export function keybindOverlayHook() {
       ];
 
       const overlay = getOverlay();
-      overlay.ctx.save();
       overlay.ctx.scale(overlay.scale, overlay.scale);
 
       const height = overlay.canvas.height / overlay.scale;
@@ -51,8 +50,8 @@ export function keybindOverlayHook() {
       overlay.ctx.fillStyle = "#202020e2";
       overlay.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
 
-      overlay.ctx.translate(boxX + boxPadding / 2, boxY + boxPadding / 2);
-
+      const contentX = boxX + boxPadding / 2;
+      const contentY = boxY + boxPadding / 2;
       const boxInsetWidth = boxWidth - boxPadding;
 
       overlay.ctx.textBaseline = "middle";
@@ -64,28 +63,28 @@ export function keybindOverlayHook() {
         metrics.fontBoundingBoxAscent - metrics.fontBoundingBoxDescent;
 
       for (let i = 0; i < keybinds.length; i++) {
-        // overlay.ctx.fillStyle = i % 2 === 0 ? "#F00" : "#F0F";
-        // overlay.ctx.fillRect(0, 0, boxInsetWidth, keyHeight);
+        const rowY = contentY + i * (keyHeight + keyHeightGap);
 
         overlay.ctx.fillStyle = "#a5a5a5";
 
-        overlay.ctx.fillText(keybinds[i].name, 0, keyHeight / 2 + fontHeight);
+        overlay.ctx.fillText(
+          keybinds[i].name,
+          contentX,
+          rowY + keyHeight / 2 + fontHeight
+        );
 
         const keyName = getKeyName(keybinds[i].key);
-
-        overlay.ctx.save();
         const keyWidth = overlay.ctx.measureText(keyName).width + 20;
-
-        overlay.ctx.translate(boxInsetWidth - keyWidth, 0);
+        const keyX = contentX + boxInsetWidth - keyWidth;
 
         overlay.ctx.fillStyle = "#888";
-        overlay.ctx.fillRect(0, 0, keyWidth, keyHeight);
+        overlay.ctx.fillRect(keyX, rowY, keyWidth, keyHeight);
 
         const border = 2;
         overlay.ctx.fillStyle = "#101010";
         overlay.ctx.fillRect(
-          border,
-          border,
+          keyX + border,
+          rowY + border,
           keyWidth - border * 2,
           keyHeight - border * 2
         );
@@ -94,15 +93,14 @@ export function keybindOverlayHook() {
         overlay.ctx.fillStyle = "#fff";
         overlay.ctx.fillText(
           keyName,
-          keyWidth / 2,
-          (keyHeight - 10) / 2 + fontHeight
+          keyX + keyWidth / 2,
+          rowY + (keyHeight - 10) / 2 + fontHeight
         );
-        overlay.ctx.restore();
-
-        overlay.ctx.translate(0, keyHeight + keyHeightGap);
       }
 
-      overlay.ctx.restore();
+      overlay.ctx.scale(1 / overlay.scale, 1 / overlay.scale);
+      overlay.ctx.textAlign = "left";
+      overlay.ctx.textBaseline = "alphabetic";
     }
   });
 }

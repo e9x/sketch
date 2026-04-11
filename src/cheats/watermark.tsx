@@ -35,7 +35,6 @@ export function watermarkHook() {
       )}`;
 
       const overlay = getOverlay();
-      overlay.ctx.save();
       overlay.ctx.scale(overlay.scale, overlay.scale);
 
       const width = overlay.canvas.width / overlay.scale;
@@ -72,7 +71,11 @@ export function watermarkHook() {
         boxInsetHeight / 2 + fontHeight / 2
       );
 
-      overlay.ctx.restore();
+      // Undo our local transform/state changes without using save/restore.
+      overlay.ctx.translate(-(boxX + boxPadding / 2), -(boxY + boxPadding / 2));
+      overlay.ctx.scale(1 / overlay.scale, 1 / overlay.scale);
+      overlay.ctx.textAlign = "left";
+      overlay.ctx.textBaseline = "alphabetic";
     }
   });
 }
