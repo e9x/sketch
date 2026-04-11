@@ -64,6 +64,11 @@ const skyboxSources: Array<[key: string, folder: string, name: string]> = [
   ["poisonFog", "1864979969_Poison_Fog_Skybox", "Poison Fog Skybox"],
   ["space", "15619750970_Space_Skybox", "Space Skybox"],
   ["purpleNebula", "230057997_Purple_Nebula_Skybox", "Purple Nebula Skybox"],
+  [
+    "cloudAtmospheric",
+    "71056550510292_Cloud_Skybox_Atmospheric_Aesthetic_Pbr_Blur",
+    "Cloud Atmospheric Blur Skybox",
+  ],
 ];
 
 export const skyboxes: Record<string, SketchSkybox> = Object.fromEntries(

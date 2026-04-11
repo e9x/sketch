@@ -15,16 +15,18 @@ import { Text } from "../krunker-ui/components/Text";
 
 const badgeLock = Symbol("badgeLock");
 let monitorStarted = false;
-let rainbowLoopStarted = false;
+let sharedRainbowLoopStarted = false;
 let configWatcherStarted = false;
-let rainbowObserverStarted = false;
-let rainbowRefreshQueued = false;
+let clanTagObserverStarted = false;
+let clanTagRefreshQueued = false;
+let leaderboardColorHookStarted = false;
 let uiRefreshQueued = false;
 let nameSyncMonitorStarted = false;
 const randomSuffix = Math.random().toString(36).slice(2, 10);
-const rainbowMarkerAttr = `data-r_${randomSuffix}`;
-let lastRainbowTag = "";
+const clanFixAttr = `data-cf_${randomSuffix}`;
+const colorTraceAttr = `data-ct_${randomSuffix}`;
 export let sharedRainbowHexColor = "#fb4a4a";
+const trackedStyleOwners = new WeakMap<CSSStyleDeclaration, HTMLElement>();
 
 type AnyObj = Record<PropertyKey, any>;
 const VIP_BADGE_ID = 18;
@@ -445,110 +447,239 @@ function applySpoofsNow() {
   } catch {}
 }
 
-
-function updateRainbowSpanColors() {
+function updateSharedRainbowColor() {
   const now = Date.now();
   const cycleMs = 4800;
   const baseHue = ((now % cycleMs) / cycleMs) * 360;
   sharedRainbowHexColor = hueToSharedRainbowHex(baseHue);
 
-  const spans = document.querySelectorAll<HTMLElement>(
-    `span[${rainbowMarkerAttr}="1"]`,
+  const clanSpans = document.querySelectorAll<HTMLElement>(`span[${clanFixAttr}="1"]`);
+  for (const span of clanSpans) {
+    span.style.setProperty("color", sharedRainbowHexColor, "important");
+  }
+}
+
+function startSharedRainbowColorLoop() {
+  if (sharedRainbowLoopStarted) return;
+  sharedRainbowLoopStarted = true;
+
+  updateSharedRainbowColor();
+  setInterval(updateSharedRainbowColor, 16);
+}
+
+function getLeadingText(node: Element) {
+  for (const child of Array.from(node.childNodes)) {
+    if (child.nodeType !== Node.TEXT_NODE) continue;
+    const value = child.textContent?.replace(/\s+/g, " ").trim();
+    if (value) return value;
+  }
+
+  return "";
+}
+
+function findOwnLeaderboardNameNodes() {
+  const selfNodes = Array.from(
+    document.querySelectorAll<HTMLElement>(".leaderNameM, .newLeaderNameM"),
   );
-  if (!spans.length) return;
+  if (selfNodes.length) return selfNodes;
 
-  for (let i = 0; i < spans.length; i++) {
-    const span = spans[i];
-    const hue = (((now + i * 180) % cycleMs) / cycleMs) * 360;
-    span.style.setProperty("color", `hsl(${hue.toFixed(1)} 96% 62%)`, "important");
+  const resolvedName = getResolvedDisplayName().toLowerCase();
+  if (!resolvedName) return [];
+
+  const candidates = document.querySelectorAll<HTMLElement>(
+    "#leaderContainer .leaderName, #leaderContainer .leaderNameF, #leaderContainer .leaderNameM, #playerListH .newLeaderName, #playerListH .newLeaderNameF, #playerListH .newLeaderNameM",
+  );
+
+  const matched: HTMLElement[] = [];
+  for (const node of candidates) {
+    if (getLeadingText(node).toLowerCase() === resolvedName) {
+      matched.push(node);
+    }
   }
+
+  return matched;
 }
 
-function clearClanRainbowSpans() {
-  const nodes = document.querySelectorAll<HTMLElement>(`[${rainbowMarkerAttr}="1"]`);
+function trackStyleOwner(node: HTMLElement) {
+  trackedStyleOwners.set(node.style, node);
+}
+
+function findColorStyleOwner(styleDecl: CSSStyleDeclaration) {
+  return trackedStyleOwners.get(styleDecl) ?? null;
+}
+
+function isTrackedLeaderboardColorTarget(node: HTMLElement) {
+  if (node.hasAttribute(colorTraceAttr)) return true;
+
+  return Boolean(
+    node.closest(
+      ".leaderItem, .newLeaderItem, .leaderName, .leaderNameF, .leaderNameM, .newLeaderName, .newLeaderNameF, .newLeaderNameM",
+    ),
+  );
+}
+
+function markTrackedLeaderboardNodes() {
+  const nodes = document.querySelectorAll<HTMLElement>(
+    ".leaderItem, .newLeaderItem, .leaderName, .leaderNameF, .leaderNameM, .newLeaderName, .newLeaderNameF, .newLeaderNameM",
+  );
+
   for (const node of nodes) {
-    const origColor = node.dataset.rbOrigColor ?? "";
-    node.style.removeProperty("color");
-    if (origColor) node.style.setProperty("color", origColor);
-    delete node.dataset.rbOrigColor;
-    node.removeAttribute(rainbowMarkerAttr);
+    node.setAttribute(colorTraceAttr, "1");
+    trackStyleOwner(node);
   }
 }
 
-function updateRainbowBadges() {
-  const enabled = sketchConfig.get("badgeRainbow") && sketchConfig.get("fakeClanTagEnabled");
-  const fakeTag = sketchConfig.get("fakeClanTag").trim();
+let lastColorTrace = "";
+let lastColorTraceAt = 0;
 
-  if (!enabled || !fakeTag || (sketchConfig.get("badgeSpoofHideEndScreen") && isOnEndScreen())) {
-    clearClanRainbowSpans();
-    lastRainbowTag = "";
+function traceLeaderboardColorWrite(
+  kind: string,
+  styleDecl: CSSStyleDeclaration,
+  value: string,
+  priority?: string,
+) {
+  const owner = findColorStyleOwner(styleDecl);
+  if (!owner || !isTrackedLeaderboardColorTarget(owner)) return;
+  if (owner.hasAttribute(clanFixAttr)) return;
+
+  const text = owner.textContent?.replace(/\s+/g, " ").trim() ?? "";
+  const signature = [
+    kind,
+    owner.tagName,
+    owner.className,
+    value,
+    priority ?? "",
+    text,
+  ].join("|");
+  const now = Date.now();
+
+  if (signature === lastColorTrace && now - lastColorTraceAt < 250) {
+    if (owner.closest(".leaderNameM, .newLeaderNameM")) queueClanTagFix();
     return;
   }
 
-  if (lastRainbowTag && lastRainbowTag.toLowerCase() !== fakeTag.toLowerCase()) {
-    clearClanRainbowSpans();
-  }
-  lastRainbowTag = fakeTag;
+  lastColorTrace = signature;
+  lastColorTraceAt = now;
 
-  // The game renders clan tags as: <span style='color:CLANCOLOR'> [CLAN]</span>
-  // For players in a real clan, CLANCOLOR may be gold (#FBC02D) for known clans.
-  // Tag the game's existing wrapper span directly so updateRainbowSpanColors can
-  // apply !important color to it — no child-span injection, no CSS inheritance fight.
-  const expectedText = `[${fakeTag}]`;
-  const allSpans = document.querySelectorAll<HTMLElement>('span[style*="color"]');
-  for (const span of allSpans) {
-    if (span.textContent?.trim() === expectedText && !span.hasAttribute(rainbowMarkerAttr)) {
-      span.dataset.rbOrigColor = span.style.getPropertyValue("color");
-      span.setAttribute(rainbowMarkerAttr, "1");
-    }
+  console.debug("[badgeSpoof/color]", {
+    kind,
+    value,
+    priority: priority ?? "",
+    tag: owner.tagName,
+    className: owner.className,
+    text,
+    style: owner.getAttribute("style") ?? "",
+  });
+
+  if (owner.closest(".leaderNameM, .newLeaderNameM")) {
+    queueClanTagFix();
   }
 }
 
-function queueRainbowRefresh() {
-  if (rainbowRefreshQueued) return;
-  rainbowRefreshQueued = true;
+function startLeaderboardColorHook() {
+  if (leaderboardColorHookStarted) return;
+  leaderboardColorHookStarted = true;
+
+  const setProperty = CSSStyleDeclaration.prototype.setProperty;
+  CSSStyleDeclaration.prototype.setProperty = function (name, value, priority) {
+    if (name === "color") {
+      traceLeaderboardColorWrite("setProperty", this, String(value), priority);
+    }
+
+    return setProperty.call(this, name, value, priority);
+  };
+
+  const colorDesc = Object.getOwnPropertyDescriptor(CSSStyleDeclaration.prototype, "color");
+  if (colorDesc?.set || colorDesc?.get) {
+    Object.defineProperty(CSSStyleDeclaration.prototype, "color", {
+      configurable: true,
+      enumerable: colorDesc.enumerable ?? true,
+      get() {
+        return colorDesc.get?.call(this);
+      },
+      set(value: string) {
+        traceLeaderboardColorWrite("setter", this, String(value));
+        colorDesc.set?.call(this, value);
+      },
+    });
+  }
+}
+
+function fixOwnClanTagsInDom() {
+  const hideOnEnd = sketchConfig.get("badgeSpoofHideEndScreen") && isOnEndScreen();
+  const fakeTag = sketchConfig.get("fakeClanTag").trim();
+  const shouldForceTag = sketchConfig.get("fakeClanTagEnabled") && fakeTag.length > 0 && !hideOnEnd;
+  const ownNodes = findOwnLeaderboardNameNodes();
+  if (!ownNodes.length) return;
+
+  markTrackedLeaderboardNodes();
+
+  for (const node of ownNodes) {
+    let clanSpan = Array.from(node.querySelectorAll<HTMLSpanElement>("span")).find(
+      (span) =>
+        span.hasAttribute(clanFixAttr) ||
+        /\[[^\]]+\]/.test(span.textContent ?? ""),
+    );
+
+    if (!shouldForceTag) {
+      if (clanSpan?.hasAttribute(clanFixAttr)) clanSpan.remove();
+      continue;
+    }
+
+    if (!clanSpan) {
+      clanSpan = document.createElement("span");
+      clanSpan.setAttribute(clanFixAttr, "1");
+      trackStyleOwner(clanSpan);
+      node.appendChild(clanSpan);
+    }
+
+    trackStyleOwner(clanSpan);
+    clanSpan.textContent = ` [${fakeTag}]`;
+    clanSpan.style.setProperty("color", sharedRainbowHexColor, "important");
+  }
+}
+
+function queueClanTagFix() {
+  if (clanTagRefreshQueued) return;
+  clanTagRefreshQueued = true;
 
   requestAnimationFrame(() => {
-    rainbowRefreshQueued = false;
-    updateRainbowBadges();
-    updateRainbowSpanColors();
+    clanTagRefreshQueued = false;
+    fixOwnClanTagsInDom();
   });
 }
 
-function startRainbowObserver() {
-  if (rainbowObserverStarted) return;
-  rainbowObserverStarted = true;
+function startClanTagObserver() {
+  if (clanTagObserverStarted) return;
+  clanTagObserverStarted = true;
 
-  const root = document.body || document.documentElement;
+  const root =
+    document.getElementById("topRight") ||
+    document.getElementById("leaderboardHolder") ||
+    document.getElementById("playerListH") ||
+    document.body ||
+    document.documentElement;
   if (!root) return;
 
   const observer = new MutationObserver(() => {
-    queueRainbowRefresh();
+    queueClanTagFix();
   });
 
   observer.observe(root, {
     childList: true,
     subtree: true,
     characterData: true,
+    attributes: true,
+    attributeFilter: ["class", "style"],
   });
-}
 
-function startRainbowLoop() {
-  if (rainbowLoopStarted) return;
-  rainbowLoopStarted = true;
-
-  startRainbowObserver();
-  queueRainbowRefresh();
-
-  // Only update colors in the interval (cheap CSS). DOM restructuring is handled
-  // by the MutationObserver so it only runs when content actually changes.
-  setInterval(() => {
-    updateRainbowSpanColors();
-  }, 16);
+  queueClanTagFix();
 }
 
 export function badgeSpoofHook() {
-  startRainbowLoop();
+  startSharedRainbowColorLoop();
+  startLeaderboardColorHook();
+  startClanTagObserver();
 
   if (!nameSyncMonitorStarted) {
     nameSyncMonitorStarted = true;
@@ -563,6 +694,7 @@ export function badgeSpoofHook() {
     sketchConfig.configTarget.addEventListener("change", () => {
       applySpoofsNow();
       refreshGameUI();
+      queueClanTagFix();
     });
   }
 
@@ -598,10 +730,12 @@ export function badgeSpoofHook() {
     installLocks(player);
     forceApplySpoofs(player);
     syncDisplayNameUI();
+    queueClanTagFix();
   });
 
   // Apply once right away so toggles/text changes are reflected without waiting for game updates.
   applySpoofsNow();
+  queueClanTagFix();
 }
 
 export function BadgeSpoofMenu() {
@@ -611,7 +745,6 @@ export function BadgeSpoofMenu() {
   const [badgeSpoofHideEndScreen, setBadgeSpoofHideEndScreen] = useSketchConfig(
     "badgeSpoofHideEndScreen",
   );
-  const [badgeRainbow, setBadgeRainbow] = useSketchConfig("badgeRainbow");
   const [fakeClanTagEnabled, setFakeClanTagEnabled] = useSketchConfig(
     "fakeClanTagEnabled",
   );
@@ -646,15 +779,6 @@ export function BadgeSpoofMenu() {
         defaultChecked={badgeSpoofHideEndScreen}
         onChange={(event) => {
           setBadgeSpoofHideEndScreen(event.currentTarget.checked);
-          applySpoofsNow();
-        }}
-      />
-      <Switch
-        title="Rainbow Clan Tag"
-        description="Cycles your clan tag text color through RGB"
-        defaultChecked={badgeRainbow}
-        onChange={(event) => {
-          setBadgeRainbow(event.currentTarget.checked);
           applySpoofsNow();
         }}
       />
