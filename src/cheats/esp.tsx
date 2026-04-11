@@ -367,6 +367,7 @@ export function espHook() {
     const healthBars = sketchConfig.get("healthBars");
     const newNametags = sketchConfig.get("newNametags");
     const tracers = sketchConfig.get("tracers");
+    const tracerThickness = sketchConfig.get("tracerThickness");
 
     // const { globalAlpha } = overlay.ctx;
     const willRender = tracers || newNametags || boxes || healthBars;
@@ -421,7 +422,7 @@ export function espHook() {
         }
 
         overlay.ctx.strokeStyle = entityColor;
-        overlay.ctx.lineWidth = 1.5;
+        overlay.ctx.lineWidth = tracerThickness;
 
         overlay.ctx.globalAlpha = overlayOpacity;
         overlay.ctx.beginPath();
@@ -524,6 +525,7 @@ export function ESPMenu() {
   const [overlayOpacity, setOverlayOpacity] = useSketchConfig("overlayOpacity");
   const [chamsOpacity, setChamsOpacity] = useSketchConfig("chamsOpacity");
   const [tracers, setTracers] = useSketchConfig("tracers");
+  const [tracerThickness, setTracerThickness] = useSketchConfig("tracerThickness");
   const [healthBars, setHealthBars] = useSketchConfig("healthBars");
   const [badColor, setBadColor] = useSketchConfig("badColor");
   const [goodColor, setGoodColor] = useSketchConfig("goodColor");
@@ -575,6 +577,17 @@ export function ESPMenu() {
         description="Draws a line between your camera and other players"
         defaultChecked={tracers}
         onChange={(event) => setTracers(event.currentTarget.checked)}
+      />
+      <Slider
+        title="Tracer Thickness"
+        description="Line width for tracer ESP"
+        defaultValue={tracerThickness}
+        onChange={(event) =>
+          setTracerThickness(event.currentTarget.valueAsNumber)
+        }
+        min={0.5}
+        max={6}
+        step={0.1}
       />
       <Switch
         title="Health Bars"

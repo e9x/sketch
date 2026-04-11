@@ -89,6 +89,7 @@ export interface SketchConfig {
   overlayOpacity: number;
   chamsOpacity: number;
   tracers: boolean;
+  tracerThickness: number;
   forceAuto: boolean;
   recoilControl: boolean;
   recoilControlKey: number;
@@ -182,6 +183,7 @@ const defaultConfig: SketchConfig = {
   overlayOpacity: 1,
   chamsOpacity: 0.6,
   tracers: false,
+  tracerThickness: 1.5,
   forceAuto: false,
   recoilControl: false,
   recoilControlKey: -1,
