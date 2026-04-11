@@ -6,6 +6,8 @@ export interface MigrationConfig {
   bingMigrated: boolean;
   fsMigrated: boolean;
   gmMigrated: boolean;
+  idbToGmMigrated: boolean;
+  idbTokenToGmMigrated: boolean;
 }
 
 const defaultConfig: MigrationConfig = {
@@ -13,6 +15,8 @@ const defaultConfig: MigrationConfig = {
   bingMigrated: false,
   fsMigrated: false,
   gmMigrated: false,
+  idbToGmMigrated: false,
+  idbTokenToGmMigrated: false,
 };
 
 const migrationConfig = new Config<MigrationConfig>(defaultConfig, getStorage());

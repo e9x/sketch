@@ -164,6 +164,10 @@ export declare class Player {
   id: number;
   sid: number;
   premiumT?: number;
+  featured?: number;
+  emailVerified?: boolean;
+  pType?: number;
+  badges?: number[];
   alias: string;
   name: string;
   fakeName: string | null;

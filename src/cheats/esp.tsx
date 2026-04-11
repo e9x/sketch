@@ -185,10 +185,6 @@ function initMaterials() {
   const genericMesh = () =>
     new game.THREE.MeshBasicMaterial({
       transparent: true,
-      blending: game.THREE.CustomBlending,
-      blendEquation: game.THREE.MaxEquation,
-      blendSrc: game.THREE.SrcAlphaFactor,
-      blendDst: game.THREE.OneMinusSrcAlphaFactor,
       fog: false,
       depthTest: false,
       depthWrite: false,
@@ -348,15 +344,7 @@ export function espHook() {
           const twin = mesh.clone(false);
           mesh.parent!.add(twin);
           twin[hook] = true;
-
-          // Draw nearest cham fragments first so shared stencil keeps the visible layer stable.
-          const renderOrderPos = new game.THREE.Vector3();
-          Object.defineProperty(twin, "renderOrder", {
-            get: () => {
-              mesh.getWorldPosition(renderOrderPos);
-              return 10000 + render.camera.position.distanceToSquared(renderOrderPos);
-            },
-          });
+          twin.renderOrder = 10000;
 
           twin.matrixAutoUpdate = false;
           twin.matrixWorldAutoUpdate = false;
@@ -430,6 +418,12 @@ export function espHook() {
 
       const entityColor =
         "#" + getEntityMaterial(entity, materials.colors).getHexString();
+      const entityOutlineColor =
+        "#" +
+        getEntityMaterial(entity, materials.colors)
+          .clone()
+          .multiplyScalar(sketchConfig.get("espWallDarkness"))
+          .getHexString();
 
       if (tracers) {
         let tracerPoint: THREE.Vector2;
@@ -500,6 +494,12 @@ export function espHook() {
 
       if (boxes) {
         overlay.ctx.globalAlpha = overlayOpacity;
+
+        // Draw a darker outer stroke first so box outlines follow wall-darkness tuning.
+        overlay.ctx.strokeStyle = entityOutlineColor;
+        overlay.ctx.lineWidth = 3;
+        overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);
+
         overlay.ctx.strokeStyle = entityColor;
         overlay.ctx.lineWidth = 1.5;
         overlay.ctx.strokeRect(box.left, box.top, box.width, box.height);

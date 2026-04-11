@@ -94,6 +94,67 @@ function setterFunc(obj: any, key: string, value?: any) {
   return obj[split[split.length - 1]];
 }
 
+// Account packet indexes used by setData() in current game build.
+const ACCOUNT_CLAN_INDEX = 7;
+const ACCOUNT_FEATURED_INDEX = 9;
+const ACCOUNT_EMAIL_VERIFIED_INDEX = 43;
+
+// Player list packet indexes (packet "0") for local player chunk.
+const PLAYER_NAME_INDEX = 5;
+const PLAYER_CLAN_INDEX = 11;
+const PLAYER_FEATURED_INDEX = 25;
+
+function applyLocalAccountSpoofs(data: any) {
+  if (!Array.isArray(data)) return;
+
+  if (sketchConfig.get("fakeClanTagEnabled")) {
+    const tag = sketchConfig.get("fakeClanTag").trim();
+    if (tag) data[ACCOUNT_CLAN_INDEX] = tag;
+  }
+
+  if (!sketchConfig.get("badgeSpoofVerified")) return;
+
+  data[ACCOUNT_FEATURED_INDEX] = 1;
+  data[ACCOUNT_EMAIL_VERIFIED_INDEX] = true;
+}
+
+function getSpoofDisplayName(): string {
+  if (!sketchConfig.get("displayNameSpoofEnabled")) return "";
+  return sketchConfig.get("displayNameSpoof").trim();
+}
+
+function applyLocalPlayerListSpoofs(packet: any) {
+  if (packet?.[0] !== "0" || !packet?.[1] || !username) return;
+
+  const allPlayers = packet[1];
+  if (!Array.isArray(allPlayers) || allPlayers.length % PLAYER_LEN !== 0) return;
+
+  const fakeClanEnabled = sketchConfig.get("fakeClanTagEnabled");
+  const fakeClanTag = sketchConfig.get("fakeClanTag").trim();
+  const verified = sketchConfig.get("badgeSpoofVerified");
+  const spoofName = getSpoofDisplayName();
+
+  for (let i = 0; i < allPlayers.length; i += PLAYER_LEN) {
+    const playerChunk = allPlayers.slice(i, i + PLAYER_LEN);
+    if (playerChunk[PLAYER_NAME_INDEX] !== username) continue;
+
+    if (fakeClanEnabled && fakeClanTag) {
+      playerChunk[PLAYER_CLAN_INDEX] = fakeClanTag;
+    }
+
+    if (verified) {
+      playerChunk[PLAYER_FEATURED_INDEX] = 1;
+    }
+
+    if (spoofName) {
+      playerChunk[PLAYER_NAME_INDEX] = spoofName;
+    }
+
+    allPlayers.splice(i, PLAYER_LEN, ...playerChunk);
+    break;
+  }
+}
+
 function onMessage(packet: any) {
   // intercept anti-cheat packets
   if (packet?.[0] === "cc") {
@@ -188,12 +249,28 @@ function onMessage(packet: any) {
     }
   }
 
+  // Keep username fresh regardless of skinHack so other spoof paths can target local chunks.
+  if (packet?.[0] === "a" || packet?.[0] === "ua") {
+    const isUpdateAccount = packet[0] === "ua";
+    if (!isUpdateAccount && typeof packet[3] === "string") {
+      username = packet[3];
+
+      const spoofName = getSpoofDisplayName();
+      if (spoofName) packet[3] = spoofName;
+    }
+
+    const data = packet[isUpdateAccount ? 1 : 4];
+    applyLocalAccountSpoofs(data);
+  }
+
+  // Rewrite local fields in player list updates even when skinHack is disabled.
+  applyLocalPlayerListSpoofs(packet);
+
   // skin hack: spoof inventory + player skin data
   if (!sketchConfig.get("skinHack")) return packet;
 
   const isUpdateAccount = packet?.[0] === "ua";
   if (packet?.[0] === "a" || isUpdateAccount) {
-    if (!isUpdateAccount) username = packet[3];
     const data = packet[isUpdateAccount ? 1 : 4];
     if (data?.[10]) {
       ownedIDs = data[10].map((x: any) => x.ind);
@@ -207,10 +284,13 @@ function onMessage(packet: any) {
 
   if (packet?.[0] === "0" && packet?.[1]) {
     const allPlayers = packet[1];
+    const spoofName = getSpoofDisplayName();
     if (allPlayers.length % PLAYER_LEN === 0) {
       for (let i = 0; i < allPlayers.length; i += PLAYER_LEN) {
         const playerChunk = allPlayers.slice(i, i + PLAYER_LEN);
-        if (playerChunk[5] === username) {
+        const isLocalPlayer =
+          playerChunk[5] === username || (spoofName && playerChunk[5] === spoofName);
+        if (isLocalPlayer) {
           for (const k in savedIndexes) {
             const mapping = INDEX_MAP.find((x) => x[0] === k)?.[1] || "";
             if (mapping) setterFunc(playerChunk, mapping, savedIndexes[k]);

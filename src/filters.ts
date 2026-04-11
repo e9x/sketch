@@ -92,6 +92,7 @@ patches.io = [
 ];
 
 const fr = Object.freeze;
+const dp = Object.defineProperty;
 data.object = Object.create(Object);
 data.object.freeze = mirrorAttributes(
   function freeze(o: any) {
@@ -101,6 +102,29 @@ data.object.freeze = mirrorAttributes(
     return fr(o);
   } as typeof Object.freeze,
   fr,
+);
+
+data.object.defineProperty = mirrorAttributes(
+  function definePropertyHook(o: any, k: string, a: PropertyDescriptor) {
+    if (k === "inventory" && typeof o === "object" && o !== null && o.id === -1) {
+      defineProperty(o, "init", {
+        configurable: true,
+        set: (init) => {
+          delete (o as any).init;
+          (o as any).init = function (...args: any[]) {
+            const menuSig = [0, 0, 0, "preview", false];
+            if (menuSig.every((v, i) => args[i] === v)) {
+              menuPlayer = o as Player;
+            }
+            return init.call(this, ...args);
+          };
+        },
+      });
+    }
+
+    return dp(o, k, a);
+  } as typeof Object.defineProperty,
+  dp,
 );
 
 patches.freeze = [/Object\[/g, () => `${dataArg}.object[`];
@@ -509,6 +533,7 @@ export function getLocalPlayer() {
 }
 
 export const onGameHooks: (() => void)[] = [];
+export const onPlayerAddHooks: ((player: Player) => void)[] = [];
 
 let sprayingFakeServer = false;
 
@@ -596,6 +621,8 @@ function doGameHooks() {
       const player = add.call(this, ...args);
 
       if (player.isYou) localPlayer = player;
+
+      for (const hook of onPlayerAddHooks) hook(player);
 
       return player;
     } as typeof add,
@@ -687,11 +714,11 @@ beforeGame.push(() => {
  * and it's not the localPlayer
  * menuPlayer can be undefined when the player isn't signed in
  */
-// let menuPlayer: Player | undefined;
+let menuPlayer: Player | undefined;
 
-// export function getMenuPlayer() {
-//   return menuPlayer;
-// }
+export function getMenuPlayer() {
+  return menuPlayer;
+}
 
 // hook helper func that returns the list of skins that the target plr has
 // function helper(player, unkown)
@@ -790,7 +817,7 @@ if (isDevelopment) {
     getGame,
     getRender,
     getLocalPlayer,
-    // getMenuPlayer,
+    getMenuPlayer,
     getOverlay,
     getConfig,
     getGameConfig,

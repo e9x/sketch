@@ -51,6 +51,7 @@ export class FSJSONStorage implements JSONStorage {
 }
 
 const hasDel = typeof GM_deleteValue === "function";
+const hasList = typeof GM_listValues === "function";
 export class GMJSONStorage implements JSONStorage {
   setValue(name: string, value: any): void {
     GM_setValue(name, value);
@@ -63,7 +64,7 @@ export class GMJSONStorage implements JSONStorage {
     else GM_setValue(name, undefined);
   }
   listValues(): string[] {
-    return GM_listValues();
+    return hasList ? GM_listValues() : [];
   }
 }
 

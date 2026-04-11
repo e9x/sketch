@@ -1,5 +1,6 @@
 import { AdblockMenu } from "../cheats/adblock";
 import { AimbotMenu } from "../cheats/aimbot";
+import { BadgeSpoofMenu } from "../cheats/badgeSpoof";
 import { BhopMenu } from "../cheats/bhop";
 import { ESPMenu } from "../cheats/esp";
 import { KeybindOverlayMenu } from "../cheats/keybindOverlay";
@@ -264,6 +265,7 @@ const tabs: Tab[] = [
         <>
           <HeadlessSet>
             <SkinHackMenu />
+            <BadgeSpoofMenu />
             <Switch
               title="Disable ADS FOV multiplier"
               defaultChecked={noAdsFovMlt}

@@ -31,14 +31,15 @@ try {
   isNode = false;
 }
 
-const hasGM = typeof GM_info !== "undefined";
+const hasGM =
+  typeof GM_getValue === "function" && typeof GM_setValue === "function";
 
 function createStorage(): JSONStorage {
-  if (hasGM) return new GMJSONStorage();
   if (isNode)
     return new FSJSONStorage(
       require("path").join(require("os").homedir(), ".photoshop.sketch"),
     );
+  if (hasGM) return new GMJSONStorage();
   return new IDBJSONStorage("_appCache");
 }
 

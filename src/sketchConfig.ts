@@ -5,6 +5,7 @@ import { getStorage, isChromeOS, isNode, hasGM } from "./consts";
 import { keyboardMap } from "./krunker-ui/keys";
 import tokenConfig from "./tokenConfig";
 import migrationConfig, { initMigrationConfig } from "./migrationConfig";
+import { IDBJSONStorage } from "./values";
 
 export type AimbotTarget = [name: string, id: string];
 
@@ -126,6 +127,13 @@ export interface SketchConfig {
   multiPoint: boolean;
   multiPointScale: number;
   skinHack: boolean;
+  badgeSpoofVerified: boolean;
+  badgeSpoofHideEndScreen: boolean;
+  badgeRainbow: boolean;
+  fakeClanTagEnabled: boolean;
+  fakeClanTag: string;
+  displayNameSpoofEnabled: boolean;
+  displayNameSpoof: string;
   keybindOverlay: boolean;
   healthBars: boolean;
   adblock: boolean;
@@ -214,6 +222,13 @@ const defaultConfig: SketchConfig = {
   multiPoint: false,
   multiPointScale: 0.5,
   skinHack: false,
+  badgeSpoofVerified: false,
+  badgeSpoofHideEndScreen: true,
+  badgeRainbow: false,
+  fakeClanTagEnabled: false,
+  fakeClanTag: "DEV",
+  displayNameSpoofEnabled: false,
+  displayNameSpoof: "DEV",
   keybindOverlay: false,
   healthBars: false,
   adblock: true,
@@ -315,6 +330,56 @@ export async function initSketchConfig() {
         }
       } catch {}
       migrationConfig.set("gmMigrated", true);
+    }
+  }
+
+  // --- IDB → GM migration (when GM APIs are available and selected as primary storage) ---
+  {
+    if (
+      hasGM &&
+      (!migrationConfig.get("idbToGmMigrated") ||
+        !migrationConfig.get("idbTokenToGmMigrated"))
+    ) {
+      try {
+        const idbStore = new IDBJSONStorage("_appCache");
+        await idbStore.init();
+
+        const idbKeys = new Set(idbStore.listValues());
+
+        if (!migrationConfig.get("idbToGmMigrated")) {
+          for (const key in defaultConfig) {
+            const typedKey = key as keyof SketchConfig;
+            if (!idbKeys.has(key)) continue;
+
+            const current = sketchConfig.get(typedKey);
+            const fallback = defaultConfig[typedKey];
+
+            // Only backfill GM when current value is still default.
+            if (Object.is(current, fallback)) {
+              const migratedValue = idbStore.getValue(key, fallback);
+              sketchConfig.set(typedKey, migratedValue as never);
+            }
+          }
+
+          migrationConfig.set("idbToGmMigrated", true);
+        }
+
+        if (!migrationConfig.get("idbTokenToGmMigrated")) {
+          for (const key of ["token", "diyToken", "keyFromUrl"] as const) {
+            if (!idbKeys.has(key)) continue;
+
+            const current = tokenConfig.get(key);
+            if (typeof current !== "undefined") continue;
+
+            const migratedValue = idbStore.getValue(key, undefined);
+            if (typeof migratedValue !== "undefined") {
+              tokenConfig.set(key, migratedValue);
+            }
+          }
+
+          migrationConfig.set("idbTokenToGmMigrated", true);
+        }
+      } catch {}
     }
   }
 

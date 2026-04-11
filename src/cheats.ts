@@ -1,5 +1,6 @@
 import { adblockHook } from "./cheats/adblock";
 import { aimbotHook } from "./cheats/aimbot";
+import { badgeSpoofHook } from "./cheats/badgeSpoof";
 import { bhopHook } from "./cheats/bhop";
 import { espHook } from "./cheats/esp";
 import { forceAutoHook } from "./cheats/forceAuto";
@@ -17,6 +18,7 @@ aimbotHook();
 espHook();
 recoilControlHook();
 forceAutoHook();
+badgeSpoofHook();
 skinHackHook();
 keybindOverlayHook();
 adblockHook();
