@@ -287,6 +287,21 @@ const hook = Symbol();
 const CHAM_STENCIL_REF = 0x7f;
 let lastChamStencilClearFrame = -1;
 
+function getPropertyDescriptor(
+  target: object,
+  key: PropertyKey
+): PropertyDescriptor | undefined {
+  let current: object | null = target;
+
+  while (current) {
+    const descriptor = Object.getOwnPropertyDescriptor(current, key);
+    if (descriptor) return descriptor;
+    current = Object.getPrototypeOf(current);
+  }
+
+  return undefined;
+}
+
 declare module "three" {
   interface Mesh {
     [hook]?: boolean;
@@ -325,11 +340,27 @@ export function espHook() {
         if (!(hook in entity.objInstances)) {
           entity.objInstances[hook] = true;
 
-          let { visible } = entity.objInstances;
+          const visibleDescriptor = getPropertyDescriptor(
+            entity.objInstances,
+            "visible"
+          );
+          let fallbackVisible = entity.objInstances.visible;
 
           Object.defineProperty(entity.objInstances, "visible", {
-            get: () => espMat in entity || visible,
-            set: (newVisible) => (visible = newVisible),
+            configurable: true,
+            get: () => {
+              if (espMat in entity) return true;
+              if (visibleDescriptor?.get)
+                return visibleDescriptor.get.call(entity.objInstances);
+              return fallbackVisible;
+            },
+            set: (newVisible) => {
+              if (visibleDescriptor?.set) {
+                visibleDescriptor.set.call(entity.objInstances, newVisible);
+              } else {
+                fallbackVisible = newVisible;
+              }
+            },
           });
         }
 

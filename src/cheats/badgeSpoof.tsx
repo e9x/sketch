@@ -80,15 +80,14 @@ function defineSpoofedProperty(
 
 function installLocks(player: Player) {
   const p = player as AnyObj;
+  const hideOnEndScreen = () => sketchConfig.get("badgeSpoofHideEndScreen") && isOnEndScreen();
   const fakeClanEnabled = () => sketchConfig.get("fakeClanTagEnabled");
   const fakeClanValue = () => sketchConfig.get("fakeClanTag").trim();
-  const fakeClanActive = () => fakeClanEnabled() && fakeClanValue().length > 0;
+  const fakeClanActive = () => fakeClanEnabled() && fakeClanValue().length > 0 && !hideOnEndScreen();
   const fakeNameEnabled = () => sketchConfig.get("displayNameSpoofEnabled");
   const fakeNameValue = () => sketchConfig.get("displayNameSpoof").trim();
-  const fakeNameActive = () => fakeNameEnabled() && fakeNameValue().length > 0;
-  const verifiedActive = () =>
-    sketchConfig.get("badgeSpoofVerified") &&
-    !(sketchConfig.get("badgeSpoofHideEndScreen") && isOnEndScreen());
+  const fakeNameActive = () => fakeNameEnabled() && fakeNameValue().length > 0 && !hideOnEndScreen();
+  const verifiedActive = () => sketchConfig.get("badgeSpoofVerified") && !hideOnEndScreen();
 
   if (!p[badgeLock]) {
     p[badgeLock] = true;
@@ -162,8 +161,9 @@ function installLocks(player: Player) {
 
 function forceApplySpoofs(player: Player) {
   const account = (player as AnyObj).account as AnyObj | undefined;
+  const onEnd = sketchConfig.get("badgeSpoofHideEndScreen") && isOnEndScreen();
 
-  if (sketchConfig.get("badgeSpoofVerified") && !(sketchConfig.get("badgeSpoofHideEndScreen") && isOnEndScreen())) {
+  if (sketchConfig.get("badgeSpoofVerified") && !onEnd) {
     (player as AnyObj).featured = 1;
     (player as AnyObj).emailVerified = true;
     if (account) {
@@ -172,7 +172,7 @@ function forceApplySpoofs(player: Player) {
     }
   }
 
-  if (sketchConfig.get("fakeClanTagEnabled")) {
+  if (sketchConfig.get("fakeClanTagEnabled") && !onEnd) {
     const tag = sketchConfig.get("fakeClanTag").trim();
     if (tag) {
       (player as AnyObj).clan = tag;
@@ -180,7 +180,7 @@ function forceApplySpoofs(player: Player) {
     }
   }
 
-  if (sketchConfig.get("displayNameSpoofEnabled")) {
+  if (sketchConfig.get("displayNameSpoofEnabled") && !onEnd) {
     const displayName = sketchConfig.get("displayNameSpoof").trim();
     if (displayName) {
       (player as AnyObj).name = displayName;
@@ -225,9 +225,6 @@ function applySpoofsNow() {
   } catch {}
 }
 
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 function updateRainbowSpanColors() {
   const spans = document.querySelectorAll<HTMLElement>(
@@ -246,18 +243,21 @@ function updateRainbowSpanColors() {
 }
 
 function clearClanRainbowSpans() {
-  const nodes = document.querySelectorAll(`span[${rainbowMarkerAttr}="1"]`);
+  const nodes = document.querySelectorAll<HTMLElement>(`[${rainbowMarkerAttr}="1"]`);
   for (const node of nodes) {
-    const text = document.createTextNode(node.textContent || "");
-    node.replaceWith(text);
+    const origColor = node.dataset.rbOrigColor ?? "";
+    node.style.removeProperty("color");
+    if (origColor) node.style.setProperty("color", origColor);
+    delete node.dataset.rbOrigColor;
+    node.removeAttribute(rainbowMarkerAttr);
   }
 }
 
 function updateRainbowBadges() {
-  const enabled = sketchConfig.get("badgeRainbow");
+  const enabled = sketchConfig.get("badgeRainbow") && sketchConfig.get("fakeClanTagEnabled");
   const fakeTag = sketchConfig.get("fakeClanTag").trim();
 
-  if (!enabled || !fakeTag) {
+  if (!enabled || !fakeTag || (sketchConfig.get("badgeSpoofHideEndScreen") && isOnEndScreen())) {
     clearClanRainbowSpans();
     lastRainbowTag = "";
     return;
@@ -268,58 +268,17 @@ function updateRainbowBadges() {
   }
   lastRainbowTag = fakeTag;
 
-  const root = document.body || document.documentElement;
-  if (!root) return;
-
-  const tagPattern = new RegExp(`\\[${escapeRegExp(fakeTag)}\\]`, "gi");
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  const textNodes: Text[] = [];
-
-  let node = walker.nextNode();
-  while (node) {
-    const textNode = node as Text;
-    const parent = textNode.parentElement;
-    const text = textNode.nodeValue || "";
-
-    if (
-      parent &&
-      !parent.closest(`[${rainbowMarkerAttr}="1"]`) &&
-      parent.tagName !== "SCRIPT" &&
-      parent.tagName !== "STYLE" &&
-      tagPattern.test(text)
-    ) {
-      textNodes.push(textNode);
-    }
-
-    tagPattern.lastIndex = 0;
-    node = walker.nextNode();
-  }
-
-  for (const textNode of textNodes) {
-    const text = textNode.nodeValue || "";
-    const fragment = document.createDocumentFragment();
-    let lastIndex = 0;
-
-    text.replace(tagPattern, (match, offset: number) => {
-      if (offset > lastIndex) {
-        fragment.appendChild(document.createTextNode(text.slice(lastIndex, offset)));
-      }
-
-      const span = document.createElement("span");
+  // The game renders clan tags as: <span style='color:CLANCOLOR'> [CLAN]</span>
+  // For players in a real clan, CLANCOLOR may be gold (#FBC02D) for known clans.
+  // Tag the game's existing wrapper span directly so updateRainbowSpanColors can
+  // apply !important color to it — no child-span injection, no CSS inheritance fight.
+  const expectedText = `[${fakeTag}]`;
+  const allSpans = document.querySelectorAll<HTMLElement>('span[style*="color"]');
+  for (const span of allSpans) {
+    if (span.textContent?.trim() === expectedText && !span.hasAttribute(rainbowMarkerAttr)) {
+      span.dataset.rbOrigColor = span.style.getPropertyValue("color");
       span.setAttribute(rainbowMarkerAttr, "1");
-      span.style.display = "inline-block";
-      span.textContent = match;
-      fragment.appendChild(span);
-
-      lastIndex = offset + match.length;
-      return match;
-    });
-
-    if (lastIndex < text.length) {
-      fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
     }
-
-    textNode.replaceWith(fragment);
   }
 }
 
@@ -359,8 +318,9 @@ function startRainbowLoop() {
   startRainbowObserver();
   queueRainbowRefresh();
 
+  // Only update colors in the interval (cheap CSS). DOM restructuring is handled
+  // by the MutationObserver so it only runs when content actually changes.
   setInterval(() => {
-    queueRainbowRefresh();
     updateRainbowSpanColors();
   }, 16);
 }
@@ -370,8 +330,6 @@ export function badgeSpoofHook() {
 
   if (!configWatcherStarted) {
     configWatcherStarted = true;
-    // Runs every overlay render frame — no interval needed for in-game realtime.
-    // Config change listener only needed for menu player (before localPlayer exists).
     sketchConfig.configTarget.addEventListener("change", () => {
       applySpoofsNow();
       refreshGameUI();
@@ -390,10 +348,10 @@ export function badgeSpoofHook() {
     });
 
     onGameHooks.push(() => {
-      // Apply and refresh visible UI every render frame so server packets can't desync the spoof.
+      // Apply spoofs every render frame so server packets can't desync them.
+      // refreshGameUI is intentionally NOT called here — it rebuilds DOM every frame and tanks perf.
       overlayRenderHooks.push(() => {
         applySpoofsNow();
-        refreshGameUI();
       });
     });
   }
@@ -446,8 +404,8 @@ export function BadgeSpoofMenu() {
         }}
       />
       <Switch
-        title="Hide Badge on End Screen"
-        description="Disables the verified spoof during the end-of-game scoreboard"
+        title="Hide All Spoofs on End Screen"
+        description="Disables all spoofs (badge, clan tag, display name, RGB) during the end-of-game scoreboard"
         defaultChecked={badgeSpoofHideEndScreen}
         onChange={(event) => {
           setBadgeSpoofHideEndScreen(event.currentTarget.checked);
