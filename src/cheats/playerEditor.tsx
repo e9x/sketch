@@ -1495,6 +1495,8 @@ function buildSpoofLookup() {
   const origToEdit = new Map<string, PlayerEdit>();
   // exact spoofed name → original name (for end-screen reversal)
   const spoofedToOrig = new Map<string, string>();
+  // name (spoofed or original) → original snapshot (for reverseMode badge/clan restoration)
+  const nameToSnapshot = new Map<string, PlayerSnapshot>();
 
   for (const player of players) {
     const storageKey = getPlayerStorageKey(player);
@@ -1507,17 +1509,21 @@ function buildSpoofLookup() {
     origToEdit.set(origName, edit);
     if (isDevelopment) console.log("[PE] lookup: orig", JSON.stringify(origName), "→ edit", JSON.stringify(edit.displayName));
 
+    const snap = playerOriginals.get(String(player.id));
+    if (snap) nameToSnapshot.set(origName, snap);
+
     const spoofName = edit.displayName?.trim();
     if (spoofName && spoofName !== origName) {
       spoofedToOrig.set(spoofName, origName);
       // Also map the spoofed name so we can apply clan colors to already-spoofed nodes
       origToEdit.set(spoofName, edit);
+      if (snap) nameToSnapshot.set(spoofName, snap);
       if (isDevelopment) console.log("[PE] lookup: spoof", JSON.stringify(spoofName), "→ orig", JSON.stringify(origName));
     }
   }
 
   if (isDevelopment) console.log("[PE] buildSpoofLookup: origToEdit size:", origToEdit.size, "spoofedToOrig size:", spoofedToOrig.size);
-  return origToEdit.size > 0 ? { origToEdit, spoofedToOrig } : null;
+  return origToEdit.size > 0 ? { origToEdit, spoofedToOrig, nameToSnapshot } : null;
 }
 
 /**
@@ -1527,7 +1533,7 @@ function spoofNameNodesIn(container: Element, reverseMode: boolean) {
   const maps = buildSpoofLookup();
   if (!maps) return;
 
-  const { origToEdit, spoofedToOrig } = maps;
+  const { origToEdit, spoofedToOrig, nameToSnapshot } = maps;
 
   const nameNodes = container.querySelectorAll<HTMLElement>(NAME_NODE_SELECTOR);
   if (isDevelopment) console.log("[PE] spoofNameNodesIn:", container.id, "reverseMode:", reverseMode, "nameNodes:", nameNodes.length);
@@ -1552,6 +1558,95 @@ function spoofNameNodesIn(container: Element, reverseMode: boolean) {
         if (isDevelopment) console.log("[PE] reverse:", JSON.stringify(nameText), "→", JSON.stringify(origName));
         nameTextNode.textContent = origName;
       }
+
+      // Also undo badge/clan changes for this name node
+      // Look up snapshot by the pre-reversed name (spoofed name before we changed the text node)
+      const snap = nameToSnapshot.get(nameText);
+      if (isDevelopment) console.log("[PE] reverse snap for", JSON.stringify(nameText), ":", snap ? "found" : "NOT FOUND");
+      const edit = origToEdit.get(nameText);
+      const isEndTableName = node.classList.contains("endTableN");
+      const itemEl = isEndTableName ? node.parentElement : node.closest(".leaderItem, .newLeaderItem");
+      if (itemEl) {
+        // Strip all current badge elements (rendered from spoofed player data)
+        const toRemove: Element[] = [];
+        if (isEndTableName) {
+          let sib = node.nextElementSibling;
+          while (sib) {
+            const next = sib.nextElementSibling;
+            if (sib.tagName === "I" && sib.classList.contains("material-icons")) {
+              toRemove.push(sib);
+            } else if (sib.tagName === "IMG" && !sib.classList.contains("endTablePfp") && !sib.classList.contains("endTableFlag")) {
+              toRemove.push(sib);
+            }
+            sib = next;
+          }
+        }
+        if (isDevelopment) console.log("[PE] reverse: stripping", toRemove.length, "badge elements");
+        for (const el of toRemove) el.remove();
+
+        // Re-inject original badges from snapshot
+        if (snap) {
+          const marginTop = "-12px";
+          const fontSize = "28px";
+          const badgeHeight = "26px";
+          const frag = document.createDocumentFragment();
+
+          const origPremium = Number(snap.player.premiumT) > 0;
+          if (origPremium) {
+            const icon = document.createElement("i");
+            icon.className = "material-icons";
+            icon.style.cssText = `color:${PREMIUM_ICON_COLOR};margin-top:${marginTop};font-size:${fontSize};vertical-align:middle;`;
+            icon.textContent = "beenhere";
+            frag.appendChild(icon);
+          }
+
+          const origVerified = Boolean(snap.player.emailVerified || snap.player.featured);
+          if (origVerified) {
+            const icon = document.createElement("i");
+            icon.className = "material-icons";
+            icon.style.cssText = `color:${VERIFIED_ICON_COLOR};margin-top:${marginTop};font-size:${fontSize};vertical-align:middle;`;
+            icon.textContent = "check_circle";
+            frag.appendChild(icon);
+          }
+
+          const origBadge = Number.isInteger(Number(snap.player.badgeIndex)) ? Number(snap.player.badgeIndex) : -1;
+          if (origBadge >= 0) {
+            const url = getGameBadgeUrl(origBadge);
+            if (url) {
+              const img = document.createElement("img");
+              img.src = url;
+              img.style.cssText = `margin-top:${marginTop};font-size:${fontSize};vertical-align:middle;height:${badgeHeight};margin-left:2px;`;
+              frag.appendChild(img);
+            }
+          }
+
+          if (frag.childNodes.length > 0 && isEndTableName) {
+            node.after(frag);
+          }
+          if (isDevelopment) console.log("[PE] reverse badges: premium:", origPremium, "verified:", origVerified, "badge:", origBadge);
+        }
+      }
+
+      // Restore original clan text and color
+      // Use snapshot if available; otherwise strip the spoofed clan
+      for (const span of Array.from(node.querySelectorAll<HTMLSpanElement>("span"))) {
+        if (!/\[[^\]]*\]/.test(span.textContent ?? "")) continue;
+        const origClan = snap ? (typeof snap.player.clan === "string" ? (snap.player.clan as string).trim() : "") : "";
+        const origClanColor = snap ? (typeof snap.player.clanColor === "string" ? (snap.player.clanColor as string) : "") : "";
+        if (origClan) {
+          // Restore original clan text and color
+          span.textContent = ` [${origClan}]`;
+          if (origClanColor) {
+            span.style.setProperty("color", origClanColor);
+          }
+        } else if (edit) {
+          // Original player had no clan; remove the spoofed clan span
+          if (isDevelopment) console.log("[PE] reverse: removing spoofed clan span", span.textContent);
+          span.remove();
+        }
+        span.removeAttribute?.(rainbowClanMarkAttr);
+      }
+
       continue;
     }
 

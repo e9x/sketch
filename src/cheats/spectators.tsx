@@ -17,14 +17,30 @@ const RESPAWN_GRACE_MS = 10_000;
 const POLL_INTERVAL = 2000;
 const OVERLAY_TOP_TIMER_GAP = 12;
 const KEYBINDS_OVERLAY_STACK_HEIGHT = 312;
+const TOP_ANCHOR_REFRESH_MS = 1000;
+
+function isValidGameId(gameId: unknown): gameId is string {
+  if (typeof gameId !== "string") return false;
+  const normalized = gameId.trim().toLowerCase();
+  return normalized.length > 0 && normalized !== "null" && normalized !== "undefined";
+}
 
 let cachedTopAnchor = 0;
 let isTopAnchorDirty = true;
 let topHudObserver: MutationObserver | null = null;
 let observedTopHudEl: HTMLElement | null = null;
+let topAnchorRefreshTimerStarted = false;
 
 function invalidateTopAnchor() {
   isTopAnchorDirty = true;
+}
+
+function ensureTopAnchorRefreshTimer() {
+  if (topAnchorRefreshTimerStarted) return;
+  if (typeof window === "undefined") return;
+
+  topAnchorRefreshTimerStarted = true;
+  window.setInterval(invalidateTopAnchor, TOP_ANCHOR_REFRESH_MS);
 }
 
 function ensureTopHudObserver() {
@@ -53,6 +69,7 @@ function ensureTopHudObserver() {
 
 if (typeof window !== "undefined") {
   window.addEventListener("resize", invalidateTopAnchor, { passive: true });
+  ensureTopAnchorRefreshTimer();
 }
 
 function getTopHudAnchorY() {
@@ -95,6 +112,11 @@ export function spectatorsHook() {
       lastPoll = now;
       try {
         const gameId = getGameActivity().id;
+        if (!isValidGameId(gameId)) {
+          connected = 0;
+          return;
+        }
+
         fetch(
           `https://matchmaker.krunker.io/game-info?game=${encodeURIComponent(gameId)}`,
           { method: "GET", credentials: "omit", mode: "cors" },

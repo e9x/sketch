@@ -5,14 +5,24 @@ import { getKeyName } from "../krunker-ui/keys";
 import { isInMenus } from "../krunkerUtil";
 
 const OVERLAY_TOP_TIMER_GAP = 12;
+const TOP_ANCHOR_REFRESH_MS = 1000;
 
 let cachedTopAnchor = 0;
 let isTopAnchorDirty = true;
 let topHudObserver: MutationObserver | null = null;
 let observedTopHudEl: HTMLElement | null = null;
+let topAnchorRefreshTimerStarted = false;
 
 function invalidateTopAnchor() {
   isTopAnchorDirty = true;
+}
+
+function ensureTopAnchorRefreshTimer() {
+  if (topAnchorRefreshTimerStarted) return;
+  if (typeof window === "undefined") return;
+
+  topAnchorRefreshTimerStarted = true;
+  window.setInterval(invalidateTopAnchor, TOP_ANCHOR_REFRESH_MS);
 }
 
 function ensureTopHudObserver() {
@@ -41,6 +51,7 @@ function ensureTopHudObserver() {
 
 if (typeof window !== "undefined") {
   window.addEventListener("resize", invalidateTopAnchor, { passive: true });
+  ensureTopAnchorRefreshTimer();
 }
 
 function getTopHudAnchorY() {
