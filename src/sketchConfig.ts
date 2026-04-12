@@ -187,6 +187,7 @@ export interface SketchConfig {
   spoofGameId: boolean;
   skinChanger: boolean;
   skinChangerSlots: Record<string, number>;
+  skinChangerHairCol: string;
 }
 
 /**
@@ -271,6 +272,7 @@ const defaultConfig: SketchConfig = {
   spoofGameId: false,
   skinChanger: false,
   skinChangerSlots: {},
+  skinChangerHairCol: "",
   aiEndpoint: "https://chat.openai.com/v1/chat/completions",
   aiKey: "",
   aiPrompt:

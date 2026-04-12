@@ -2,9 +2,10 @@ import { isDevelopment } from "../consts";
 import { console } from "../crashout";
 import { getBox, getGame, getIO, onGameHooks, onIoHooks } from "../filters";
 import { onMessageTransformers, onSendTransformers } from "./wsHook";
-import sketchConfig, { useSketchConfig } from "../sketchConfig";
+import sketchConfig from "../sketchConfig";
 import playerSpoofConfig, { type PlayerSpoofEdit } from "../playerSpoofConfig";
-import { Switch } from "../krunker-ui/components/Switch";
+import { Button } from "../krunker-ui/components/Button";
+import { openSkinChangerWindow } from "./skinChanger";
 
 // v9.1.1
 const PLAYER_LEN = 50;
@@ -404,15 +405,12 @@ export function skinHackHook() {
 }
 
 export function SkinHackMenu() {
-  const [skinHack, setSkinHack] = useSketchConfig("skinHack");
-
   return (
-    <Switch
-      title="Inventory Unlocker"
-      description="Unlocks all the skins. Your skins will only appear to you. They won't show to other players. You must be signed in."
-      attention
-      defaultChecked={skinHack}
-      onChange={(event) => setSkinHack(event.currentTarget.checked)}
+    <Button
+      title="Skin Changer"
+      description="Override your cosmetics and weapon skins client-side"
+      text="Open"
+      onClick={openSkinChangerWindow}
     />
   );
 }

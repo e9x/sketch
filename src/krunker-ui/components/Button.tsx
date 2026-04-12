@@ -16,7 +16,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <Control title={title} attention={attention} description={description}>
-      <div className="settingsBtn" onClick={onClick}>
+      <div className="settingsBtn" style={{ width: "auto", flexShrink: 0 }} onClick={onClick}>
         {text}
       </div>
     </Control>

@@ -3,7 +3,7 @@ import { AimbotMenu } from "../cheats/aimbot";
 import { BhopMenu } from "../cheats/bhop";
 import { ESPMenu } from "../cheats/esp";
 import { KeybindOverlayMenu } from "../cheats/keybindOverlay";
-import { SkinChangerMenu } from "../cheats/skinChanger";
+import { SkinHackMenu } from "../cheats/skins";
 import { SpectatorsMenu } from "../cheats/spectators";
 import { WatermarkMenu } from "../cheats/watermark";
 import { PlayerEditorMenu } from "../cheats/playerEditor";
@@ -271,6 +271,7 @@ const tabs: Tab[] = [
         <>
           <HeadlessSet>
             <PlayerEditorMenu />
+            <SkinHackMenu />
             <SpectatorsMenu />
             <Switch
               title="Disable ADS FOV multiplier"
@@ -405,7 +406,6 @@ const tabs: Tab[] = [
               }}
             />
           </Set>
-          <SkinChangerMenu />
         </>
       );
     },

@@ -47,6 +47,8 @@ declare var windows: GameWindow[];
  */
 declare function showWindow(id: number): void;
 
+declare function closWind(): void;
+
 declare const SOUND: {
   play(id: string, vol: number): void;
 };

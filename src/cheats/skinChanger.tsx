@@ -1,12 +1,15 @@
 import { getGame, getMenuPlayer, onGameHooks } from "../filters";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
-import { HeadlessSet, Set } from "../krunker-ui/components/Set";
+import { Set } from "../krunker-ui/components/Set";
 import { Select } from "../krunker-ui/components/Select";
 import { Switch } from "../krunker-ui/components/Switch";
 import { Button } from "../krunker-ui/components/Button";
-import { SkinHackMenu } from "./skins";
+import { ColorPicker } from "../krunker-ui/components/ColorPicker";
+import { createRenderContainer } from "../krunker-ui/container";
+import { isDevelopment } from "../consts";
+import { console } from "../crashout";
 import type { Player } from "../krunker/Player";
-import { useState, useEffect, useCallback } from "preact/hooks";
+import { useState, useEffect, useCallback, useRef } from "preact/hooks";
 
 // Skin type indices per the game's store.types array
 const SKIN_TYPE = {
@@ -46,16 +49,58 @@ const COSMETIC_SLOTS = [
   { key: "meleeIndex", type: SKIN_TYPE.MELEE, label: "Melee" },
 ] as const;
 
+// Skin color options matching the game's skinColors array
+const SKIN_COLORS = [
+  { index: 0, name: "Bronze" },
+  { index: 1, name: "Sienna" },
+  { index: 2, name: "Rose" },
+  { index: 3, name: "Tan" },
+  { index: 4, name: "Pale" },
+  { index: 5, name: "Infected" },
+  { index: 6, name: "Yellowish" },
+  { index: 7, name: "Darker Color" },
+] as const;
+
+// Integer color values from the game's skinColors array
+const SKIN_COLOR_VALUES = [
+  8412234, // Bronze
+  10975328, // Sienna
+  13864303, // Rose
+  13408638, // Tan
+  15581094, // Pale
+  8492161, // Infected
+  14919767, // Yellowish
+  2492161, // Darker Color
+] as const;
+
 // Weapon skin slots use the WEAPON type but are filtered by weapon ID
 // skins[i].weapon is 1-indexed (weapon 1 = getGame().weapons[0])
 const WEAPON_SKIN_KEY_PREFIX = "weaponSkin_";
 // Charm slots per weapon
 const CHARM_KEY_PREFIX = "charm_";
 
-type SkinEntry = { id: number; name: string; type: number; weapon?: number; classIndex?: number };
+type SkinEntry = {
+  id: number;
+  index: number;
+  name: string;
+  type: number;
+  weapon?: number;
+  classIndex?: number;
+  thumbnail?: string;
+  rarity?: number;
+  creator?: string;
+  creators?: string[];
+  rgb?: boolean;
+  seas?: number;
+  free?: boolean;
+  keyW?: string;
+};
+
+type RarityEntry = { color: string; animate?: boolean };
 
 let cachedSkins: SkinEntry[] = [];
 let cachedWeapons: { name: string }[] = [];
+let cachedRarities: RarityEntry[] = [];
 
 function ensureCache() {
   if (cachedSkins.length > 0) return;
@@ -63,6 +108,7 @@ function ensureCache() {
     const game = getGame();
     cachedSkins = game.store.skins as SkinEntry[];
     cachedWeapons = game.weapons as { name: string }[];
+    cachedRarities = game.store.rarities as RarityEntry[];
   } catch {}
 }
 
@@ -122,6 +168,24 @@ export function applySkinOverrides(player: Player): boolean {
     }
   }
 
+  // Skin color
+  const skinColVal = slots["skinColIndex"];
+  if (skinColVal !== undefined && skinColVal !== -1) {
+    if ((player as any).skinColIndex !== skinColVal) {
+      (player as any).skinColIndex = skinColVal;
+      changed = true;
+    }
+  }
+
+  // Hair color
+  const hairCol = sketchConfig.get("skinChangerHairCol");
+  if (hairCol) {
+    if ((player as any).hairCol !== hairCol) {
+      (player as any).hairCol = hairCol;
+      changed = true;
+    }
+  }
+
   // Weapon skins - stored in player.skins[] array
   // player.skins is indexed by weapon ID (0-indexed)
   // The skin value is the skin index from store.skins
@@ -174,6 +238,8 @@ export function skinChangerHook() {
 
 /**
  * Force regen meshes on the local player with current skin overrides.
+ * For the menu preview player, we set needsRender = true and let the game's
+ * own preview render loop rebuild the meshes in the correct scene.
  */
 export function regenLocalPlayerMeshes() {
   try {
@@ -186,43 +252,257 @@ export function regenLocalPlayerMeshes() {
     const menu = getMenuPlayer();
     if (menu) {
       applySkinOverrides(menu);
-      game.players.regenMeshes(menu);
+      menu.needsRender = true;
     }
   } catch {}
 }
 
 // --- UI ---
 
-function SlotDropdown({
+let skinChangerWindowIndex: number | null = null;
+
+/**
+ * Open the skin changer as its own game popup window.
+ */
+export function openSkinChangerWindow() {
+  const html = createRenderContainer(() => <SkinChangerMenu />);
+
+  const win: GameWindowRender = {
+    header: "Skin Changer",
+    label: "skinchanger",
+    width: 900,
+    height: "100%",
+    popup: true,
+    sticky: true,
+    forceScroll: true,
+    gen: () => html,
+  };
+
+  if (skinChangerWindowIndex === null) {
+    skinChangerWindowIndex = windows.length;
+    windows.push(win);
+  } else {
+    windows[skinChangerWindowIndex] = win;
+  }
+
+  try {
+    showWindow(skinChangerWindowIndex + 1);
+  } catch (err) {
+    if (isDevelopment) console.error("show skin changer win", err);
+  }
+}
+
+// --- Skin Picker Popup ---
+
+let pickerState: {
+  slotKey: string;
+  type: number;
+  label: string;
+  weaponId?: number;
+} | null = null;
+let pickerOnSelect: ((index: number) => void) | null = null;
+let skinPickerWindowIndex: number | null = null;
+
+function openSkinPicker(
+  slotKey: string,
+  type: number,
+  label: string,
+  onSelect: (index: number) => void,
+  weaponId?: number,
+) {
+  pickerState = { slotKey, type, label, weaponId };
+  pickerOnSelect = onSelect;
+
+  const html = createRenderContainer(() => <SkinPickerPopup />);
+
+  const win: GameWindowRender = {
+    header: `Select ${label}`,
+    label: "skinpicker",
+    width: 877,
+    height: "calc(100% - 300px)",
+    sticky: true,
+    dark: true,
+    hideScroll: true,
+    gen: () => html,
+  };
+
+  if (skinPickerWindowIndex === null) {
+    skinPickerWindowIndex = windows.length;
+    windows.push(win);
+  } else {
+    windows[skinPickerWindowIndex] = win;
+  }
+
+  try {
+    showWindow(skinPickerWindowIndex + 1);
+  } catch (err) {
+    if (isDevelopment) console.error("show skin picker win", err);
+  }
+}
+
+function SkinPickerPopup() {
+  const state = pickerState;
+  if (!state) return null;
+
+  const [search, setSearch] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const allSkins = getSkinsForType(state.type, state.weaponId);
+
+  const filtered = search
+    ? allSkins.filter((s) => {
+        const skin = cachedSkins[s.index];
+        if (!skin) return false;
+        const q = search.toLowerCase();
+        if (skin.name?.toLowerCase().includes(q)) return true;
+        if (skin.keyW?.toLowerCase().includes(q)) return true;
+        if (skin.creator?.toLowerCase().includes(q)) return true;
+        if (skin.creators) {
+          for (const c of skin.creators) {
+            if (c.toLowerCase().includes(q)) return true;
+          }
+        }
+        return false;
+      })
+    : allSkins;
+
+  function select(index: number) {
+    pickerOnSelect?.(index);
+    if (skinChangerWindowIndex !== null) {
+      showWindow(skinChangerWindowIndex + 1);
+    }
+  }
+
+  function goBack() {
+    if (skinChangerWindowIndex !== null) {
+      showWindow(skinChangerWindowIndex + 1);
+    } else {
+      closWind();
+    }
+  }
+
+  const imgClass = state.type ? "skinImgC" : "skinImg";
+
+  return (
+    <>
+      <div id="itemSearchH">
+        <div class="custBack" onClick={goBack} onMouseEnter={() => playTick()}>
+          <span class="material-icons custBackArr">arrow_back</span>
+        </div>
+        <input
+          ref={inputRef}
+          id="itemSearch"
+          type="text"
+          placeholder="Search Item"
+          onInput={(e) => setSearch(e.currentTarget.value)}
+        />
+        <div
+          class="winClose"
+          onClick={() => closWind()}
+          onMouseEnter={() => playTick()}
+        >
+          <span class="material-icons winCloseArr">close</span>
+        </div>
+      </div>
+      <div
+        id="skinList"
+        style="margin-top: 8px; overflow-y: scroll; height: calc(100% - 95px);"
+      >
+        {/* Default / None */}
+        <div
+          class="skinCard blackShad"
+          style="border: 5px solid lightgrey"
+          onMouseEnter={() => playTick()}
+          onClick={() => select(-1)}
+        >
+          None
+          <div class="itemOwn">Default</div>
+          <div class="itemSea" style="opacity: 0">
+            Season 1
+          </div>
+        </div>
+
+        {/* Skin cards */}
+        {filtered.map((s) => {
+          const skin = cachedSkins[s.index];
+          if (!skin) return null;
+          const rarity = cachedRarities[skin.rarity || 0];
+          const color = rarity?.color || "lightgrey";
+          const isAnimated =
+            !skin.free && rarity?.animate;
+
+          return (
+            <div
+              key={s.index}
+              class={`skinCard${skin.rarity !== 5 ? " blackShad" : ""}${isAnimated ? " rainbow" : ""}`}
+              style={
+                skin.free
+                  ? "border: 5px solid lightgrey"
+                  : `color: ${color}; border: 5px solid ${color}`
+              }
+              onMouseEnter={() => playTick()}
+              onClick={() => select(s.index)}
+              data-index={skin.index}
+            >
+              {skin.name}
+              <div class="itemOwn" style="z-index: 3; position: relative;">
+                {skin.free
+                  ? "Default"
+                  : `by ${skin.creator || "Krunker.io"}`}
+              </div>
+              {!skin.free && (
+                <div class="itemSea">Season {skin.seas || 1}</div>
+              )}
+              {skin.thumbnail && (
+                <img
+                  loading="lazy"
+                  draggable={false}
+                  class={`${imgClass}${skin.rgb ? " rgbHue" : ""}`}
+                  src={skin.thumbnail}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+// --- Slot Picker Button ---
+
+function SlotPicker({
   label,
   slotKey,
-  options,
+  type,
   onChanged,
+  weaponId,
 }: {
   label: string;
   slotKey: string;
-  options: { index: number; name: string }[];
+  type: number;
   onChanged: () => void;
+  weaponId?: number;
 }) {
   const currentVal = getSlotValue(slotKey);
+  const currentSkin = currentVal >= 0 ? cachedSkins[currentVal] : null;
 
   return (
-    <Select
+    <Button
       title={label}
-      defaultValue={String(currentVal)}
-      onChange={(e) => {
-        const val = parseInt(e.currentTarget.value);
-        setSlotValue(slotKey, val);
-        onChanged();
+      description={currentSkin ? currentSkin.name : "Default"}
+      text="Browse"
+      onClick={() => {
+        openSkinPicker(slotKey, type, label, (index) => {
+          setSlotValue(slotKey, index);
+          onChanged();
+        }, weaponId);
       }}
-    >
-      <option value="-1">Default</option>
-      {options.map((o) => (
-        <option key={o.index} value={String(o.index)}>
-          {o.name}
-        </option>
-      ))}
-    </Select>
+    />
   );
 }
 
@@ -261,7 +541,6 @@ export function SkinChangerMenu() {
   if (!ready) {
     return (
       <Set title="Skin Changer">
-        <SkinHackMenu />
         <Switch
           title="Enable Skin Changer"
           description="Override your cosmetics client-side. Waiting for game to load..."
@@ -276,7 +555,6 @@ export function SkinChangerMenu() {
 
   return (
     <Set title="Skin Changer">
-      <SkinHackMenu />
       <Switch
         title="Enable Skin Changer"
         description="Override your cosmetics and weapon skins client-side. Only visible to you."
@@ -284,7 +562,7 @@ export function SkinChangerMenu() {
         onChange={(e) => {
           const on = e.currentTarget.checked;
           setEnabled(on);
-          if (on) regenLocalPlayerMeshes();
+          regenLocalPlayerMeshes();
         }}
       />
       {enabled && (
@@ -299,13 +577,74 @@ export function SkinChangerMenu() {
             }}
           />
 
+          <Set title="Colors">
+            <Select
+              title="Skin Color Preset"
+              defaultValue={String(getSlotValue("skinColIndex"))}
+              onChange={(e) => {
+                const val = parseInt(e.currentTarget.value);
+                setSlotValue("skinColIndex", val);
+                onChanged();
+              }}
+            >
+              <option value="-1">Default</option>
+              {SKIN_COLORS.map((c) => (
+                <option key={c.index} value={String(c.index)}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+            <ColorPicker
+              title="Skin Color"
+              defaultValue={(() => {
+                const v = getSlotValue("skinColIndex");
+                if (v <= -1) return "#806a4a";
+                if (v <= 7) {
+                  const col = SKIN_COLOR_VALUES[v];
+                  return col ? `#${col.toString(16).padStart(6, "0")}` : "#806a4a";
+                }
+                return `#${v.toString(16).padStart(6, "0")}`;
+              })()}
+              onChange={(e) => {
+                const hex = e.currentTarget.value;
+                const intCol = parseInt(hex.slice(1), 16);
+                setSlotValue("skinColIndex", intCol);
+                onChanged();
+              }}
+            />
+            <Button
+              title="Reset Skin Color"
+              text="Reset"
+              onClick={() => {
+                setSlotValue("skinColIndex", -1);
+                onChanged();
+              }}
+            />
+            <ColorPicker
+              title="Hair Color"
+              defaultValue={sketchConfig.get("skinChangerHairCol") || "#000000"}
+              onChange={(e) => {
+                sketchConfig.set("skinChangerHairCol", e.currentTarget.value);
+                onChanged();
+              }}
+            />
+            <Button
+              title="Reset Hair Color"
+              text="Reset"
+              onClick={() => {
+                sketchConfig.set("skinChangerHairCol", "");
+                onChanged();
+              }}
+            />
+          </Set>
+
           <Set title="Cosmetics">
             {COSMETIC_SLOTS.map((slot) => (
-              <SlotDropdown
+              <SlotPicker
                 key={slot.key}
                 label={slot.label}
                 slotKey={slot.key}
-                options={getSkinsForType(slot.type)}
+                type={slot.type}
                 onChanged={onChanged}
               />
             ))}
@@ -317,11 +656,12 @@ export function SkinChangerMenu() {
               const skins = getSkinsForType(SKIN_TYPE.WEAPON, weaponId);
               if (skins.length === 0) return null;
               return (
-                <SlotDropdown
+                <SlotPicker
                   key={`ws_${i}`}
                   label={w.name}
                   slotKey={`${WEAPON_SKIN_KEY_PREFIX}${i}`}
-                  options={skins}
+                  type={SKIN_TYPE.WEAPON}
+                  weaponId={weaponId}
                   onChanged={onChanged}
                 />
               );
@@ -333,11 +673,11 @@ export function SkinChangerMenu() {
               const charms = getSkinsForType(SKIN_TYPE.CHARM);
               if (charms.length === 0) return null;
               return (
-                <SlotDropdown
+                <SlotPicker
                   key={`ch_${i}`}
                   label={w.name}
                   slotKey={`${CHARM_KEY_PREFIX}${i}`}
-                  options={charms}
+                  type={SKIN_TYPE.CHARM}
                   onChanged={onChanged}
                 />
               );

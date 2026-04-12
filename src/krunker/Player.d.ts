@@ -185,6 +185,7 @@ export declare class Player {
   spread: number;
   spreadMlt: number;
   active: boolean;
+  needsRender: boolean;
   objInstances: THREE.Object3D | null;
   waistMesh: THREE.Object3D | null;
   backMesh: (THREE.Object3D & { children: THREE.Mesh[] }) | null;
@@ -213,6 +214,8 @@ export declare class Player {
   level: number;
   hatIndex: number;
   headIndex: number;
+  skinColIndex: number;
+  hairCol: number | string;
   // between 0 and 1. 0 = aimed, 1 = aiming
   aimVal: number;
   inputs: unknown[];
