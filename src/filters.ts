@@ -72,6 +72,23 @@ export const data: Record<string, any> = {
   },
 };
 
+export const beforeUpdateMenuAccountDataHooks: (() => void)[] = [];
+export const afterUpdateMenuAccountDataHooks: (() => void)[] = [];
+
+data.wrapUpdateMenuAccountData = function wrapUpdateMenuAccountData<T extends Function>(
+  updateMenuAccountData: T,
+) {
+  return mirrorAttributes(function (this: unknown, ...args: unknown[]) {
+    for (const hook of beforeUpdateMenuAccountDataHooks) hook();
+
+    const result = updateMenuAccountData.apply(this, args);
+
+    for (const hook of afterUpdateMenuAccountDataHooks) hook();
+
+    return result;
+  }, updateMenuAccountData);
+};
+
 export const patches: Record<
   string,
   [
@@ -128,6 +145,12 @@ data.object.defineProperty = mirrorAttributes(
 );
 
 patches.freeze = [/Object\[/g, () => `${dataArg}.object[`];
+
+patches.updateMenuAccountData = [
+  /window\[['"]updateMenuAccountData['"]\]=function\(\)\{([^}]*)\}/,
+  (_, body) =>
+    `window["updateMenuAccountData"]=${dataArg}.wrapUpdateMenuAccountData(function(){${body}})`,
+];
 
 // patches.lol = [new RegExp(`this\\[(${v.source}\\(0x[0-9a-f]+\\))\\]=new WebSocket\\(`), (_, prop) => `this[${prop}] = ${dataArg}.socket = new WebSocket(`];
 

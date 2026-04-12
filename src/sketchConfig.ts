@@ -138,15 +138,7 @@ export interface SketchConfig {
   multiPoint: boolean;
   multiPointScale: number;
   skinHack: boolean;
-  badgeSpoofVerified: boolean;
-  badgeSpoofHideEndScreen: boolean;
   badgeRainbow: boolean;
-  fakeClanTagEnabled: boolean;
-  fakeClanTag: string;
-  displayNameSpoofEnabled: boolean;
-  displayNameSpoof: string;
-  fakePremiumEnabled: boolean;
-  fakeVipStatusEnabled: boolean;
   keybindOverlay: boolean;
   healthBars: boolean;
   adblock: boolean;
@@ -242,15 +234,7 @@ const defaultConfig: SketchConfig = {
   multiPoint: false,
   multiPointScale: 0.5,
   skinHack: false,
-  badgeSpoofVerified: false,
-  badgeSpoofHideEndScreen: true,
   badgeRainbow: false,
-  fakeClanTagEnabled: false,
-  fakeClanTag: "DEV",
-  displayNameSpoofEnabled: false,
-  displayNameSpoof: "DEV",
-  fakePremiumEnabled: false,
-  fakeVipStatusEnabled: false,
   keybindOverlay: false,
   healthBars: false,
   adblock: true,

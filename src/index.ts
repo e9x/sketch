@@ -11,6 +11,7 @@ import { afterGame, beforeGame, hook } from "./filters";
 import { getInit } from "./inject";
 import { gameLoad } from "./dogehook";
 import sketchConfig, { initSketchConfig } from "./sketchConfig";
+import { initPlayerSpoofConfig } from "./playerSpoofConfig";
 import { begToken, showUpdated, showFutile, panic } from "./anxiety";
 import { sketchButton } from "./menu/createUI";
 import "./cheats";
@@ -62,6 +63,7 @@ declare function enterGame(): void;
 
 async function main() {
   await initSketchConfig();
+  await initPlayerSpoofConfig();
   await initTokenConfig();
 
   checkHash();

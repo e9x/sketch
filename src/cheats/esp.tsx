@@ -24,7 +24,7 @@ import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Switch } from "../krunker-ui/components/Switch";
 import type * as THREE from "three";
 import { Slider } from "../krunker-ui/components/Slider";
-import { sharedRainbowHexColor } from "./badgeSpoof";
+import { sharedRainbowHexColor } from "./playerEditor";
 
 // nametags is handled in index.ts
 // see get nametags() { ... }
@@ -446,23 +446,10 @@ export function espHook() {
 
     if (!willRender || isInMenus()) return;
 
-    // initial values
-    const ogTrans = overlay.ctx.getTransform();
-
-    const {
-      globalAlpha,
-      strokeStyle,
-      lineWidth,
-      fillStyle,
-      textAlign,
-      textBaseline,
-      imageSmoothingEnabled,
-      font,
-    } = overlay.ctx;
+    overlay.ctx.save();
+    overlay.ctx.scale(overlay.scale, overlay.scale);
 
     const overlayOpacity = sketchConfig.get("overlayOpacity");
-
-    overlay.ctx.scale(overlay.scale, overlay.scale);
 
     const overlaySize = getOverlaySizeScaled();
 
@@ -589,17 +576,7 @@ export function espHook() {
       }
     }
 
-    overlay.ctx.setTransform(ogTrans);
-    Object.assign(overlay.ctx, {
-      globalAlpha,
-      strokeStyle,
-      lineWidth,
-      fillStyle,
-      textAlign,
-      textBaseline,
-      imageSmoothingEnabled,
-      font,
-    });
+    overlay.ctx.restore();
   });
 }
 

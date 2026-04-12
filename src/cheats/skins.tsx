@@ -3,6 +3,7 @@ import { console } from "../crashout";
 import { getBox, getGame, getIO, onGameHooks } from "../filters";
 import { onMessageTransformers, onSendTransformers } from "./wsHook";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
+import playerSpoofConfig, { type PlayerSpoofEdit } from "../playerSpoofConfig";
 import { Switch } from "../krunker-ui/components/Switch";
 
 // v9.1.1
@@ -105,27 +106,37 @@ const PLAYER_CLAN_INDEX = 11;
 const PLAYER_FEATURED_INDEX = 25;
 const PLAYER_PREMIUM_INDEX = 27;
 
+function getLocalPlayerEdit() {
+  const raw = playerSpoofConfig.get("edits").you as Partial<PlayerSpoofEdit> | undefined;
+  if (!raw) return undefined;
+
+  return {
+    displayName: typeof raw.displayName === "string" ? raw.displayName.trim() : "",
+    verified: Boolean(raw.verified),
+    premium: Boolean(raw.premium),
+    clan: typeof raw.clan === "string" ? raw.clan.trim() : "",
+  };
+}
+
 function applyLocalAccountSpoofs(data: any) {
   if (!Array.isArray(data)) return;
+  const localEdit = getLocalPlayerEdit();
+  if (!localEdit) return;
 
-  if (sketchConfig.get("fakeClanTagEnabled")) {
-    const tag = sketchConfig.get("fakeClanTag").trim();
-    if (tag) data[ACCOUNT_CLAN_INDEX] = tag;
-  }
+  if (localEdit.clan) data[ACCOUNT_CLAN_INDEX] = localEdit.clan;
 
-  if (sketchConfig.get("fakePremiumEnabled") || sketchConfig.get("fakeVipStatusEnabled")) {
+  if (localEdit.premium) {
     data[ACCOUNT_PREMIUM_INDEX] = 1;
   }
 
-  if (!sketchConfig.get("badgeSpoofVerified")) return;
+  if (!localEdit.verified) return;
 
   data[ACCOUNT_FEATURED_INDEX] = 1;
   data[ACCOUNT_EMAIL_VERIFIED_INDEX] = true;
 }
 
 function getSpoofDisplayName(): string {
-  if (!sketchConfig.get("displayNameSpoofEnabled")) return "";
-  return sketchConfig.get("displayNameSpoof").trim();
+  return getLocalPlayerEdit()?.displayName || "";
 }
 
 function applyLocalChatNameSpoofs(packet: any) {
@@ -157,25 +168,24 @@ function applyLocalPlayerListSpoofs(packet: any) {
 
   const allPlayers = packet[1];
   if (!Array.isArray(allPlayers) || allPlayers.length % PLAYER_LEN !== 0) return;
+  const localEdit = getLocalPlayerEdit();
+  if (!localEdit) return;
 
-  const fakeClanEnabled = sketchConfig.get("fakeClanTagEnabled");
-  const fakeClanTag = sketchConfig.get("fakeClanTag").trim();
-  const verified = sketchConfig.get("badgeSpoofVerified");
   const spoofName = getSpoofDisplayName();
 
   for (let i = 0; i < allPlayers.length; i += PLAYER_LEN) {
     const playerChunk = allPlayers.slice(i, i + PLAYER_LEN);
     if (playerChunk[PLAYER_NAME_INDEX] !== username) continue;
 
-    if (fakeClanEnabled && fakeClanTag) {
-      playerChunk[PLAYER_CLAN_INDEX] = fakeClanTag;
+    if (localEdit.clan) {
+      playerChunk[PLAYER_CLAN_INDEX] = localEdit.clan;
     }
 
-    if (verified) {
+    if (localEdit.verified) {
       playerChunk[PLAYER_FEATURED_INDEX] = 1;
     }
 
-    if (sketchConfig.get("fakePremiumEnabled") || sketchConfig.get("fakeVipStatusEnabled")) {
+    if (localEdit.premium) {
       playerChunk[PLAYER_PREMIUM_INDEX] = 1;
     }
 
@@ -283,7 +293,7 @@ function onMessage(packet: any) {
     }
   }
 
-  // Keep username fresh regardless of skinHack so other spoof paths can target local chunks.
+  // Keep username fresh regardless of skinHack so packet transforms can target local chunks.
   if (packet?.[0] === "a" || packet?.[0] === "ua") {
     const isUpdateAccount = packet[0] === "ua";
     if (!isUpdateAccount && typeof packet[3] === "string") {

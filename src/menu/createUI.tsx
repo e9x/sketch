@@ -10,8 +10,8 @@ function sketchWindow() {
   const html = createRenderContainer(() => <Menu />);
 
   const win: GameWindowRender = {
-    header: "✏️",
-    label: "sketch",
+    header: "",
+    label: "",
     width: 1100,
     height: "100%",
     popup: true,

@@ -75,6 +75,10 @@ function getTopHudAnchorCanvasY(overlay: ReturnType<typeof getOverlay>) {
 
 export function keybindOverlayHook() {
   overlayRenderHooks.push(() => {
+    const overlay = getOverlay();
+    overlay.ctx.save();
+    overlay.ctx.scale(overlay.scale, overlay.scale);
+
     if (sketchConfig.get("keybindOverlay") && !isInMenus()) {
       const keybinds: { name: string; key: number }[] = [
         {
@@ -99,9 +103,6 @@ export function keybindOverlayHook() {
         },
       ];
 
-      const overlay = getOverlay();
-      overlay.ctx.scale(overlay.scale, overlay.scale);
-
       const keyHeight = 48;
       const keyHeightGap = 8;
 
@@ -124,20 +125,16 @@ export function keybindOverlayHook() {
       overlay.ctx.textBaseline = "middle";
       overlay.ctx.font = "16px 'gamefont'";
 
-      // get font height
-      const metrics = overlay.ctx.measureText("");
-      const fontHeight =
-        metrics.fontBoundingBoxAscent - metrics.fontBoundingBoxDescent;
-
       for (let i = 0; i < keybinds.length; i++) {
         const rowY = contentY + i * (keyHeight + keyHeightGap);
+        const rowMidY = rowY + keyHeight / 2;
 
         overlay.ctx.fillStyle = "#a5a5a5";
         overlay.ctx.textAlign = "left";
         overlay.ctx.fillText(
           keybinds[i].name,
           contentX,
-          rowY + keyHeight / 2 + fontHeight
+          rowMidY
         );
 
         const keyName = getKeyName(keybinds[i].key);
@@ -161,16 +158,15 @@ export function keybindOverlayHook() {
         overlay.ctx.fillText(
           keyName,
           keyX + keyWidth / 2,
-          rowY + (keyHeight - 10) / 2 + fontHeight
+          rowMidY
         );
       }
-
-      overlay.ctx.scale(1 / overlay.scale, 1 / overlay.scale);
-      overlay.ctx.textAlign = "left";
-      overlay.ctx.textBaseline = "alphabetic";
     }
+    overlay.ctx.restore();
   });
 }
+
+
 
 export function KeybindOverlayMenu() {
   const [keybindOverlay, setKeybindOverlay] = useSketchConfig("keybindOverlay");

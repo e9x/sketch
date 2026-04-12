@@ -1,6 +1,5 @@
 import { adblockHook } from "./cheats/adblock";
 import { aimbotHook } from "./cheats/aimbot";
-import { badgeSpoofHook } from "./cheats/badgeSpoof";
 import { bhopHook } from "./cheats/bhop";
 import { espHook } from "./cheats/esp";
 import { forceAutoHook } from "./cheats/forceAuto";
@@ -12,6 +11,7 @@ import { spectatorsHook } from "./cheats/spectators";
 import { triggerbotHook } from "./cheats/triggerbot";
 import { watermarkHook } from "./cheats/watermark";
 import { analyticsHook } from "./cheats/analytics";
+import { playerEditorHook } from "./cheats/playerEditor";
 
 wsHook();
 triggerbotHook();
@@ -21,12 +21,12 @@ aimbotHook();
 espHook();
 recoilControlHook();
 forceAutoHook();
-badgeSpoofHook();
 skinHackHook();
 spectatorsHook();
 keybindOverlayHook();
 adblockHook();
 watermarkHook();
 analyticsHook();
+playerEditorHook();
 
 //sketchButton();

@@ -1,12 +1,12 @@
 import { AdblockMenu } from "../cheats/adblock";
 import { AimbotMenu } from "../cheats/aimbot";
-import { BadgeSpoofMenu } from "../cheats/badgeSpoof";
 import { BhopMenu } from "../cheats/bhop";
 import { ESPMenu } from "../cheats/esp";
 import { KeybindOverlayMenu } from "../cheats/keybindOverlay";
 import { SkinHackMenu } from "../cheats/skins";
 import { SpectatorsMenu } from "../cheats/spectators";
 import { WatermarkMenu } from "../cheats/watermark";
+import { PlayerEditorMenu } from "../cheats/playerEditor";
 import { discordURL, docsURL, sketchVersion } from "../consts";
 import { getActiveMap } from "../filters";
 import sketchConfig, {
@@ -270,7 +270,7 @@ const tabs: Tab[] = [
         <>
           <HeadlessSet>
             <SkinHackMenu />
-            <BadgeSpoofMenu />
+            <PlayerEditorMenu />
             <SpectatorsMenu />
             <Switch
               title="Disable ADS FOV multiplier"
