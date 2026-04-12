@@ -15,6 +15,7 @@ export interface PlayerSpoofEdit {
 
 export interface PlayerSpoofConfig {
   edits: Record<string, PlayerSpoofEdit>;
+  hideOnEndScreen: boolean;
 }
 
 class PrefixJSONStorage implements JSONStorage {
@@ -49,6 +50,7 @@ class PrefixJSONStorage implements JSONStorage {
 
 const defaultConfig: PlayerSpoofConfig = {
   edits: {},
+  hideOnEndScreen: false,
 };
 
 const playerSpoofStorage = new PrefixJSONStorage("playerSpoof.", getStorage());

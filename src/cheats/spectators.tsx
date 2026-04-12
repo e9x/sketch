@@ -9,10 +9,10 @@ let alivePlayers = 0;
 let lastPoll = 0;
 let spectatorNames: string[] = [];
 
-// Track when guest players (accid=0) first appeared dead.
+// Track when players first appeared dead.
 // Only consider them spectators after a grace period (auto-respawn wait).
-const guestDeathTimestamps = new Map<number, number>();
-const GUEST_RESPAWN_GRACE_MS = 10_000;
+const deathTimestamps = new Map<number, number>();
+const RESPAWN_GRACE_MS = 10_000;
 
 const POLL_INTERVAL = 2000;
 const OVERLAY_TOP_TIMER_GAP = 12;
@@ -123,22 +123,18 @@ export function spectatorsHook() {
           if (entityAlive(p)) {
             count++;
             // Player came back alive, clear any death timestamp
-            guestDeathTimestamps.delete(p.sid);
+            deathTimestamps.delete(p.sid);
           } else {
-            const isGuest = !p.accid;
+            // Track when this player first appeared dead
+            if (!deathTimestamps.has(p.sid)) {
+              deathTimestamps.set(p.sid, now);
+            }
 
-            if (isGuest) {
-              // Track when this guest first appeared dead
-              if (!guestDeathTimestamps.has(p.sid)) {
-                guestDeathTimestamps.set(p.sid, now);
-              }
-
-              const deathTime = guestDeathTimestamps.get(p.sid)!;
-              if (now - deathTime < GUEST_RESPAWN_GRACE_MS) {
-                // Still within respawn grace period, count as alive (waiting to respawn)
-                count++;
-                continue;
-              }
+            const deathTime = deathTimestamps.get(p.sid)!;
+            if (now - deathTime < RESPAWN_GRACE_MS) {
+              // Still within respawn grace period, count as alive (waiting to respawn)
+              count++;
+              continue;
             }
 
             const rawName =
@@ -149,8 +145,8 @@ export function spectatorsHook() {
         }
 
         // Clean up stale entries for players no longer in the game
-        for (const sid of guestDeathTimestamps.keys()) {
-          if (!seenSids.has(sid)) guestDeathTimestamps.delete(sid);
+        for (const sid of deathTimestamps.keys()) {
+          if (!seenSids.has(sid)) deathTimestamps.delete(sid);
         }
 
         alivePlayers = count;

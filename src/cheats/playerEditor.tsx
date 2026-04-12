@@ -20,6 +20,7 @@ import { useEffect, useState } from "preact/hooks";
 import { getExposedWindow, isDevelopment } from "../consts";
 import { console } from "../crashout";
 import playerSpoofConfig, { type PlayerSpoofEdit } from "../playerSpoofConfig";
+import { usePlayerSpoofConfig } from "../playerSpoofConfig";
 
 type AnyObj = Record<PropertyKey, any>;
 
@@ -540,6 +541,20 @@ function getPlayers(): Player[] {
 
   const menuPlayer = getMenuPlayer();
   return menuPlayer ? [menuPlayer] : [];
+}
+
+function fixEndScreenNames(nameMap: Map<string, string>) {
+  const endTable = document.getElementById("endTable");
+  if (!endTable) return;
+
+  for (const el of Array.from(endTable.getElementsByClassName("endTableN"))) {
+    for (const child of Array.from(el.childNodes)) {
+      if (child.nodeType !== Node.TEXT_NODE || !child.textContent?.trim()) continue;
+      const spoofed = child.textContent.trim();
+      const real = nameMap.get(spoofed);
+      if (real) child.textContent = real;
+    }
+  }
 }
 
 function isLocalPlayerEntry(player: Player) {
@@ -1268,9 +1283,47 @@ export function playerEditorHook() {
   if (playerEditorRenderHookInstalled) return;
   playerEditorRenderHookInstalled = true;
 
+  // Track end screen state so we build the name fixup map once on transition
+  let endScreenNameMap: Map<string, string> | null = null;
+
   overlayRenderHooks.push(() => {
     const edits = getStoredEdits();
     const players = getPlayers();
+
+    // When hideOnEndScreen is enabled and the end screen cards are showing,
+    // restore all spoofed players back to their original state and fix the DOM.
+    if (playerSpoofConfig.get("hideOnEndScreen")) {
+      const uiBase = document.getElementById("uiBase");
+      if (uiBase?.classList.contains("onEndScrn")) {
+        if (!endScreenNameMap) {
+          // First frame on end screen: build spoofedName → originalName map
+          // BEFORE restoring (restore deletes snapshots)
+          endScreenNameMap = new Map();
+          for (const player of players) {
+            const storageKey = getPlayerStorageKey(player);
+            const edit = edits[storageKey];
+            if (!edit?.displayName?.trim()) continue;
+            const origName = getOriginalPlayerName(player);
+            if (origName) endScreenNameMap.set(edit.displayName.trim(), origName);
+          }
+          // Restore all player objects to original state
+          for (const player of players) {
+            if (playerOriginals.has(String(player.id))) {
+              restoreOriginalPlayerState(player);
+            }
+          }
+        }
+        // Fix end screen DOM every frame (handles delayed re-renders)
+        if (endScreenNameMap.size > 0) {
+          fixEndScreenNames(endScreenNameMap);
+        }
+        return;
+      }
+    }
+
+    // Not on end screen or setting disabled — reset transition tracking
+    endScreenNameMap = null;
+
     for (const player of players) {
       const storageKey = getPlayerStorageKey(player);
       const edit = edits[storageKey];
@@ -1338,12 +1391,22 @@ export function playerEditorHook() {
 }
 
 export function PlayerEditorMenu() {
+  const [hideOnEndScreen, setHideOnEndScreen] = usePlayerSpoofConfig("hideOnEndScreen");
+
   return (
-    <Button
-      title="Player Editor"
-      description="Open live player list and edit spoof data per-player"
-      text="Open"
-      onClick={() => openPlayerListWindow()}
-    />
+    <>
+      <Button
+        title="Player Editor"
+        description="Open live player list and edit spoof data per-player"
+        text="Open"
+        onClick={() => openPlayerListWindow()}
+      />
+      <Switch
+        title="Hide Spoofs on End Screen"
+        description="Restore original player data when end screen cards are displayed"
+        defaultChecked={hideOnEndScreen}
+        onChange={(event) => setHideOnEndScreen(event.currentTarget.checked)}
+      />
+    </>
   );
 }
