@@ -37,6 +37,24 @@ patches.controls = [
     `${dataArg}.controls(${target},${prop},${value});`,
 ];
 
+patches.switchLeaderboard = [
+  new RegExp(
+    `window\\[(${v.source}\\(0x[0-9a-f]+\\))\\]=function\\((${v.source}),(${v.source})\\)\\{([^}]*leaderboardHolder[^}]*)\\}`,
+  ),
+  (_, lookup, arg1, arg2, body) => {
+    return `window[${lookup}]=${dataArg}.wrapSwitchLeaderboard(function(${arg1},${arg2}){${body}})`;
+  },
+];
+
+patches.chatI18N = [
+  new RegExp(
+    `function\\s+(${v.source})\\((${v.source},${v.source},(${v.source}),${v.source},${v.source},${v.source},${v.source})\\)\\{([^}]*)\\}window\\['switchChat'\\]`,
+  ),
+  (_, fnName, allArgs, thirdArg, body) => {
+    return `function ${fnName}(${allArgs}){Array['isArray'](${thirdArg})||(${thirdArg}=[${thirdArg}]);${dataArg}.chatI18N(${thirdArg});${body}}window['switchChat']`;
+  },
+];
+
 let failed = false;
 
 for (const name in patches) {

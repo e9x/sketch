@@ -104,6 +104,28 @@ data.wrapUpdateMenuAccountData = function wrapUpdateMenuAccountData<T extends Fu
   }, updateMenuAccountData);
 };
 
+export const beforeSwitchLeaderboardHooks: (() => void)[] = [];
+
+data.wrapSwitchLeaderboard = function wrapSwitchLeaderboard<T extends Function>(
+  switchLeaderboard: T,
+) {
+  return mirrorAttributes(function (this: unknown, ...args: unknown[]) {
+    for (const hook of beforeSwitchLeaderboardHooks) hook();
+
+    return switchLeaderboard.apply(this, args);
+  }, switchLeaderboard);
+};
+
+export const beforeAddChatI18NHooks: ((i18nArgs: unknown[]) => void)[] = [];
+
+data.chatI18N = function chatI18N(i18nArgs: unknown[]) {
+  for (const hook of beforeAddChatI18NHooks) {
+    try {
+      hook(i18nArgs);
+    } catch {}
+  }
+};
+
 export const patches: Record<
   string,
   [
@@ -169,6 +191,27 @@ patches.updateMenuAccountData = [
     const accountVar = setMatch?.[1];
     const capture = accountVar ? `${dataArg}.onSvelteAccountData(${accountVar});` : "";
     return `window["updateMenuAccountData"]=${dataArg}.wrapUpdateMenuAccountData(function(){${capture}${body}})`;
+  },
+];
+
+patches.switchLeaderboard = [
+  new RegExp(
+    `window\\[(${v.source}\\(0x[0-9a-f]+\\))\\]=function\\((${v.source}),(${v.source})\\)\\{([^}]*leaderboardHolder[^}]*)\\}`,
+  ),
+  (_: string, lookup: string, arg1: string, arg2: string, body: string) => {
+    return `window[${lookup}]=${dataArg}.wrapSwitchLeaderboard(function(${arg1},${arg2}){${body}})`;
+  },
+];
+
+// Wrap the ADD_CHATI18N handler to let hooks modify the i18n args (e.g. spoof player names)
+// Matches: function NAME(7 args){ body }window['switchChat']
+// The 3rd arg is the i18n array: ["server.message.join", "PlayerName"]
+patches.chatI18N = [
+  new RegExp(
+    `function\\s+(${v.source})\\((${v.source},${v.source},(${v.source}),${v.source},${v.source},${v.source},${v.source})\\)\\{([^}]*)\\}window\\['switchChat'\\]`,
+  ),
+  (_: string, fnName: string, allArgs: string, thirdArg: string, body: string) => {
+    return `function ${fnName}(${allArgs}){Array['isArray'](${thirdArg})||(${thirdArg}=[${thirdArg}]);${dataArg}.chatI18N(${thirdArg});${body}}window['switchChat']`;
   },
 ];
 

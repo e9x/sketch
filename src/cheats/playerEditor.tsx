@@ -1,4 +1,6 @@
 import {
+  beforeAddChatI18NHooks,
+  beforeSwitchLeaderboardHooks,
   afterUpdateMenuAccountDataHooks,
   beforeUpdateMenuAccountDataHooks,
   getGame,
@@ -1281,6 +1283,57 @@ export function playerEditorHook() {
     }
 
     refreshRainbowClanTagsInDom(players, edits);
+  });
+
+  const reapplySpoofs = () => {
+    const edits = getStoredEdits();
+    const players = getPlayers();
+    for (const player of players) {
+      const storageKey = getPlayerStorageKey(player);
+      const edit = edits[storageKey];
+      if (!edit) continue;
+      applyEditToPlayer(player, edit);
+    }
+  };
+
+  beforeSwitchLeaderboardHooks.push(reapplySpoofs);
+
+  // toggleStrm also calls the leaderboard render function directly, bypassing switchLeaderboard
+  const w = getExposedWindow() as AnyObj;
+  if (typeof w.toggleStrm === "function") {
+    const origToggleStrm = w.toggleStrm;
+    w.toggleStrm = function (this: unknown, ...args: unknown[]) {
+      reapplySpoofs();
+      return origToggleStrm.apply(this, args);
+    };
+  }
+
+  // Spoof player names in i18n chat messages (join/leave/kick/ban etc.)
+  beforeAddChatI18NHooks.push((i18nArgs) => {
+    if (!Array.isArray(i18nArgs) || i18nArgs.length < 2) return;
+    const key = i18nArgs[0];
+    if (typeof key !== "string" || !key.startsWith("server.message.")) return;
+
+    const edits = getStoredEdits();
+    const players = getPlayers();
+
+    // Build a map of original name → spoofed displayName
+    const nameMap = new Map<string, string>();
+    for (const player of players) {
+      const storageKey = getPlayerStorageKey(player);
+      const edit = edits[storageKey];
+      if (!edit?.displayName?.trim()) continue;
+      const origName = getOriginalPlayerName(player);
+      if (origName) nameMap.set(origName, edit.displayName.trim());
+    }
+    if (nameMap.size === 0) return;
+
+    // Replace name args (indices 1+) with spoofed names
+    for (let i = 1; i < i18nArgs.length; i++) {
+      if (typeof i18nArgs[i] !== "string") continue;
+      const spoofed = nameMap.get(i18nArgs[i] as string);
+      if (spoofed) i18nArgs[i] = spoofed;
+    }
   });
 }
 
