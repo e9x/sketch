@@ -3,6 +3,7 @@ import {
   beforeUpdateMenuAccountDataHooks,
   getGame,
   getMenuPlayer,
+  onPlayerAddHooks,
   overlayRenderHooks,
   svelteAccountData,
 } from "../filters";
@@ -127,9 +128,7 @@ function startSharedRainbowColorLoop() {
 }
 
 function isMenuPlayer(player: Player) {
-  const result = (player as AnyObj).id === -1;
-  if (isDevelopment) console.log("[PE] isMenuPlayer", { id: (player as AnyObj).id, result });
-  return result;
+  return (player as AnyObj).id === -1;
 }
 
 /**
@@ -145,20 +144,13 @@ function getPlayerRealName(player: Player): string {
       const display = svelteAccountData.premiumT > 0 && svelteAccountData.alias
         ? svelteAccountData.alias
         : svelteAccountData.name;
-      if (display) {
-        if (isDevelopment) console.log("[PE] getPlayerRealName (menuPlayer) from svelteAccountData", { display });
-        return display;
-      }
+      if (display) return display;
     }
     // Fallback: account property on the player (rarely set for menuPlayer)
     const accName = p.account?.name;
-    if (typeof accName === "string" && accName.trim()) {
-      if (isDevelopment) console.log("[PE] getPlayerRealName (menuPlayer) from account", { accName });
-      return accName.trim();
-    }
+    if (typeof accName === "string" && accName.trim()) return accName.trim();
     // Fallback: DOM (may show the spoofed name if we already overwrote it)
     const domName = document.getElementById("menuAccountUsername")?.textContent?.trim();
-    if (isDevelopment) console.log("[PE] getPlayerRealName (menuPlayer)", { accName, domName, pName: p.name, pAlias: p.alias });
     if (domName) return domName;
     return "";
   }
@@ -166,41 +158,29 @@ function getPlayerRealName(player: Player): string {
   // For live players, check the snapshot first to avoid returning spoofed values
   const snapshot = playerOriginals.get(String(p.id));
   if (snapshot) {
-    // If premium with alias, the display name was the alias
     if (typeof snapshot.player.alias === "string" && (snapshot.player.alias as string).trim()) {
-      const alias = (snapshot.player.alias as string).trim();
-      if (isDevelopment) console.log("[PE] getPlayerRealName (live) from snapshot.alias", { id: p.id, alias });
-      return alias;
+      return (snapshot.player.alias as string).trim();
     }
     if (typeof snapshot.player.name === "string" && (snapshot.player.name as string).trim()) {
-      const name = (snapshot.player.name as string).trim();
-      if (isDevelopment) console.log("[PE] getPlayerRealName (live) from snapshot.name", { id: p.id, name });
-      return name;
+      return (snapshot.player.name as string).trim();
     }
   }
 
   const raw = typeof p.getName === "function" ? p.getName() : p.name;
-  const result = typeof raw === "string" ? raw.trim() : "";
-  if (isDevelopment) console.log("[PE] getPlayerRealName", { id: p.id, pName: p.name, pAlias: p.alias, pFakeName: p.fakeName, getName: raw, result });
-  return result;
+  return typeof raw === "string" ? raw.trim() : "";
 }
 
 function getPlayerRows(): PlayerRow[] {
   const players = getPlayers();
-  if (isDevelopment) console.log("[PE] getPlayerRows: player count", players.length);
-  const rows = players.map((player) => {
-    const row = {
-      id: String(player.id),
-      storageKey: getPlayerStorageKey(player),
-      sid: player.sid,
-      name: getPlayerRealName(player) || "unknown",
-      originalName: getOriginalPlayerName(player),
-      customName: getStoredEdit(getPlayerStorageKey(player))?.displayName.trim() || "",
-      isYou: isLocalPlayerEntry(player),
-    };
-    if (isDevelopment) console.log("[PE] getPlayerRows: row", row);
-    return row;
-  });
+  const rows = players.map((player) => ({
+    id: String(player.id),
+    storageKey: getPlayerStorageKey(player),
+    sid: player.sid,
+    name: getPlayerRealName(player) || "unknown",
+    originalName: getOriginalPlayerName(player),
+    customName: getStoredEdit(getPlayerStorageKey(player))?.displayName.trim() || "",
+    isYou: isLocalPlayerEntry(player),
+  }));
 
   rows.sort((a, b) => {
     if (a.isYou === b.isYou) return 0;
@@ -219,9 +199,44 @@ const rainbowClanMarkAttr = `data-pe-rainbow-${Math.random().toString(36).slice(
 let localUiRefreshQueued = false;
 let playerEditorRenderHookInstalled = false;
 let menuAccountDataCallbacksInstalled = false;
+let playerEditorPlayerAddHookInstalled = false;
+const playerSetDataHookTag = Symbol("playerEditorSetDataHook");
+
+function applyPersistedEditIfAny(player: Player) {
+  const storageKey = getPlayerStorageKey(player);
+  const edit = getStoredEdit(storageKey);
+  if (!edit) return;
+
+  captureOriginalPlayerState(player);
+  applyEditToPlayer(player, edit);
+}
+
+function installSetDataHook(player: Player) {
+  const p = player as AnyObj;
+  if (p[playerSetDataHookTag] || typeof p.setData !== "function") return;
+
+  const originalSetData = p.setData;
+  p.setData = function (...args: unknown[]) {
+    const result = originalSetData.apply(this, args);
+    try {
+      applyPersistedEditIfAny(this as Player);
+    } catch {}
+    return result;
+  };
+  p[playerSetDataHookTag] = true;
+}
+
+function installPlayerAddCallbacks() {
+  if (playerEditorPlayerAddHookInstalled) return;
+  playerEditorPlayerAddHookInstalled = true;
+
+  onPlayerAddHooks.push((player) => {
+    installSetDataHook(player);
+    applyPersistedEditIfAny(player);
+  });
+}
 
 function queueLocalPlayerUIRefresh() {
-  if (isDevelopment) console.log("[PE] queueLocalPlayerUIRefresh called, already queued:", localUiRefreshQueued);
   if (localUiRefreshQueued) return;
   localUiRefreshQueued = true;
 
@@ -230,7 +245,6 @@ function queueLocalPlayerUIRefresh() {
 
     try {
       const localPlayer = getPlayers().find((player) => isLocalPlayerEntry(player));
-      if (isDevelopment) console.log("[PE] queueLocalPlayerUIRefresh: localPlayer found:", !!localPlayer);
       if (!localPlayer) return;
 
       // Capture the real name from DOM BEFORE we overwrite it.
@@ -239,7 +253,6 @@ function queueLocalPlayerUIRefresh() {
         const snapshot = playerOriginals.get(String(localPlayer.id));
         if (snapshot && !snapshot.domName) {
           const realDomName = document.getElementById("menuAccountUsername")?.textContent?.trim() || null;
-          if (isDevelopment) console.log("[PE] queueLocalPlayerUIRefresh: capturing domName:", realDomName);
           if (realDomName) snapshot.domName = realDomName;
         }
       }
@@ -247,7 +260,6 @@ function queueLocalPlayerUIRefresh() {
       const storageKey = getPlayerStorageKey(localPlayer);
       const edit = getStoredEdit(storageKey);
       const customName = edit?.displayName?.trim();
-      if (isDevelopment) console.log("[PE] queueLocalPlayerUIRefresh: storageKey:", storageKey, "customName:", customName);
 
       if (customName) {
         const menuNameIds = [
@@ -282,43 +294,35 @@ function queueLocalPlayerUIRefresh() {
 }
 
 function getLocalPlayerEntry() {
-  const entry = getPlayers().find((player) => isLocalPlayerEntry(player));
-  if (isDevelopment) console.log("[PE] getLocalPlayerEntry:", entry ? { id: (entry as AnyObj).id, name: (entry as AnyObj).name, accName: (entry as AnyObj).account?.name } : null);
-  return entry;
+  return getPlayers().find((player) => isLocalPlayerEntry(player));
 }
 
 function applyLocalPlayerEditForMenuSync() {
-  if (isDevelopment) console.log("[PE] applyLocalPlayerEditForMenuSync: entering");
   const localPlayer = getLocalPlayerEntry();
-  if (!localPlayer) {
-    if (isDevelopment) console.log("[PE] applyLocalPlayerEditForMenuSync: no local player");
-    return;
-  }
+  if (!localPlayer) return;
 
   const storageKey = getPlayerStorageKey(localPlayer);
   const edit = getStoredEdit(storageKey);
-  if (isDevelopment) console.log("[PE] applyLocalPlayerEditForMenuSync: storageKey:", storageKey, "edit:", edit);
   if (!edit) return;
 
   captureOriginalPlayerState(localPlayer);
   applyEditToPlayer(localPlayer, edit);
-  if (isDevelopment) console.log("[PE] applyLocalPlayerEditForMenuSync: done");
 }
 
 function installMenuAccountDataCallbacks() {
-  if (isDevelopment) console.log("[PE] installMenuAccountDataCallbacks: already installed:", menuAccountDataCallbacksInstalled);
   if (menuAccountDataCallbacksInstalled) return;
   menuAccountDataCallbacksInstalled = true;
 
   beforeUpdateMenuAccountDataHooks.push(() => {
-    if (isDevelopment) console.log("[PE] beforeUpdateMenuAccountData hook firing");
     try {
       applyLocalPlayerEditForMenuSync();
     } catch {}
   });
 
   afterUpdateMenuAccountDataHooks.push(() => {
-    if (isDevelopment) console.log("[PE] afterUpdateMenuAccountData hook firing");
+    try {
+      applyLocalPlayerEditForMenuSync();
+    } catch {}
     queueLocalPlayerUIRefresh();
   });
 }
@@ -326,14 +330,12 @@ function installMenuAccountDataCallbacks() {
 function triggerMenuAccountDataRefresh() {
   const w = getExposedWindow() as AnyObj;
   if (typeof w.updateMenuAccountData === "function") {
-    if (isDevelopment) console.log("[PE] triggerMenuAccountDataRefresh: calling updateMenuAccountData");
     try {
       w.updateMenuAccountData();
       return;
     } catch {}
   }
 
-  if (isDevelopment) console.log("[PE] triggerMenuAccountDataRefresh: fallback to queueLocalPlayerUIRefresh");
   queueLocalPlayerUIRefresh();
 }
 
@@ -344,10 +346,7 @@ function cloneObject(value: unknown) {
 
 function captureOriginalPlayerState(player: Player) {
   const id = String(player.id);
-  if (playerOriginals.has(id)) {
-    if (isDevelopment) console.log("[PE] captureOriginalPlayerState: already captured id:", id);
-    return;
-  }
+  if (playerOriginals.has(id)) return;
 
   const p = player as AnyObj;
   const account = p.account as AnyObj | undefined;
@@ -390,7 +389,7 @@ function captureOriginalPlayerState(player: Player) {
       : null,
   };
 
-  if (isDevelopment) console.log("[PE] captureOriginalPlayerState: capturing id:", id, "isMenu:", isMenuPlayer(player), "snapshot:", JSON.parse(JSON.stringify(snapshot)));
+  if (isDevelopment) console.log("[PE] captureOriginalPlayerState:", id, isMenuPlayer(player) ? "menu" : "live");
 
   playerOriginals.set(id, snapshot);
 }
@@ -398,7 +397,6 @@ function captureOriginalPlayerState(player: Player) {
 function restoreOriginalPlayerState(player: Player) {
   const id = String(player.id);
   const snapshot = playerOriginals.get(id);
-  if (isDevelopment) console.log("[PE] restoreOriginalPlayerState: id:", id, "hasSnapshot:", !!snapshot, "isMenu:", isMenuPlayer(player));
   if (!snapshot) return;
 
   const p = player as AnyObj;
@@ -406,12 +404,9 @@ function restoreOriginalPlayerState(player: Player) {
 
   // For menuPlayer, don't restore p.name/alias/fakeName — they're just "preview"
   if (!isMenuPlayer(player)) {
-    if (isDevelopment) console.log("[PE] restoreOriginalPlayerState: restoring name/alias/fakeName", { name: snapshot.player.name, alias: snapshot.player.alias, fakeName: snapshot.player.fakeName });
     p.name = snapshot.player.name;
     p.alias = snapshot.player.alias;
     p.fakeName = snapshot.player.fakeName;
-  } else {
-    if (isDevelopment) console.log("[PE] restoreOriginalPlayerState: SKIPPING name/alias/fakeName for menuPlayer");
   }
   p.featured = snapshot.player.featured;
   p.emailVerified = snapshot.player.emailVerified;
@@ -428,7 +423,6 @@ function restoreOriginalPlayerState(player: Player) {
   }
 
   if (account && snapshot.account) {
-    if (isDevelopment) console.log("[PE] restoreOriginalPlayerState: restoring account fields", snapshot.account);
     account.name = snapshot.account.name;
     account.alias = snapshot.account.alias;
     account.featured = snapshot.account.featured;
@@ -441,12 +435,10 @@ function restoreOriginalPlayerState(player: Player) {
   }
 
   playerOriginals.delete(id);
-  if (isDevelopment) console.log("[PE] restoreOriginalPlayerState: done, deleted snapshot for id:", id);
 }
 
 function getOriginalPlayerName(player: Player) {
   const snapshot = playerOriginals.get(String(player.id));
-  if (isDevelopment) console.log("[PE] getOriginalPlayerName: id:", player.id, "hasSnapshot:", !!snapshot, "isMenu:", isMenuPlayer(player));
 
   if (isMenuPlayer(player)) {
     // Best source: Svelte account data captured directly from the store
@@ -454,24 +446,16 @@ function getOriginalPlayerName(player: Player) {
       const display = svelteAccountData.premiumT > 0 && svelteAccountData.alias
         ? svelteAccountData.alias
         : svelteAccountData.name;
-      if (display) {
-        if (isDevelopment) console.log("[PE] getOriginalPlayerName (menuPlayer): from svelteAccountData:", display);
-        return display;
-      }
+      if (display) return display;
     }
     // Fallback: DOM name captured at snapshot time
-    if (snapshot?.domName) {
-      if (isDevelopment) console.log("[PE] getOriginalPlayerName (menuPlayer): from snapshot.domName:", snapshot.domName);
-      return snapshot.domName;
-    }
+    if (snapshot?.domName) return snapshot.domName;
     if (snapshot?.account && typeof snapshot.account.name === "string") {
       const original = (snapshot.account.name as string).trim();
-      if (isDevelopment) console.log("[PE] getOriginalPlayerName (menuPlayer): from snapshot.account.name:", original);
       if (original) return original;
     }
     // Fallback to live DOM
     const domName = document.getElementById("menuAccountUsername")?.textContent?.trim();
-    if (isDevelopment) console.log("[PE] getOriginalPlayerName (menuPlayer): fallback to DOM:", domName);
     if (domName) return domName;
     return "";
   }
@@ -479,13 +463,10 @@ function getOriginalPlayerName(player: Player) {
   // For live players, prefer alias (premium display name) over raw username
   if (snapshot) {
     if (typeof snapshot.player.alias === "string" && (snapshot.player.alias as string).trim()) {
-      const alias = (snapshot.player.alias as string).trim();
-      if (isDevelopment) console.log("[PE] getOriginalPlayerName: from snapshot.player.alias:", alias);
-      return alias;
+      return (snapshot.player.alias as string).trim();
     }
     if (typeof snapshot.player.name === "string") {
       const original = (snapshot.player.name as string).trim();
-      if (isDevelopment) console.log("[PE] getOriginalPlayerName: from snapshot.player.name:", original);
       if (original) return original;
     }
   }
@@ -497,9 +478,7 @@ function getOriginalPlayerName(player: Player) {
       : typeof p.name === "string"
         ? p.name
         : "";
-  const result = typeof raw === "string" ? raw.trim() : "";
-  if (isDevelopment) console.log("[PE] getOriginalPlayerName: fallback getName/name:", result);
-  return result;
+  return typeof raw === "string" ? raw.trim() : "";
 }
 
 function getVipBadgeIndex() {
@@ -553,72 +532,47 @@ function showInjectedWindow(
 function getPlayers(): Player[] {
   try {
     const livePlayers = [...getGame().players.list];
-    if (livePlayers.length > 0) {
-      if (isDevelopment) console.log("[PE] getPlayers: live players:", livePlayers.length, livePlayers.map(p => ({ id: (p as AnyObj).id, name: (p as AnyObj).name, isYou: (p as AnyObj).isYou })));
-      return livePlayers;
-    }
+    if (livePlayers.length > 0) return livePlayers;
   } catch {
     // no-op
   }
 
   const menuPlayer = getMenuPlayer();
-  if (isDevelopment) console.log("[PE] getPlayers: no live players, menuPlayer:", menuPlayer ? { id: (menuPlayer as AnyObj).id, name: (menuPlayer as AnyObj).name, accName: (menuPlayer as AnyObj).account?.name } : null);
   return menuPlayer ? [menuPlayer] : [];
 }
 
 function isLocalPlayerEntry(player: Player) {
   const p = player as AnyObj;
-  if (p.isYou) {
-    if (isDevelopment) console.log("[PE] isLocalPlayerEntry: isYou=true, id:", p.id);
-    return true;
-  }
+  if (p.isYou) return true;
 
   const menuPlayer = getMenuPlayer();
-  if (!menuPlayer || player !== menuPlayer) {
-    if (isDevelopment) console.log("[PE] isLocalPlayerEntry: not menuPlayer, id:", p.id);
-    return false;
-  }
+  if (!menuPlayer || player !== menuPlayer) return false;
 
   try {
-    const noLivePlayers = getGame().players.list.length === 0;
-    if (isDevelopment) console.log("[PE] isLocalPlayerEntry: menuPlayer, noLivePlayers:", noLivePlayers);
-    return noLivePlayers;
+    return getGame().players.list.length === 0;
   } catch {
-    if (isDevelopment) console.log("[PE] isLocalPlayerEntry: menuPlayer, game not ready, returning true");
     return true;
   }
 }
 
 function findPlayerById(id: string) {
-  const found = getPlayers().find((player) => String(player.id) === id);
-  if (isDevelopment) console.log("[PE] findPlayerById:", id, "found:", found ? { id: (found as AnyObj).id, name: (found as AnyObj).name, accName: (found as AnyObj).account?.name } : null);
-  return found;
+  return getPlayers().find((player) => String(player.id) === id);
 }
 
 function getPlayerStorageKey(player: Player) {
-  if (isLocalPlayerEntry(player)) {
-    if (isDevelopment) console.log("[PE] getPlayerStorageKey: local player -> 'you'");
-    return "you";
-  }
+  if (isLocalPlayerEntry(player)) return "you";
 
   const p = player as AnyObj;
 
   const accid = Number(p.accid);
-  if (Number.isInteger(accid) && accid > 0) {
-    if (isDevelopment) console.log("[PE] getPlayerStorageKey: accid:", accid);
-    return `accid:${accid}`;
-  }
+  if (Number.isInteger(accid) && accid > 0) return `accid:${accid}`;
 
   const sid = Number(p.sid);
-  if (Number.isInteger(sid) && sid >= 0) {
-    if (isDevelopment) console.log("[PE] getPlayerStorageKey: sid:", sid);
-    return `sid:${sid}`;
-  }
+  if (Number.isInteger(sid) && sid >= 0) return `sid:${sid}`;
 
   const rawName =
     typeof p.getName === "function" ? p.getName() : typeof p.name === "string" ? p.name : "";
   const normalized = rawName.trim().toLowerCase();
-  if (isDevelopment) console.log("[PE] getPlayerStorageKey: fallback name:", normalized);
   return `name:${normalized || "unknown"}`;
 }
 
@@ -643,26 +597,18 @@ interface RainbowTarget {
 
 function resolveRainbowClanTag(player: Player, edit: PlayerEdit) {
   const customClan = edit.clan.trim();
-  if (customClan) {
-    if (isDevelopment) console.log("[PE] resolveRainbowClanTag: using custom clan:", customClan);
-    return customClan;
-  }
+  if (customClan) return customClan;
 
   const p = player as AnyObj;
-  const liveClan =
-    typeof p.clan === "string"
-      ? p.clan.trim()
-      : typeof p.account?.clan === "string"
-        ? String(p.account.clan).trim()
-        : "";
-
-  if (isDevelopment) console.log("[PE] resolveRainbowClanTag: using live clan:", liveClan, "p.clan:", p.clan, "account.clan:", p.account?.clan);
-  return liveClan;
+  return typeof p.clan === "string"
+    ? p.clan.trim()
+    : typeof p.account?.clan === "string"
+      ? String(p.account.clan).trim()
+      : "";
 }
 
 function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, PlayerEdit>) {
   if (typeof document === "undefined") return;
-  if (isDevelopment) console.log("[PE] refreshRainbowClanTagsInDom: players:", players.length, "edits keys:", Object.keys(edits));
 
   const targets: RainbowTarget[] = [];
 
@@ -696,7 +642,7 @@ function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, Pl
     });
   }
 
-  if (isDevelopment && targets.length > 0) console.log("[PE] refreshRainbowClanTagsInDom: targets:", targets);
+  if (isDevelopment && targets.length > 0) console.log("[PE] rainbow targets:", targets.length);
   if (targets.length === 0) return;
 
   const oldMarked = Array.from(
@@ -706,7 +652,7 @@ function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, Pl
   const targetClanTags = targets.map((target) => target.clanTag.toLowerCase());
 
   const nameNodes = document.querySelectorAll<HTMLElement>(
-    "#leaderContainer .leaderName, #leaderContainer .leaderNameF, #leaderContainer .leaderNameM, #playerListH .newLeaderName, #playerListH .newLeaderNameF, #playerListH .newLeaderNameM",
+    "#leaderContainer .leaderName, #leaderContainer .leaderNameF, #leaderContainer .leaderNameM, #playerListH .newLeaderName, #playerListH .newLeaderNameF, #playerListH .newLeaderNameM, #ingameTable .newLeaderName, #ingameTable .newLeaderNameF, #ingameTable .newLeaderNameM, #endTable .endTableN",
   );
 
   for (const node of nameNodes) {
@@ -772,7 +718,7 @@ function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, Pl
   // Fallback: directly color any existing clan spans that match configured rainbow clan tags.
   // This handles cases where name-node matching is unstable but the clan tag text is visible.
   const candidateClanSpans = document.querySelectorAll<HTMLElement>(
-    "#leaderContainer span, #playerListH span, #topRight span",
+    "#leaderContainer span, #playerListH span, #ingameTable span, #topRight span, #endTable span",
   );
   for (const span of candidateClanSpans) {
     const text = (span.textContent ?? "").trim();
@@ -1339,6 +1285,7 @@ export function playerEditorHook() {
   if (isDevelopment) console.log("[PE] playerEditorHook: entering, renderHookInstalled:", playerEditorRenderHookInstalled);
   startSharedRainbowColorLoop();
   installMenuAccountDataCallbacks();
+  installPlayerAddCallbacks();
 
   if (playerEditorRenderHookInstalled) return;
   playerEditorRenderHookInstalled = true;
@@ -1358,6 +1305,7 @@ export function playerEditorHook() {
       if (isDevelopment && overlayFrameCount % 300 === 1) console.log("[PE] overlayRenderHook: applying edit for", storageKey, "player id:", (player as AnyObj).id, "p.name:", (player as AnyObj).name, "account.name:", (player as AnyObj).account?.name);
       // Snapshot once before any persisted spoof is applied so we can show/restore true originals.
       captureOriginalPlayerState(player);
+      installSetDataHook(player);
       applyEditToPlayer(player, edit);
     }
 
