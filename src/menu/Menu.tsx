@@ -3,12 +3,12 @@ import { AimbotMenu } from "../cheats/aimbot";
 import { BhopMenu } from "../cheats/bhop";
 import { ESPMenu } from "../cheats/esp";
 import { KeybindOverlayMenu } from "../cheats/keybindOverlay";
-import { SkinHackMenu } from "../cheats/skins";
+import { SkinChangerMenu } from "../cheats/skinChanger";
 import { SpectatorsMenu } from "../cheats/spectators";
 import { WatermarkMenu } from "../cheats/watermark";
 import { PlayerEditorMenu } from "../cheats/playerEditor";
 import { discordURL, docsURL, sketchVersion } from "../consts";
-import { getActiveMap } from "../filters";
+import { getActiveMap, enableSpoofGameId, disableSpoofGameId } from "../filters";
 import sketchConfig, {
   SketchConfig,
   skyboxes,
@@ -270,7 +270,6 @@ const tabs: Tab[] = [
       return (
         <>
           <HeadlessSet>
-            <SkinHackMenu />
             <PlayerEditorMenu />
             <SpectatorsMenu />
             <Switch
@@ -282,7 +281,12 @@ const tabs: Tab[] = [
               title="Spoof Game ID"
               description="Shows a random game ID in the browser URL instead of the real one"
               defaultChecked={spoofGameId}
-              onChange={(event) => setSpoofGameId(event.currentTarget.checked)}
+              onChange={(event) => {
+                const enabled = event.currentTarget.checked;
+                setSpoofGameId(enabled);
+                if (enabled) enableSpoofGameId();
+                else disableSpoofGameId();
+              }}
             />
           </HeadlessSet>
           <Set title="ESP">
@@ -401,6 +405,7 @@ const tabs: Tab[] = [
               }}
             />
           </Set>
+          <SkinChangerMenu />
         </>
       );
     },

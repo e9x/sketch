@@ -185,6 +185,8 @@ export interface SketchConfig {
   aiModel: string;
   spectatorsOverlay: boolean;
   spoofGameId: boolean;
+  skinChanger: boolean;
+  skinChangerSlots: Record<string, number>;
 }
 
 /**
@@ -267,6 +269,8 @@ const defaultConfig: SketchConfig = {
   aiReply: false,
   spectatorsOverlay: false,
   spoofGameId: false,
+  skinChanger: false,
+  skinChangerSlots: {},
   aiEndpoint: "https://chat.openai.com/v1/chat/completions",
   aiKey: "",
   aiPrompt:

@@ -14,6 +14,7 @@ import type { MapData } from "./krunker/GameMap";
 import type { Hook } from "./inject";
 import { AI } from "./krunker/AI";
 import type * as IO from "./krunker/io";
+import { sessionStore } from "./sessionStore";
 
 const canSee = Symbol();
 let checkingCanSee = false;
@@ -268,19 +269,63 @@ beforeGame.push(() => {
 
 // --- Spoof Game ID in browser URL ---
 
-const SPOOF_REGIONS = ["NY", "FRA", "BHN", "DAL", "MBI", "SIN", "BRZ", "SYD", "TOK"];
+const SPOOF_REGIONS = ["NY", "SV", "DAL", "MIA", "STL", "CHI", "MX", "BRZ", "BHN", "TOK", "SIN", "SEO", "MBI", "FRA", "LON", "AFR", "SYD", "SSS", "IOW"];
 
-function generateFakeGameId() {
+const REGION_FULL_NAMES: Record<string, string> = {
+  NY: "New York",
+  SV: "Silicon Valley",
+  DAL: "Dallas",
+  MIA: "Miami",
+  STL: "Seattle",
+  CHI: "Chicago",
+  MX: "Mexico",
+  BRZ: "Brazil",
+  BHN: "Middle East",
+  TOK: "Tokyo",
+  SIN: "Singapore",
+  SEO: "South Korea",
+  MBI: "Mumbai",
+  FRA: "Frankfurt",
+  LON: "London",
+  AFR: "South Africa",
+  SYD: "Sydney",
+  SSS: "EU Super Secret Servers",
+  IOW: "Iowa",
+};
+
+export function generateFakeGameId() {
   const region = SPOOF_REGIONS[Math.floor(Math.random() * SPOOF_REGIONS.length)];
   const code = Math.random().toString(36).slice(2, 7);
   return `${region}:${code}`;
 }
 
-let fakeGameId: string | null = null;
-let realGameId: string | null = null;
+export let fakeGameId: string | null = null;
+export let realGameId: string | null = null;
+
+interface SpoofData { fake: string; real: string }
+
+// Restore persisted spoof IDs from session storage
+{
+  const stored = sessionStore.get<SpoofData>("spoof");
+  if (stored?.fake && stored?.real) {
+    fakeGameId = stored.fake;
+    realGameId = stored.real;
+  }
+}
+
+export function persistSpoofIds() {
+  if (fakeGameId && realGameId) {
+    sessionStore.set("spoof", { fake: fakeGameId, real: realGameId });
+  } else {
+    sessionStore.remove("spoof");
+  }
+}
 
 function ensureFakeGameId() {
-  if (!fakeGameId) fakeGameId = generateFakeGameId();
+  if (!fakeGameId) {
+    fakeGameId = generateFakeGameId();
+    persistSpoofIds();
+  }
   return fakeGameId;
 }
 
@@ -289,58 +334,53 @@ function spoofUrlString(url: string): string {
   // match game=REGION:CODE in query strings or paths
   const match = url.match(/([?&])game=([A-Z]{2,4}:[a-z0-9]{3,6})/);
   if (!match) return url;
-  realGameId = match[2];
-  return url.replace(match[2], ensureFakeGameId());
+  const gameId = match[2];
+  // Already spoofed — don't touch it
+  if (fakeGameId && gameId === fakeGameId) return url;
+  realGameId = gameId;
+  const fake = ensureFakeGameId();
+  persistSpoofIds();
+  return url.replace(gameId, fake);
 }
 
-// Immediately spoof the URL on script load if enabled
+export function updateRegionLabel() {
+  try {
+    const el = document.getElementById("menuRegionLabel");
+    if (!el || !fakeGameId) return;
+    if (!sketchConfig.get("spoofGameId")) return;
+    const region = fakeGameId.split(":")[0];
+    const fullName = REGION_FULL_NAMES[region];
+    if (fullName) el.textContent = fullName;
+  } catch {}
+}
+
+// On script load: if the URL contains a stored fake game ID, swap it back to
+// On script load: if the URL has a stored fake game ID, keep it — the
+// data.location proxy will transparently give the game the real ID.
+// No need to swap the URL or regenerate a new fake ID.
 {
-  const href = location.href;
-  const match = href.match(/[?&]game=([A-Z]{2,4}:[a-z0-9]{3,6})/);
-  if (sketchConfig.get("spoofGameId") && match) {
-    realGameId = match[1];
-    fakeGameId = generateFakeGameId();
-    history.replaceState(document.title, document.title, href.replace(realGameId, fakeGameId));
+  if (fakeGameId && realGameId) {
+    const href = location.href;
+    if (href.includes(fakeGameId)) {
+      if (isDevelopment) console.log("SPOOF: on-load keeping fake ID in URL:", fakeGameId, "(real:", realGameId + ")");
+    } else if (href.includes(realGameId)) {
+      // URL has the real ID (e.g. navigated via a direct link) — spoof it
+      if (isDevelopment) console.log("SPOOF: on-load found real ID in URL, spoofing to", fakeGameId);
+      history.replaceState(document.title, document.title, href.replace(realGameId, fakeGameId));
+    }
   }
 }
 
-// Spoofed history object — proxies to real history but spoofs game IDs in URLs
-data.history = new Proxy(history, {
-  get(target, prop) {
-    const value = (target as any)[prop];
-    if (typeof value !== "function") return value;
-
-    if (prop === "pushState" || prop === "replaceState") {
-      return function (data: any, unused: string, url?: string | URL | null) {
-        if (url && sketchConfig.get("spoofGameId")) {
-          const urlStr = typeof url === "string" ? url : url.toString();
-          return (target as any)[prop](data, unused, spoofUrlString(urlStr));
-        }
-        return (target as any)[prop](data, unused, url);
-      };
-    }
-
-    return value.bind(target);
-  },
-});
-
-// Spoofed location object — proxies to real location but spoofs game IDs in href/search
+// --- Spoof window["location"] and window["history"] in game source ---
 data.location = new Proxy(location, {
   get(target, prop) {
     const value = (target as any)[prop];
-
-    if (sketchConfig.get("spoofGameId") && fakeGameId) {
-      if (prop === "href" || prop === "search") {
-        return spoofUrlString(value as string);
-      }
-      if (prop === "toString") {
-        return function () {
-          return spoofUrlString(target.href);
-        };
-      }
+    if (typeof value === "function") return value.bind(target);
+    // Unspoof fake game ID back to real for href/search/hash so game code reads real ID
+    if (fakeGameId && realGameId && typeof value === "string" && (prop === "href" || prop === "search" || prop === "hash")) {
+      return value.replace(fakeGameId, realGameId);
     }
-
-    return typeof value === "function" ? value.bind(target) : value;
+    return value;
   },
   set(target, prop, value) {
     (target as any)[prop] = value;
@@ -348,41 +388,86 @@ data.location = new Proxy(location, {
   },
 });
 
-// Reset/regenerate fake game ID when the setting is toggled
-sketchConfig.configTarget.addEventListener("change", (e) => {
-  if (e.configKey === "spoofGameId") {
-    if (sketchConfig.get("spoofGameId")) {
-      fakeGameId = generateFakeGameId();
-      // Parse the real game ID from the current URL if we don't have it yet
-      const href = location.href;
-      const match = href.match(/[?&]game=([A-Z]{2,4}:[a-z0-9]{3,6})/);
-      if (match) realGameId = match[1];
-      if (realGameId && href.includes(realGameId)) {
-        history.replaceState(document.title, document.title, href.replace(realGameId, fakeGameId));
-      }
-    } else {
-      // Restore the real URL when disabled
-      if (realGameId && fakeGameId) {
-        const href = location.href;
-        if (href.includes(fakeGameId)) {
-          history.replaceState(document.title, document.title, href.replace(fakeGameId, realGameId));
+data.history = new Proxy(history, {
+  get(target, prop) {
+    const value = (target as any)[prop];
+    if (typeof value !== "function") return value;
+
+    if (prop === "pushState" || prop === "replaceState") {
+      return function (stateData: any, unused: string, url?: string | URL | null) {
+        if (url && sketchConfig.get("spoofGameId")) {
+          const urlStr = typeof url === "string" ? url : url.toString();
+          const spoofed = spoofUrlString(urlStr);
+          if (isDevelopment && spoofed !== urlStr) console.log(`SPOOF: ${prop as string} spoofed URL`, urlStr, "->", spoofed);
+          const result = (target as any)[prop](stateData, unused, spoofed);
+          updateRegionLabel();
+          return result;
         }
-      }
-      fakeGameId = null;
-      realGameId = null;
+        return (target as any)[prop](stateData, unused, url);
+      };
     }
-  }
+
+    return value.bind(target);
+  },
 });
 
+// Patch bracket-access: window["location"] and window['location']
+patches.spoofLocation = [
+  /window\[(['"])location\1\]/g,
+  () => `${dataArg}.location`,
+];
+
+// Patch bracket-access: window["history"] and window['history']
 patches.spoofHistory = [
-  /window\.history/g,
+  /window\[(['"])history\1\]/g,
   () => `${dataArg}.history`,
 ];
 
-patches.spoofLocation = [
-  /window\.location/g,
-  () => `${dataArg}.location`,
+export function enableSpoofGameId() {
+  fakeGameId = generateFakeGameId();
+  // Parse the real game ID from the current URL if we don't have it yet
+  const href = location.href;
+  const match = href.match(/[?&]game=([A-Z]{2,4}:[a-z0-9]{3,6})/);
+  if (match) realGameId = match[1];
+  if (isDevelopment) console.log("SPOOF: enabled", { fakeGameId, realGameId });
+  persistSpoofIds();
+  if (realGameId && href.includes(realGameId)) {
+    history.replaceState(document.title, document.title, href.replace(realGameId, fakeGameId));
+    if (isDevelopment) console.log("SPOOF: replaced real ID in URL with fake");
+  }
+  updateRegionLabel();
+}
+
+export function disableSpoofGameId() {
+  if (isDevelopment) console.log("SPOOF: disabled", { fakeGameId, realGameId });
+  // Restore the real URL when disabled
+  if (realGameId && fakeGameId) {
+    const href = location.href;
+    if (href.includes(fakeGameId)) {
+      history.replaceState(document.title, document.title, href.replace(fakeGameId, realGameId));
+      if (isDevelopment) console.log("SPOOF: restored real ID in URL");
+    }
+  }
+  fakeGameId = null;
+  realGameId = null;
+  persistSpoofIds();
+}
+
+// Patch menuRegionLabel.textContent assignments to go through our spoof
+patches.spoofRegionLabel = [
+  /menuRegionLabel\.textContent\s*=/g,
+  () => `${dataArg}.setRegionLabel(menuRegionLabel),menuRegionLabel.textContent=`,
 ];
+
+data.setRegionLabel = function setRegionLabel(el: HTMLElement) {
+  // After the game sets the region label, we override it with the fake region name
+  if (!sketchConfig.get("spoofGameId") || !fakeGameId) return;
+  setTimeout(() => {
+    const region = fakeGameId!.split(":")[0];
+    const fullName = REGION_FULL_NAMES[region];
+    if (fullName) el.textContent = fullName;
+  });
+};
 
 let config: typeof configModule | undefined;
 

@@ -20,6 +20,21 @@ let { call: c } = (() => {}).bind;
 c.bind = c.bind;
 let str_in = c.bind(String.prototype.includes);
 let ele_rm = c.bind(Element.prototype.remove);
+
+function unspoofSeekUrl(url: string): string {
+  try {
+    const raw = sessionStorage.getItem("_sk_spoof");
+    if (!raw) return url;
+    const data = JSON.parse(raw) as { fake: string; real: string };
+    if (data.fake && data.real && url.includes(encodeURIComponent(data.fake))) {
+      return url.replace(encodeURIComponent(data.fake), encodeURIComponent(data.real));
+    }
+    if (data.fake && data.real && url.includes(data.fake)) {
+      return url.replace(data.fake, data.real);
+    }
+  } catch {}
+  return url;
+}
 function cleanStack(e: any): never {
   if (e instanceof Error && e.stack) {
     e.stack = e.stack
@@ -55,7 +70,8 @@ function makeFrame() {
       if (typeof url === "string" && str_in(url, "/seek-game")) {
         ele_rm(ifr);
         ele_rm(div);
-        const p = _fetch(this, url, init) as Promise<Response>;
+        const realUrl = unspoofSeekUrl(url);
+        const p = _fetch(this, realUrl, init) as Promise<Response>;
         p.then(tokenPromiseResolve).catch(tokenPromiseReject);
       }
       // @ts-ignore

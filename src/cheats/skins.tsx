@@ -408,7 +408,7 @@ export function SkinHackMenu() {
 
   return (
     <Switch
-      title="Skin Hack"
+      title="Inventory Unlocker"
       description="Unlocks all the skins. Your skins will only appear to you. They won't show to other players. You must be signed in."
       attention
       defaultChecked={skinHack}

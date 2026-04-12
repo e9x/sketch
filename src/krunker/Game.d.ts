@@ -38,7 +38,8 @@ declare class Game {
   addSpray(...args: unknown[]): unknown;
   roundId: string;
   sessionId: string;
-  store: { skins: { type: number; weapon: number; classIndex: number }[] };
+  store: { skins: { type: number; weapon: number; classIndex: number; name: string; id: number }[] };
+  weapons: { name: string; src: string; icon: string; melee?: boolean; secondary?: boolean }[];
   canSee(
     target: Player | AI,
     x2: number,
