@@ -4,6 +4,7 @@ import {
   getGame,
   getMenuPlayer,
   overlayRenderHooks,
+  svelteAccountData,
 } from "../filters";
 import { createRenderContainer } from "../krunker-ui/container";
 import { Button } from "../krunker-ui/components/Button";
@@ -13,7 +14,8 @@ import { Switch } from "../krunker-ui/components/Switch";
 import { Text } from "../krunker-ui/components/Text";
 import type { Player } from "../krunker/Player";
 import { useEffect, useState } from "preact/hooks";
-import { getExposedWindow } from "../consts";
+import { getExposedWindow, isDevelopment } from "../consts";
+import { console } from "../crashout";
 import playerSpoofConfig, { type PlayerSpoofEdit } from "../playerSpoofConfig";
 
 type AnyObj = Record<PropertyKey, any>;
@@ -36,6 +38,8 @@ interface PlayerSnapshot {
     showBadgesPremium: unknown;
     showBadgesCustom: unknown;
   };
+  /** Original DOM name for menuPlayer (only source of truth since menuPlayer has no .account) */
+  domName: string | null;
   account: {
     name: unknown;
     alias: unknown;
@@ -122,16 +126,81 @@ function startSharedRainbowColorLoop() {
   setInterval(updateSharedRainbowColor, 16);
 }
 
+function isMenuPlayer(player: Player) {
+  const result = (player as AnyObj).id === -1;
+  if (isDevelopment) console.log("[PE] isMenuPlayer", { id: (player as AnyObj).id, result });
+  return result;
+}
+
+/**
+ * Get the real account name for a player.
+ * For menuPlayer, uses Svelte account data captured from the store.
+ * For live players, reads from the snapshot to avoid returning spoofed values.
+ */
+function getPlayerRealName(player: Player): string {
+  const p = player as AnyObj;
+  if (isMenuPlayer(player)) {
+    // Best source: Svelte account data captured directly from the store
+    if (svelteAccountData) {
+      const display = svelteAccountData.premiumT > 0 && svelteAccountData.alias
+        ? svelteAccountData.alias
+        : svelteAccountData.name;
+      if (display) {
+        if (isDevelopment) console.log("[PE] getPlayerRealName (menuPlayer) from svelteAccountData", { display });
+        return display;
+      }
+    }
+    // Fallback: account property on the player (rarely set for menuPlayer)
+    const accName = p.account?.name;
+    if (typeof accName === "string" && accName.trim()) {
+      if (isDevelopment) console.log("[PE] getPlayerRealName (menuPlayer) from account", { accName });
+      return accName.trim();
+    }
+    // Fallback: DOM (may show the spoofed name if we already overwrote it)
+    const domName = document.getElementById("menuAccountUsername")?.textContent?.trim();
+    if (isDevelopment) console.log("[PE] getPlayerRealName (menuPlayer)", { accName, domName, pName: p.name, pAlias: p.alias });
+    if (domName) return domName;
+    return "";
+  }
+
+  // For live players, check the snapshot first to avoid returning spoofed values
+  const snapshot = playerOriginals.get(String(p.id));
+  if (snapshot) {
+    // If premium with alias, the display name was the alias
+    if (typeof snapshot.player.alias === "string" && (snapshot.player.alias as string).trim()) {
+      const alias = (snapshot.player.alias as string).trim();
+      if (isDevelopment) console.log("[PE] getPlayerRealName (live) from snapshot.alias", { id: p.id, alias });
+      return alias;
+    }
+    if (typeof snapshot.player.name === "string" && (snapshot.player.name as string).trim()) {
+      const name = (snapshot.player.name as string).trim();
+      if (isDevelopment) console.log("[PE] getPlayerRealName (live) from snapshot.name", { id: p.id, name });
+      return name;
+    }
+  }
+
+  const raw = typeof p.getName === "function" ? p.getName() : p.name;
+  const result = typeof raw === "string" ? raw.trim() : "";
+  if (isDevelopment) console.log("[PE] getPlayerRealName", { id: p.id, pName: p.name, pAlias: p.alias, pFakeName: p.fakeName, getName: raw, result });
+  return result;
+}
+
 function getPlayerRows(): PlayerRow[] {
-  const rows = getPlayers().map((player) => ({
-    id: String(player.id),
-    storageKey: getPlayerStorageKey(player),
-    sid: player.sid,
-    name: (typeof player.getName === "function" ? player.getName() : player.name) || "unknown",
-    originalName: getOriginalPlayerName(player),
-    customName: getStoredEdit(getPlayerStorageKey(player))?.displayName.trim() || "",
-    isYou: isLocalPlayerEntry(player),
-  }));
+  const players = getPlayers();
+  if (isDevelopment) console.log("[PE] getPlayerRows: player count", players.length);
+  const rows = players.map((player) => {
+    const row = {
+      id: String(player.id),
+      storageKey: getPlayerStorageKey(player),
+      sid: player.sid,
+      name: getPlayerRealName(player) || "unknown",
+      originalName: getOriginalPlayerName(player),
+      customName: getStoredEdit(getPlayerStorageKey(player))?.displayName.trim() || "",
+      isYou: isLocalPlayerEntry(player),
+    };
+    if (isDevelopment) console.log("[PE] getPlayerRows: row", row);
+    return row;
+  });
 
   rows.sort((a, b) => {
     if (a.isYou === b.isYou) return 0;
@@ -152,6 +221,7 @@ let playerEditorRenderHookInstalled = false;
 let menuAccountDataCallbacksInstalled = false;
 
 function queueLocalPlayerUIRefresh() {
+  if (isDevelopment) console.log("[PE] queueLocalPlayerUIRefresh called, already queued:", localUiRefreshQueued);
   if (localUiRefreshQueued) return;
   localUiRefreshQueued = true;
 
@@ -160,15 +230,26 @@ function queueLocalPlayerUIRefresh() {
 
     try {
       const localPlayer = getPlayers().find((player) => isLocalPlayerEntry(player));
+      if (isDevelopment) console.log("[PE] queueLocalPlayerUIRefresh: localPlayer found:", !!localPlayer);
       if (!localPlayer) return;
 
-      const p = localPlayer as AnyObj;
-      const resolvedName =
-        typeof p.getName === "function"
-          ? String(p.getName() || "").trim()
-          : String(p.name || "").trim();
+      // Capture the real name from DOM BEFORE we overwrite it.
+      // At this point Svelte's microtask has flushed the real account name into the DOM.
+      if (isMenuPlayer(localPlayer)) {
+        const snapshot = playerOriginals.get(String(localPlayer.id));
+        if (snapshot && !snapshot.domName) {
+          const realDomName = document.getElementById("menuAccountUsername")?.textContent?.trim() || null;
+          if (isDevelopment) console.log("[PE] queueLocalPlayerUIRefresh: capturing domName:", realDomName);
+          if (realDomName) snapshot.domName = realDomName;
+        }
+      }
 
-      if (resolvedName) {
+      const storageKey = getPlayerStorageKey(localPlayer);
+      const edit = getStoredEdit(storageKey);
+      const customName = edit?.displayName?.trim();
+      if (isDevelopment) console.log("[PE] queueLocalPlayerUIRefresh: storageKey:", storageKey, "customName:", customName);
+
+      if (customName) {
         const menuNameIds = [
           "menuAccountUsername",
           "menuUsername",
@@ -178,8 +259,12 @@ function queueLocalPlayerUIRefresh() {
 
         for (const id of menuNameIds) {
           const el = document.getElementById(id);
-          if (el) el.textContent = resolvedName;
+          if (el) el.textContent = customName;
         }
+
+        // The class menu preview name uses a class-based span
+        const classNameEl = document.querySelector(".menuClassPlayerName");
+        if (classNameEl) classNameEl.textContent = customName;
       }
 
       const w = getExposedWindow() as any;
@@ -197,31 +282,43 @@ function queueLocalPlayerUIRefresh() {
 }
 
 function getLocalPlayerEntry() {
-  return getPlayers().find((player) => isLocalPlayerEntry(player));
+  const entry = getPlayers().find((player) => isLocalPlayerEntry(player));
+  if (isDevelopment) console.log("[PE] getLocalPlayerEntry:", entry ? { id: (entry as AnyObj).id, name: (entry as AnyObj).name, accName: (entry as AnyObj).account?.name } : null);
+  return entry;
 }
 
 function applyLocalPlayerEditForMenuSync() {
+  if (isDevelopment) console.log("[PE] applyLocalPlayerEditForMenuSync: entering");
   const localPlayer = getLocalPlayerEntry();
-  if (!localPlayer) return;
+  if (!localPlayer) {
+    if (isDevelopment) console.log("[PE] applyLocalPlayerEditForMenuSync: no local player");
+    return;
+  }
 
-  const edit = getStoredEdit(getPlayerStorageKey(localPlayer));
+  const storageKey = getPlayerStorageKey(localPlayer);
+  const edit = getStoredEdit(storageKey);
+  if (isDevelopment) console.log("[PE] applyLocalPlayerEditForMenuSync: storageKey:", storageKey, "edit:", edit);
   if (!edit) return;
 
   captureOriginalPlayerState(localPlayer);
   applyEditToPlayer(localPlayer, edit);
+  if (isDevelopment) console.log("[PE] applyLocalPlayerEditForMenuSync: done");
 }
 
 function installMenuAccountDataCallbacks() {
+  if (isDevelopment) console.log("[PE] installMenuAccountDataCallbacks: already installed:", menuAccountDataCallbacksInstalled);
   if (menuAccountDataCallbacksInstalled) return;
   menuAccountDataCallbacksInstalled = true;
 
   beforeUpdateMenuAccountDataHooks.push(() => {
+    if (isDevelopment) console.log("[PE] beforeUpdateMenuAccountData hook firing");
     try {
       applyLocalPlayerEditForMenuSync();
     } catch {}
   });
 
   afterUpdateMenuAccountDataHooks.push(() => {
+    if (isDevelopment) console.log("[PE] afterUpdateMenuAccountData hook firing");
     queueLocalPlayerUIRefresh();
   });
 }
@@ -229,12 +326,14 @@ function installMenuAccountDataCallbacks() {
 function triggerMenuAccountDataRefresh() {
   const w = getExposedWindow() as AnyObj;
   if (typeof w.updateMenuAccountData === "function") {
+    if (isDevelopment) console.log("[PE] triggerMenuAccountDataRefresh: calling updateMenuAccountData");
     try {
       w.updateMenuAccountData();
       return;
     } catch {}
   }
 
+  if (isDevelopment) console.log("[PE] triggerMenuAccountDataRefresh: fallback to queueLocalPlayerUIRefresh");
   queueLocalPlayerUIRefresh();
 }
 
@@ -245,13 +344,21 @@ function cloneObject(value: unknown) {
 
 function captureOriginalPlayerState(player: Player) {
   const id = String(player.id);
-  if (playerOriginals.has(id)) return;
+  if (playerOriginals.has(id)) {
+    if (isDevelopment) console.log("[PE] captureOriginalPlayerState: already captured id:", id);
+    return;
+  }
 
   const p = player as AnyObj;
   const account = p.account as AnyObj | undefined;
   const showBadges = p.showBadges as AnyObj | undefined;
 
-  playerOriginals.set(id, {
+  const isMenu = isMenuPlayer(player);
+  const domName = isMenu
+    ? document.getElementById("menuAccountUsername")?.textContent?.trim() || null
+    : null;
+
+  const snapshot: PlayerSnapshot = {
     player: {
       name: p.name,
       alias: p.alias,
@@ -267,6 +374,7 @@ function captureOriginalPlayerState(player: Player) {
       showBadgesPremium: showBadges?.premium,
       showBadgesCustom: showBadges?.custom,
     },
+    domName,
     account: account
       ? {
           name: account.name,
@@ -280,20 +388,31 @@ function captureOriginalPlayerState(player: Player) {
           clanCol: account.clanCol,
         }
       : null,
-  });
+  };
+
+  if (isDevelopment) console.log("[PE] captureOriginalPlayerState: capturing id:", id, "isMenu:", isMenuPlayer(player), "snapshot:", JSON.parse(JSON.stringify(snapshot)));
+
+  playerOriginals.set(id, snapshot);
 }
 
 function restoreOriginalPlayerState(player: Player) {
   const id = String(player.id);
   const snapshot = playerOriginals.get(id);
+  if (isDevelopment) console.log("[PE] restoreOriginalPlayerState: id:", id, "hasSnapshot:", !!snapshot, "isMenu:", isMenuPlayer(player));
   if (!snapshot) return;
 
   const p = player as AnyObj;
   const account = p.account as AnyObj | undefined;
 
-  p.name = snapshot.player.name;
-  p.alias = snapshot.player.alias;
-  p.fakeName = snapshot.player.fakeName;
+  // For menuPlayer, don't restore p.name/alias/fakeName — they're just "preview"
+  if (!isMenuPlayer(player)) {
+    if (isDevelopment) console.log("[PE] restoreOriginalPlayerState: restoring name/alias/fakeName", { name: snapshot.player.name, alias: snapshot.player.alias, fakeName: snapshot.player.fakeName });
+    p.name = snapshot.player.name;
+    p.alias = snapshot.player.alias;
+    p.fakeName = snapshot.player.fakeName;
+  } else {
+    if (isDevelopment) console.log("[PE] restoreOriginalPlayerState: SKIPPING name/alias/fakeName for menuPlayer");
+  }
   p.featured = snapshot.player.featured;
   p.emailVerified = snapshot.player.emailVerified;
   p.premiumT = snapshot.player.premiumT;
@@ -309,6 +428,7 @@ function restoreOriginalPlayerState(player: Player) {
   }
 
   if (account && snapshot.account) {
+    if (isDevelopment) console.log("[PE] restoreOriginalPlayerState: restoring account fields", snapshot.account);
     account.name = snapshot.account.name;
     account.alias = snapshot.account.alias;
     account.featured = snapshot.account.featured;
@@ -321,13 +441,53 @@ function restoreOriginalPlayerState(player: Player) {
   }
 
   playerOriginals.delete(id);
+  if (isDevelopment) console.log("[PE] restoreOriginalPlayerState: done, deleted snapshot for id:", id);
 }
 
 function getOriginalPlayerName(player: Player) {
   const snapshot = playerOriginals.get(String(player.id));
-  if (snapshot && typeof snapshot.player.name === "string") {
-    const original = snapshot.player.name.trim();
-    if (original) return original;
+  if (isDevelopment) console.log("[PE] getOriginalPlayerName: id:", player.id, "hasSnapshot:", !!snapshot, "isMenu:", isMenuPlayer(player));
+
+  if (isMenuPlayer(player)) {
+    // Best source: Svelte account data captured directly from the store
+    if (svelteAccountData) {
+      const display = svelteAccountData.premiumT > 0 && svelteAccountData.alias
+        ? svelteAccountData.alias
+        : svelteAccountData.name;
+      if (display) {
+        if (isDevelopment) console.log("[PE] getOriginalPlayerName (menuPlayer): from svelteAccountData:", display);
+        return display;
+      }
+    }
+    // Fallback: DOM name captured at snapshot time
+    if (snapshot?.domName) {
+      if (isDevelopment) console.log("[PE] getOriginalPlayerName (menuPlayer): from snapshot.domName:", snapshot.domName);
+      return snapshot.domName;
+    }
+    if (snapshot?.account && typeof snapshot.account.name === "string") {
+      const original = (snapshot.account.name as string).trim();
+      if (isDevelopment) console.log("[PE] getOriginalPlayerName (menuPlayer): from snapshot.account.name:", original);
+      if (original) return original;
+    }
+    // Fallback to live DOM
+    const domName = document.getElementById("menuAccountUsername")?.textContent?.trim();
+    if (isDevelopment) console.log("[PE] getOriginalPlayerName (menuPlayer): fallback to DOM:", domName);
+    if (domName) return domName;
+    return "";
+  }
+
+  // For live players, prefer alias (premium display name) over raw username
+  if (snapshot) {
+    if (typeof snapshot.player.alias === "string" && (snapshot.player.alias as string).trim()) {
+      const alias = (snapshot.player.alias as string).trim();
+      if (isDevelopment) console.log("[PE] getOriginalPlayerName: from snapshot.player.alias:", alias);
+      return alias;
+    }
+    if (typeof snapshot.player.name === "string") {
+      const original = (snapshot.player.name as string).trim();
+      if (isDevelopment) console.log("[PE] getOriginalPlayerName: from snapshot.player.name:", original);
+      if (original) return original;
+    }
   }
 
   const p = player as AnyObj;
@@ -337,7 +497,9 @@ function getOriginalPlayerName(player: Player) {
       : typeof p.name === "string"
         ? p.name
         : "";
-  return typeof raw === "string" ? raw.trim() : "";
+  const result = typeof raw === "string" ? raw.trim() : "";
+  if (isDevelopment) console.log("[PE] getOriginalPlayerName: fallback getName/name:", result);
+  return result;
 }
 
 function getVipBadgeIndex() {
@@ -391,47 +553,72 @@ function showInjectedWindow(
 function getPlayers(): Player[] {
   try {
     const livePlayers = [...getGame().players.list];
-    if (livePlayers.length > 0) return livePlayers;
+    if (livePlayers.length > 0) {
+      if (isDevelopment) console.log("[PE] getPlayers: live players:", livePlayers.length, livePlayers.map(p => ({ id: (p as AnyObj).id, name: (p as AnyObj).name, isYou: (p as AnyObj).isYou })));
+      return livePlayers;
+    }
   } catch {
     // no-op
   }
 
   const menuPlayer = getMenuPlayer();
+  if (isDevelopment) console.log("[PE] getPlayers: no live players, menuPlayer:", menuPlayer ? { id: (menuPlayer as AnyObj).id, name: (menuPlayer as AnyObj).name, accName: (menuPlayer as AnyObj).account?.name } : null);
   return menuPlayer ? [menuPlayer] : [];
 }
 
 function isLocalPlayerEntry(player: Player) {
   const p = player as AnyObj;
-  if (p.isYou) return true;
+  if (p.isYou) {
+    if (isDevelopment) console.log("[PE] isLocalPlayerEntry: isYou=true, id:", p.id);
+    return true;
+  }
 
   const menuPlayer = getMenuPlayer();
-  if (!menuPlayer || player !== menuPlayer) return false;
+  if (!menuPlayer || player !== menuPlayer) {
+    if (isDevelopment) console.log("[PE] isLocalPlayerEntry: not menuPlayer, id:", p.id);
+    return false;
+  }
 
   try {
-    return getGame().players.list.length === 0;
+    const noLivePlayers = getGame().players.list.length === 0;
+    if (isDevelopment) console.log("[PE] isLocalPlayerEntry: menuPlayer, noLivePlayers:", noLivePlayers);
+    return noLivePlayers;
   } catch {
+    if (isDevelopment) console.log("[PE] isLocalPlayerEntry: menuPlayer, game not ready, returning true");
     return true;
   }
 }
 
 function findPlayerById(id: string) {
-  return getPlayers().find((player) => String(player.id) === id);
+  const found = getPlayers().find((player) => String(player.id) === id);
+  if (isDevelopment) console.log("[PE] findPlayerById:", id, "found:", found ? { id: (found as AnyObj).id, name: (found as AnyObj).name, accName: (found as AnyObj).account?.name } : null);
+  return found;
 }
 
 function getPlayerStorageKey(player: Player) {
-  if (isLocalPlayerEntry(player)) return "you";
+  if (isLocalPlayerEntry(player)) {
+    if (isDevelopment) console.log("[PE] getPlayerStorageKey: local player -> 'you'");
+    return "you";
+  }
 
   const p = player as AnyObj;
 
   const accid = Number(p.accid);
-  if (Number.isInteger(accid) && accid > 0) return `accid:${accid}`;
+  if (Number.isInteger(accid) && accid > 0) {
+    if (isDevelopment) console.log("[PE] getPlayerStorageKey: accid:", accid);
+    return `accid:${accid}`;
+  }
 
   const sid = Number(p.sid);
-  if (Number.isInteger(sid) && sid >= 0) return `sid:${sid}`;
+  if (Number.isInteger(sid) && sid >= 0) {
+    if (isDevelopment) console.log("[PE] getPlayerStorageKey: sid:", sid);
+    return `sid:${sid}`;
+  }
 
   const rawName =
     typeof p.getName === "function" ? p.getName() : typeof p.name === "string" ? p.name : "";
   const normalized = rawName.trim().toLowerCase();
+  if (isDevelopment) console.log("[PE] getPlayerStorageKey: fallback name:", normalized);
   return `name:${normalized || "unknown"}`;
 }
 
@@ -456,7 +643,10 @@ interface RainbowTarget {
 
 function resolveRainbowClanTag(player: Player, edit: PlayerEdit) {
   const customClan = edit.clan.trim();
-  if (customClan) return customClan;
+  if (customClan) {
+    if (isDevelopment) console.log("[PE] resolveRainbowClanTag: using custom clan:", customClan);
+    return customClan;
+  }
 
   const p = player as AnyObj;
   const liveClan =
@@ -466,11 +656,13 @@ function resolveRainbowClanTag(player: Player, edit: PlayerEdit) {
         ? String(p.account.clan).trim()
         : "";
 
+  if (isDevelopment) console.log("[PE] resolveRainbowClanTag: using live clan:", liveClan, "p.clan:", p.clan, "account.clan:", p.account?.clan);
   return liveClan;
 }
 
 function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, PlayerEdit>) {
   if (typeof document === "undefined") return;
+  if (isDevelopment) console.log("[PE] refreshRainbowClanTagsInDom: players:", players.length, "edits keys:", Object.keys(edits));
 
   const targets: RainbowTarget[] = [];
 
@@ -488,10 +680,9 @@ function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, Pl
       names.push(value);
     };
 
-    const liveName =
-      typeof player.getName === "function" ? player.getName() : (player as AnyObj).name;
-    if (typeof liveName === "string" && liveName.trim()) {
-      addName(liveName.trim().toLowerCase());
+    const liveName = getPlayerRealName(player);
+    if (liveName) {
+      addName(liveName.toLowerCase());
     }
 
     if (edit.displayName.trim()) {
@@ -505,6 +696,7 @@ function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, Pl
     });
   }
 
+  if (isDevelopment && targets.length > 0) console.log("[PE] refreshRainbowClanTagsInDom: targets:", targets);
   if (targets.length === 0) return;
 
   const oldMarked = Array.from(
@@ -603,6 +795,7 @@ function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, Pl
 
 function getStoredEdit(storageKey: string) {
   const raw = getStoredEdits()[storageKey] as Partial<PlayerEdit> | undefined;
+  if (isDevelopment) console.log("[PE] getStoredEdit: key:", storageKey, "raw:", raw);
   if (!raw) return undefined;
 
   return {
@@ -617,6 +810,7 @@ function getStoredEdit(storageKey: string) {
 }
 
 function setStoredEdit(storageKey: string, edit: PlayerEdit) {
+  if (isDevelopment) console.log("[PE] setStoredEdit: key:", storageKey, "edit:", edit);
   const edits = getStoredEdits();
   playerSpoofConfig.set("edits", {
     ...edits,
@@ -625,6 +819,7 @@ function setStoredEdit(storageKey: string, edit: PlayerEdit) {
 }
 
 function deleteStoredEdit(storageKey: string) {
+  if (isDevelopment) console.log("[PE] deleteStoredEdit: key:", storageKey);
   const edits = getStoredEdits();
   if (!(storageKey in edits)) return;
   const next = { ...edits };
@@ -634,8 +829,13 @@ function deleteStoredEdit(storageKey: string) {
 
 function getDefaultEdit(player: Player): PlayerEdit {
   const p = player as AnyObj;
+  const isMenu = isMenuPlayer(player);
+  const defaultName = isMenu
+    ? getPlayerRealName(player)
+    : (typeof p.name === "string" ? p.name : "").trim();
+  if (isDevelopment) console.log("[PE] getDefaultEdit: id:", p.id, "isMenu:", isMenu, "defaultName:", defaultName, "p.name:", p.name, "account.name:", p.account?.name, "p.clan:", p.clan, "p.premiumT:", p.premiumT);
   return {
-    displayName: (typeof p.name === "string" ? p.name : "").trim(),
+    displayName: defaultName,
     verified: Boolean(p.emailVerified || p.featured),
     premium: Number(p.premiumT) > 0,
     vip: Number(p.BP?.tier) > 0,
@@ -684,13 +884,23 @@ function getBadgeOptions(): BadgeOption[] {
 function applyEditToPlayer(player: Player, edit: PlayerEdit) {
   const p = player as AnyObj;
   const account = p.account as AnyObj | undefined;
+  const isMenu = isMenuPlayer(player);
+  if (isDevelopment) console.log("[PE] applyEditToPlayer: id:", p.id, "isMenu:", isMenu, "edit:", edit, "BEFORE p.name:", p.name, "p.alias:", p.alias, "p.fakeName:", p.fakeName, "account.name:", account?.name, "account.alias:", account?.alias);
 
   const name = edit.displayName.trim();
   if (name) {
-    p.name = name;
-    p.alias = name;
-    p.fakeName = name;
+    // For menuPlayer, only patch account fields — p.name/alias/fakeName are
+    // meaningless on the preview player and leak "preview" into UI if captured.
+    if (!isMenu) {
+      if (isDevelopment) console.log("[PE] applyEditToPlayer: setting p.name/alias/fakeName to:", name);
+      p.name = name;
+      p.alias = name;
+      p.fakeName = name;
+    } else {
+      if (isDevelopment) console.log("[PE] applyEditToPlayer: SKIPPING p.name/alias/fakeName for menuPlayer");
+    }
     if (account) {
+      if (isDevelopment) console.log("[PE] applyEditToPlayer: setting account.name/alias to:", name);
       account.name = name;
       account.alias = name;
     }
@@ -761,9 +971,11 @@ function applyEditToPlayer(player: Player, edit: PlayerEdit) {
       account.clanCol = sharedRainbowHexColor;
     }
   }
+  if (isDevelopment) console.log("[PE] applyEditToPlayer: AFTER p.name:", p.name, "p.alias:", p.alias, "p.fakeName:", p.fakeName, "account.name:", account?.name, "account.alias:", account?.alias, "p.clan:", p.clan, "p.premiumT:", p.premiumT, "p.featured:", p.featured, "p.badgeIndex:", p.badgeIndex);
 }
 
 function openPlayerListWindow() {
+  if (isDevelopment) console.log("[PE] openPlayerListWindow");
   const html = createRenderContainer(() => <PlayerEditorListWindow />);
   showInjectedWindow({
     header: "🧩",
@@ -779,6 +991,7 @@ function openPlayerListWindow() {
 }
 
 function openPlayerEditWindow(playerId: string) {
+  if (isDevelopment) console.log("[PE] openPlayerEditWindow: playerId:", playerId);
   const html = createRenderContainer(() => <PlayerEditorDetailWindow playerId={playerId} />);
   showInjectedWindow({
     header: "🧩",
@@ -923,19 +1136,25 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
   });
 
   useEffect(() => {
+    if (isDevelopment) console.log("[PE] DetailWindow useEffect: playerId:", playerId);
     const player = findPlayerById(playerId);
-    if (!player) return;
+    if (!player) {
+      if (isDevelopment) console.log("[PE] DetailWindow useEffect: player not found!");
+      return;
+    }
     captureOriginalPlayerState(player);
 
-    setPlayerName(
-      (typeof player.getName === "function" ? player.getName() : player.name) ||
-        "Unknown",
-    );
-    setPlayerOriginalName(getOriginalPlayerName(player) || "Unknown");
+    const realName = getPlayerRealName(player) || "Unknown";
+    const origName = getOriginalPlayerName(player) || "Unknown";
+    if (isDevelopment) console.log("[PE] DetailWindow useEffect: realName:", realName, "origName:", origName);
+    setPlayerName(realName);
+    setPlayerOriginalName(origName);
 
     const storageKey = getPlayerStorageKey(player);
     const existing = getStoredEdit(storageKey);
-    setForm(existing ?? getDefaultEdit(player));
+    const formData = existing ?? getDefaultEdit(player);
+    if (isDevelopment) console.log("[PE] DetailWindow useEffect: storageKey:", storageKey, "existing:", existing, "formData:", formData);
+    setForm(formData);
     setBadgeOptions(getBadgeOptions());
   }, [playerId]);
 
@@ -958,21 +1177,41 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
   };
 
   const applyCurrentEdit = () => {
+    if (isDevelopment) console.log("[PE] applyCurrentEdit: playerId:", playerId, "form:", form);
     const player = findPlayerById(playerId);
-    if (!player) return;
+    if (!player) {
+      if (isDevelopment) console.log("[PE] applyCurrentEdit: player not found!");
+      return;
+    }
     captureOriginalPlayerState(player);
-    setStoredEdit(getPlayerStorageKey(player), { ...form });
+    const storageKey = getPlayerStorageKey(player);
+    if (isDevelopment) console.log("[PE] applyCurrentEdit: storageKey:", storageKey, "isLocal:", isLocalPlayerEntry(player));
+    setStoredEdit(storageKey, { ...form });
     applyEditToPlayer(player, form);
-    if (isLocalPlayerEntry(player)) triggerMenuAccountDataRefresh();
+    if (isLocalPlayerEntry(player)) {
+      if (isDevelopment) console.log("[PE] applyCurrentEdit: triggering menu refresh for local player");
+      triggerMenuAccountDataRefresh();
+    }
   };
 
   const resetCurrentEdit = () => {
+    if (isDevelopment) console.log("[PE] resetCurrentEdit: playerId:", playerId);
     const player = findPlayerById(playerId);
-    if (!player) return;
-    deleteStoredEdit(getPlayerStorageKey(player));
+    if (!player) {
+      if (isDevelopment) console.log("[PE] resetCurrentEdit: player not found!");
+      return;
+    }
+    const storageKey = getPlayerStorageKey(player);
+    if (isDevelopment) console.log("[PE] resetCurrentEdit: storageKey:", storageKey, "isLocal:", isLocalPlayerEntry(player));
+    deleteStoredEdit(storageKey);
     restoreOriginalPlayerState(player);
-    setForm(getDefaultEdit(player));
-    if (isLocalPlayerEntry(player)) triggerMenuAccountDataRefresh();
+    const defaults = getDefaultEdit(player);
+    if (isDevelopment) console.log("[PE] resetCurrentEdit: defaults:", defaults);
+    setForm(defaults);
+    if (isLocalPlayerEntry(player)) {
+      if (isDevelopment) console.log("[PE] resetCurrentEdit: triggering menu refresh for local player");
+      triggerMenuAccountDataRefresh();
+    }
   };
 
   return (
@@ -1097,19 +1336,26 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
 }
 
 export function playerEditorHook() {
+  if (isDevelopment) console.log("[PE] playerEditorHook: entering, renderHookInstalled:", playerEditorRenderHookInstalled);
   startSharedRainbowColorLoop();
   installMenuAccountDataCallbacks();
 
   if (playerEditorRenderHookInstalled) return;
   playerEditorRenderHookInstalled = true;
 
+  let overlayFrameCount = 0;
   overlayRenderHooks.push(() => {
+    overlayFrameCount++;
     const edits = getStoredEdits();
     const players = getPlayers();
+    const editKeys = Object.keys(edits);
+    if (isDevelopment && overlayFrameCount % 300 === 1) console.log("[PE] overlayRenderHook frame", overlayFrameCount, "players:", players.length, "editKeys:", editKeys);
     for (const player of players) {
-      const edit = edits[getPlayerStorageKey(player)];
+      const storageKey = getPlayerStorageKey(player);
+      const edit = edits[storageKey];
       if (!edit) continue;
 
+      if (isDevelopment && overlayFrameCount % 300 === 1) console.log("[PE] overlayRenderHook: applying edit for", storageKey, "player id:", (player as AnyObj).id, "p.name:", (player as AnyObj).name, "account.name:", (player as AnyObj).account?.name);
       // Snapshot once before any persisted spoof is applied so we can show/restore true originals.
       captureOriginalPlayerState(player);
       applyEditToPlayer(player, edit);

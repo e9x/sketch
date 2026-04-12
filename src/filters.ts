@@ -75,6 +75,21 @@ export const data: Record<string, any> = {
 export const beforeUpdateMenuAccountDataHooks: (() => void)[] = [];
 export const afterUpdateMenuAccountDataHooks: (() => void)[] = [];
 
+/** Last known account object captured from the Svelte store inside updateMenuAccountData. */
+export let svelteAccountData: { name: string; alias: string; premiumT: number } | null = null;
+
+data.onSvelteAccountData = function onSvelteAccountData(account: unknown) {
+  if (account && typeof account === "object") {
+    const a = account as Record<string, unknown>;
+    svelteAccountData = {
+      name: typeof a.name === "string" ? a.name : "",
+      alias: typeof a.alias === "string" ? a.alias : "",
+      premiumT: typeof a.premiumT === "number" ? a.premiumT : 0,
+    };
+    if (isDevelopment) console.log("HOOK: Svelte account data captured", svelteAccountData);
+  }
+};
+
 data.wrapUpdateMenuAccountData = function wrapUpdateMenuAccountData<T extends Function>(
   updateMenuAccountData: T,
 ) {
@@ -148,8 +163,13 @@ patches.freeze = [/Object\[/g, () => `${dataArg}.object[`];
 
 patches.updateMenuAccountData = [
   /window\[['"]updateMenuAccountData['"]\]=function\(\)\{([^}]*)\}/,
-  (_, body) =>
-    `window["updateMenuAccountData"]=${dataArg}.wrapUpdateMenuAccountData(function(){${body}})`,
+  (_, body) => {
+    // Extract the account variable from STORE['set'](ACCOUNT_VAR)
+    const setMatch = (body as string).match(/\['set'\]\(([^)]+)\)/);
+    const accountVar = setMatch?.[1];
+    const capture = accountVar ? `${dataArg}.onSvelteAccountData(${accountVar});` : "";
+    return `window["updateMenuAccountData"]=${dataArg}.wrapUpdateMenuAccountData(function(){${capture}${body}})`;
+  },
 ];
 
 // patches.lol = [new RegExp(`this\\[(${v.source}\\(0x[0-9a-f]+\\))\\]=new WebSocket\\(`), (_, prop) => `this[${prop}] = ${dataArg}.socket = new WebSocket(`];
