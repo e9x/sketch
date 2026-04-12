@@ -13,8 +13,7 @@ import { Switch } from "../krunker-ui/components/Switch";
 import { Text } from "../krunker-ui/components/Text";
 import type { Player } from "../krunker/Player";
 import { useEffect, useState } from "preact/hooks";
-import { getExposedWindow, isDevelopment } from "../consts";
-import { console } from "../crashout";
+import { getExposedWindow } from "../consts";
 import playerSpoofConfig, { type PlayerSpoofEdit } from "../playerSpoofConfig";
 
 type AnyObj = Record<PropertyKey, any>;
@@ -149,18 +148,8 @@ let playerEditorListWindowIndex: number | null = null;
 let playerEditorDetailWindowIndex: number | null = null;
 const rainbowClanMarkAttr = `data-pe-rainbow-${Math.random().toString(36).slice(2, 8)}`;
 let localUiRefreshQueued = false;
-let rainbowDebugLastLog = 0;
 let playerEditorRenderHookInstalled = false;
 let menuAccountDataCallbacksInstalled = false;
-
-function logRainbowDebug(message: string, extra?: unknown) {
-  if (!isDevelopment) return;
-  const now = Date.now();
-  if (now - rainbowDebugLastLog < 1200) return;
-  rainbowDebugLastLog = now;
-  if (typeof extra === "undefined") console.log("[playerEditor/rainbow]", message);
-  else console.log("[playerEditor/rainbow]", message, extra);
-}
 
 function queueLocalPlayerUIRefresh() {
   if (localUiRefreshQueued) return;
@@ -396,9 +385,7 @@ function showInjectedWindow(
 
   try {
     w.showWindow(windowIndex + 1);
-  } catch (err) {
-    if (isDevelopment) console.error("player editor window", err);
-  }
+  } catch {}
 }
 
 function getPlayers(): Player[] {
@@ -612,15 +599,6 @@ function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, Pl
     if (touched.includes(span)) continue;
     span.remove();
   }
-
-  logRainbowDebug("pass", {
-    targets: targets.length,
-    ownNodes: document.querySelectorAll(".leaderNameM, .newLeaderNameM").length,
-    touched: touched.length,
-    color: sharedRainbowHexColor,
-    localEditRainbow: Boolean(localEdit?.rainbowClan),
-    localEditClan: localEdit?.clan || "",
-  });
 }
 
 function getStoredEdit(storageKey: string) {

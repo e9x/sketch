@@ -334,7 +334,6 @@ export function redrawSky() {
     const render = getRender();
     const game = getGame();
     if (!conf) return;
-    //  console.warn("FUCK");
     const id = render.lastEnvId;
     render.lastEnvId = null;
     render.init(conf, game.mode, true);
@@ -563,7 +562,6 @@ function doRenderHooks() {
 
   render.init = mirrorAttributes(
     function (this: any, config: any, mode: any, idk1: any, idk2: any) {
-      // console.trace("lol init ez", [config, mode, idk1, idk2]);
       if (maps.has(config)) config = maps.get(config);
 
       let nConfig = config;
@@ -585,8 +583,6 @@ function doRenderHooks() {
           sky: sketchConfig.get("skyColorHex"),
         });
       maps.set(nConfig, config);
-
-      // console.log("map config:", [nConfig]);
 
       init.call(this, nConfig, mode, idk1, idk2);
     } as typeof init,
@@ -636,10 +632,8 @@ function doRenderHooks() {
       render.loadTexture = mirrorAttributes(
         function (this: any, mat: any, id: any, data: any, crap: any) {
           const ret = value.call(this, mat, id, data, crap);
-          // console.log("load tex", mat, id, data, crap);
           if (data.src === "clouds_0" || data.emissive === "#FFC980") {
             let visible = mat.visible;
-            // console.log("got cloud", mat, id, data, crap);
             Object.defineProperty(mat, "visible", {
               get: () => (sketchConfig.get("hideClouds") ? false : visible),
               set: (v) => (visible = v),
@@ -687,20 +681,16 @@ function doRenderHooks() {
     },
   });
 
-  //console.log(render, "LO!L!!");
   defineProperty(render, "add", {
     configurable: true,
     set(value: RenderManager["add"]) {
       delete (render as any).add;
-      //console.log("add:", value);
       const hookNHide = /^clouds_|lightcone_/;
       render.add = mirrorAttributes(
         function (this: any, mesh: any, data: any) {
           value.call(this, mesh, data);
-          // console.log("The Fucking Object:", mesh, data);
           if (typeof data === "object" && hookNHide.test(data.src)) {
             let visible = mesh.visible;
-            //console.log("got cloud", mesh, data);
             Object.defineProperty(mesh, "visible", {
               get: () => (sketchConfig.get("hideClouds") ? false : visible),
               set: (v) => (visible = v),
@@ -749,7 +739,6 @@ function doGameHooks() {
   for (const attach of game.attach) {
     if (!(hookAttach in attach)) {
       const { req } = attach;
-      //console.log({ req });
       const hooked = (player: any, game: any) => {
         return (
           sketchConfig.get("skinHack") ||
