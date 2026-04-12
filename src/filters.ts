@@ -281,6 +281,35 @@ export function getConfig() {
 export const overlayRenderHooks: (() => void)[] = [];
 export const preOverlayRenderHooks: (() => void)[] = [];
 
+/**
+ * Called after any element's innerHTML is set.
+ * Receives the element that was just written to.
+ * Use for post-processing game-rendered DOM (leaderboard, scoreboard, end screen, etc.)
+ */
+export const innerHTMLHooks: ((element: Element) => void)[] = [];
+
+beforeGame.push(() => {
+  const desc = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML");
+  if (!desc?.set) return;
+  const originalSet = desc.set;
+
+  defineProperty(Element.prototype, "innerHTML", {
+    configurable: true,
+    enumerable: true,
+    get: desc.get,
+    set(this: Element, value: string) {
+      originalSet.call(this, value);
+      if (innerHTMLHooks.length > 0) {
+        for (const hook of innerHTMLHooks) {
+          try {
+            hook(this);
+          } catch {}
+        }
+      }
+    },
+  });
+});
+
 let overlay: typeof Overlay | undefined;
 
 export function getOverlay() {

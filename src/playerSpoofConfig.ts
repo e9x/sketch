@@ -12,6 +12,8 @@ export interface PlayerSpoofEdit {
   clan: string;
   clanColor: string;
   rainbowClan: boolean;
+  hideClan: boolean;
+  hideBadge: boolean;
 }
 
 export interface PlayerSpoofConfig {

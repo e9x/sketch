@@ -5,6 +5,7 @@ import {
   beforeUpdateMenuAccountDataHooks,
   getGame,
   getMenuPlayer,
+  innerHTMLHooks,
   onPlayerAddHooks,
   overlayRenderHooks,
   svelteAccountData,
@@ -66,6 +67,11 @@ interface PlayerRow {
   originalName: string;
   customName: string;
   isYou: boolean;
+}
+
+interface DisconnectedEditRow {
+  storageKey: string;
+  displayName: string;
 }
 
 interface BadgeOption {
@@ -176,8 +182,12 @@ function getPlayerRealName(player: Player): string {
 
 function getPlayerRows(): PlayerRow[] {
   const players = getPlayers();
-  console.log("[PE] getPlayerRows: players count:", players.length);
-  for (const player of players) {
+  // Filter out menuPlayer when a real local player is already in the list
+  // (menuPlayer is kept in getPlayers() for spoofing, but shouldn't show as a duplicate row)
+  const hasRealLocal = players.some((p) => (p as AnyObj).isYou);
+  const filtered = hasRealLocal ? players.filter((p) => !isMenuPlayer(p)) : players;
+  console.log("[PE] getPlayerRows: players count:", filtered.length);
+  for (const player of filtered) {
     const p = player as AnyObj;
     console.log("[PE] player id:", p.id, "sid:", p.sid, "name:", p.name, "alias:", p.alias,
       "isYou:", p.isYou, "isMenu:", isMenuPlayer(player), "accid:", p.accid,
@@ -186,7 +196,7 @@ function getPlayerRows(): PlayerRow[] {
       "getOriginalName:", getOriginalPlayerName(player),
       "storageKey:", getPlayerStorageKey(player));
   }
-  const rows = players.map((player) => ({
+  const rows = filtered.map((player) => ({
     id: String(player.id),
     storageKey: getPlayerStorageKey(player),
     sid: player.sid,
@@ -201,6 +211,21 @@ function getPlayerRows(): PlayerRow[] {
     return a.isYou ? -1 : 1;
   });
 
+  return rows;
+}
+
+function getDisconnectedEditRows(liveKeys: Record<string, true>): DisconnectedEditRow[] {
+  const edits = getStoredEdits();
+  const rows: DisconnectedEditRow[] = [];
+  for (const key of Object.keys(edits)) {
+    if (key === "you") continue;
+    if (liveKeys[key]) continue;
+    const edit = getStoredEdit(key);
+    rows.push({
+      storageKey: key,
+      displayName: edit?.displayName?.trim() || key,
+    });
+  }
   return rows;
 }
 
@@ -292,17 +317,6 @@ function queueLocalPlayerUIRefresh() {
         const classNameEl = document.querySelector(".menuClassPlayerName");
         if (classNameEl) classNameEl.textContent = customName;
       }
-
-      const w = getExposedWindow() as any;
-      if (document.getElementById("playerListH")) {
-        w.windows?.[22]?.searchPlayers?.();
-      }
-
-      const leaderboardHolder = document.getElementById("leaderboardHolder");
-      if (leaderboardHolder && typeof w.switchLeaderboard === "function") {
-        const visible = leaderboardHolder.style.display !== "none";
-        w.switchLeaderboard(visible);
-      }
     } catch {}
   });
 }
@@ -351,6 +365,16 @@ function triggerMenuAccountDataRefresh() {
   }
 
   queueLocalPlayerUIRefresh();
+}
+
+function forceLeaderboardRerender() {
+  const w = getExposedWindow() as AnyObj;
+  if (typeof w.switchLeaderboard !== "function") return;
+  const lh = document.getElementById("leaderboardHolder");
+  if (lh) {
+    if (isDevelopment) console.log("[PE] forcing sidebar leaderboard re-render");
+    w.switchLeaderboard(lh.style.display !== "none");
+  }
 }
 
 function cloneObject(value: unknown) {
@@ -561,20 +585,6 @@ function getPlayers(): Player[] {
   return menuPlayer ? [menuPlayer] : [];
 }
 
-function fixEndScreenNames(nameMap: Map<string, string>) {
-  const endTable = document.getElementById("endTable");
-  if (!endTable) return;
-
-  for (const el of Array.from(endTable.getElementsByClassName("endTableN"))) {
-    for (const child of Array.from(el.childNodes)) {
-      if (child.nodeType !== Node.TEXT_NODE || !child.textContent?.trim()) continue;
-      const spoofed = child.textContent.trim();
-      const real = nameMap.get(spoofed);
-      if (real) child.textContent = real;
-    }
-  }
-}
-
 function isLocalPlayerEntry(player: Player) {
   const p = player as AnyObj;
   if (p.isYou) return true;
@@ -614,173 +624,6 @@ function getStoredEdits() {
   return playerSpoofConfig.get("edits");
 }
 
-function getLeadingText(node: Element) {
-  for (const child of Array.from(node.childNodes)) {
-    if (child.nodeType !== Node.TEXT_NODE) continue;
-    const value = child.textContent?.replace(/\s+/g, " ").trim();
-    if (value) return value;
-  }
-  return "";
-}
-
-interface ClanColorTarget {
-  names: string[];
-  clanTag: string;
-  color: string;
-  isYou: boolean;
-}
-
-function resolveClanTag(player: Player, edit: PlayerEdit) {
-  const customClan = edit.clan.trim();
-  if (customClan) return customClan;
-
-  const p = player as AnyObj;
-  return typeof p.clan === "string"
-    ? p.clan.trim()
-    : typeof p.account?.clan === "string"
-      ? String(p.account.clan).trim()
-      : "";
-}
-
-function refreshClanColorsInDom(players: Player[], edits: Record<string, PlayerEdit>) {
-  if (typeof document === "undefined") return;
-
-  const targets: ClanColorTarget[] = [];
-
-  for (const player of players) {
-    const edit = edits[getPlayerStorageKey(player)];
-    if (!edit) continue;
-
-    const wantsRainbow = edit.rainbowClan;
-    const staticColor = edit.clanColor?.trim() || "";
-    if (!wantsRainbow && !staticColor) continue;
-
-    const clanTag = resolveClanTag(player, edit);
-    if (!clanTag) continue;
-
-    const names: string[] = [];
-    const addName = (value: string) => {
-      if (!value) return;
-      if (names.includes(value)) return;
-      names.push(value);
-    };
-
-    const liveName = getPlayerRealName(player);
-    if (liveName) {
-      addName(liveName.toLowerCase());
-    }
-
-    if (edit.displayName.trim()) {
-      addName(edit.displayName.trim().toLowerCase());
-    }
-
-    targets.push({
-      names,
-      clanTag,
-      color: wantsRainbow ? sharedRainbowHexColor : staticColor,
-      isYou: Boolean((player as AnyObj).isYou),
-    });
-  }
-
-  if (isDevelopment && targets.length > 0) console.log("[PE] clan color targets:", targets.length);
-  if (targets.length === 0) return;
-
-  const oldMarked = Array.from(
-    document.querySelectorAll<HTMLElement>(`span[${rainbowClanMarkAttr}="1"]`),
-  );
-  const touched: HTMLElement[] = [];
-  const targetClanTags = targets.map((target) => target.clanTag.toLowerCase());
-
-  const nameNodes = document.querySelectorAll<HTMLElement>(
-    "#leaderContainer .leaderName, #leaderContainer .leaderNameF, #leaderContainer .leaderNameM, #playerListH .newLeaderName, #playerListH .newLeaderNameF, #playerListH .newLeaderNameM, #ingameTable .newLeaderName, #ingameTable .newLeaderNameF, #ingameTable .newLeaderNameM, #endTable .endTableN",
-  );
-
-  for (const node of nameNodes) {
-    const leading = getLeadingText(node).toLowerCase();
-    if (!leading) continue;
-
-    const target = targets.find((entry) => entry.names.includes(leading));
-    if (!target) continue;
-
-    // Remove non-player-editor clan spans so our controlled span is the source of truth.
-    for (const span of Array.from(node.querySelectorAll<HTMLSpanElement>("span"))) {
-      if (!/\[[^\]]+\]/.test(span.textContent ?? "")) continue;
-      if (span.getAttribute(rainbowClanMarkAttr) === "1") continue;
-      span.remove();
-    }
-
-    let clanSpan = Array.from(node.querySelectorAll<HTMLSpanElement>("span")).find(
-      (span) => span.getAttribute(rainbowClanMarkAttr) === "1",
-    );
-
-    if (!clanSpan) {
-      clanSpan = document.createElement("span");
-      clanSpan.setAttribute(rainbowClanMarkAttr, "1");
-      node.appendChild(clanSpan);
-    }
-
-    clanSpan.textContent = ` [${target.clanTag}]`;
-    clanSpan.style.setProperty("color", target.color, "important");
-    touched.push(clanSpan);
-  }
-
-  // Self rows sometimes render with special classes and no direct leading text match
-  const ownTarget = targets.find((entry) => entry.isYou);
-  const localEdit = edits.you;
-  const ownTargetClanTag =
-    ownTarget?.clanTag ||
-    (localEdit?.rainbowClan || localEdit?.clanColor?.trim() ? localEdit.clan.trim() : "");
-  if (ownTargetClanTag) {
-    const ownNodes = document.querySelectorAll<HTMLElement>(".leaderNameM, .newLeaderNameM");
-    for (const node of ownNodes) {
-      for (const span of Array.from(node.querySelectorAll<HTMLSpanElement>("span"))) {
-        if (!/\[[^\]]+\]/.test(span.textContent ?? "")) continue;
-        if (span.getAttribute(rainbowClanMarkAttr) === "1") continue;
-        span.remove();
-      }
-
-      let clanSpan = Array.from(node.querySelectorAll<HTMLSpanElement>("span")).find(
-        (span) => span.getAttribute(rainbowClanMarkAttr) === "1",
-      );
-
-      if (!clanSpan) {
-        clanSpan = document.createElement("span");
-        clanSpan.setAttribute(rainbowClanMarkAttr, "1");
-        node.appendChild(clanSpan);
-      }
-
-      clanSpan.textContent = ` [${ownTargetClanTag}]`;
-      const ownColor = ownTarget?.color || (localEdit?.rainbowClan ? sharedRainbowHexColor : localEdit?.clanColor?.trim() || "");
-      if (ownColor) clanSpan.style.setProperty("color", ownColor, "important");
-      touched.push(clanSpan);
-    }
-  }
-
-  // Fallback: directly color any existing clan spans that match configured rainbow clan tags.
-  // This handles cases where name-node matching is unstable but the clan tag text is visible.
-  const candidateClanSpans = document.querySelectorAll<HTMLElement>(
-    "#leaderContainer span, #playerListH span, #ingameTable span, #topRight span, #endTable span",
-  );
-  for (const span of candidateClanSpans) {
-    const text = (span.textContent ?? "").trim();
-    const match = text.match(/^\[([^\]]+)\]$/);
-    if (!match) continue;
-
-    const tag = match[1].trim().toLowerCase();
-    if (!tag || !targetClanTags.includes(tag)) continue;
-
-    const matchTarget = targets.find((t) => t.clanTag.toLowerCase() === tag);
-    if (matchTarget) span.style.setProperty("color", matchTarget.color, "important");
-    span.setAttribute(rainbowClanMarkAttr, "1");
-    touched.push(span);
-  }
-
-  for (const span of oldMarked) {
-    if (touched.includes(span)) continue;
-    span.remove();
-  }
-}
-
 function getStoredEdit(storageKey: string) {
   const raw = getStoredEdits()[storageKey] as Partial<PlayerEdit> | undefined;
   if (!raw) return undefined;
@@ -794,6 +637,8 @@ function getStoredEdit(storageKey: string) {
     clan: typeof raw.clan === "string" ? raw.clan : "",
     clanColor: typeof raw.clanColor === "string" ? raw.clanColor : "",
     rainbowClan: Boolean(raw.rainbowClan),
+    hideClan: Boolean(raw.hideClan),
+    hideBadge: Boolean(raw.hideBadge),
   };
 }
 
@@ -828,6 +673,8 @@ function getDefaultEdit(player: Player): PlayerEdit {
     clan: typeof p.clan === "string" ? p.clan : "",
     clanColor: "",
     rainbowClan: false,
+    hideClan: false,
+    hideBadge: false,
   };
 }
 
@@ -931,8 +778,8 @@ function applyEditToPlayer(player: Player, edit: PlayerEdit) {
     }
   }
 
-  p.clan = edit.clan.trim();
-  if (account) account.clan = edit.clan.trim();
+  p.clan = edit.hideClan ? "" : edit.clan.trim();
+  if (account) account.clan = edit.hideClan ? "" : edit.clan.trim();
 
   if (p.showBadges && typeof p.showBadges === "object") {
     p.showBadges.premium = edit.premium;
@@ -1007,16 +854,29 @@ function navigateBackToPlayerList() {
 
 function PlayerEditorListWindow() {
   const [players, setPlayers] = useState<PlayerRow[]>([]);
+  const [disconnected, setDisconnected] = useState<DisconnectedEditRow[]>([]);
 
   useEffect(() => {
     const refresh = () => {
-      setPlayers(getPlayerRows());
+      const rows = getPlayerRows();
+      setPlayers(rows);
+      const liveKeys: Record<string, true> = {};
+      for (const r of rows) liveKeys[r.storageKey] = true;
+      setDisconnected(getDisconnectedEditRows(liveKeys));
     };
 
     refresh();
     const interval = setInterval(refresh, 500);
     return () => clearInterval(interval);
   }, []);
+
+  const refreshAll = () => {
+    const rows = getPlayerRows();
+    setPlayers(rows);
+    const liveKeys: Record<string, true> = {};
+    for (const r of rows) liveKeys[r.storageKey] = true;
+    setDisconnected(getDisconnectedEditRows(liveKeys));
+  };
 
   return (
     <>
@@ -1037,9 +897,7 @@ function PlayerEditorListWindow() {
               textAlign: "center",
               whiteSpace: "nowrap",
             }}
-            onClick={() => {
-              setPlayers(getPlayerRows());
-            }}
+            onClick={refreshAll}
           >
             Refresh
           </div>
@@ -1099,6 +957,61 @@ function PlayerEditorListWindow() {
           </table>
         </div>
       </Set>
+
+      {disconnected.length > 0 && (
+        <Set title="Disconnected">
+          <div className="settName">
+            <table
+              className="pListTable"
+              style={{
+                marginTop: "8px",
+                overflowY: "scroll",
+                height: "calc(100% - 120px)",
+              }}
+            >
+              <tbody>
+                {disconnected.map((row) => (
+                  <tr key={row.storageKey}>
+                    <td
+                      className="pListName"
+                      style={{
+                        maxWidth: "340px",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                      title={`${row.storageKey}${row.displayName !== row.storageKey ? ` / ${row.displayName}` : ""}`}
+                    >
+                      {row.displayName !== row.storageKey
+                        ? `${row.storageKey} / ${row.displayName}`
+                        : row.storageKey}
+                    </td>
+                    <td className="pListActions">
+                      <span
+                        onMouseEnter={() => playTick()}
+                        className="punishButton kick"
+                        onClick={() => openDisconnectedEditWindow(row.storageKey)}
+                      >
+                        Edit
+                      </span>
+                      <span
+                        onMouseEnter={() => playTick()}
+                        className="punishButton ban"
+                        onClick={() => {
+                          deleteStoredEdit(row.storageKey);
+                          refreshAll();
+                        }}
+                      >
+                        Delete
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Set>
+      )}
     </>
   );
 }
@@ -1118,6 +1031,8 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
     clan: "",
     clanColor: "",
     rainbowClan: false,
+    hideClan: false,
+    hideBadge: false,
   });
 
   useEffect(() => {
@@ -1169,6 +1084,7 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
     if (isLocalPlayerEntry(player)) {
       triggerMenuAccountDataRefresh();
     }
+    forceLeaderboardRerender();
   };
 
   const resetCurrentEdit = () => {
@@ -1184,6 +1100,7 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
     if (isLocalPlayerEntry(player)) {
       triggerMenuAccountDataRefresh();
     }
+    forceLeaderboardRerender();
   };
 
   return (
@@ -1278,9 +1195,15 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
         </Select>
         <Text
           title="Clan"
-          description="Clan tag text"
+          description="Clan tag text (leave blank to keep original)"
           defaultValue={form.clan}
           onChange={(event) => updateForm("clan", event.currentTarget.value)}
+        />
+        <Switch
+          title="Hide Clan"
+          description="Remove the original clan tag entirely"
+          defaultChecked={form.hideClan}
+          onChange={(event) => updateForm("hideClan", event.currentTarget.checked)}
         />
         <ColorPicker
           title="Clan Color"
@@ -1293,6 +1216,12 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
           description="Cycles clan color using shared rainbow color (overrides static color)"
           defaultChecked={form.rainbowClan}
           onChange={(event) => updateForm("rainbowClan", event.currentTarget.checked)}
+        />
+        <Switch
+          title="Hide Badge"
+          description="Remove the original badge/verified/premium icons entirely"
+          defaultChecked={form.hideBadge}
+          onChange={(event) => updateForm("hideBadge", event.currentTarget.checked)}
         />
 
         <Button
@@ -1313,6 +1242,513 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
   );
 }
 
+function openDisconnectedEditWindow(storageKey: string) {
+  if (isDevelopment) console.log("[PE] openDisconnectedEditWindow: storageKey:", storageKey);
+  const html = createRenderContainer(() => <DisconnectedPlayerDetailWindow storageKey={storageKey} />);
+  showInjectedWindow({
+    header: "🧩",
+    label: "edit saved player",
+    width: 760,
+    height: PLAYER_EDITOR_POPUP_HEIGHT,
+    popup: true,
+    sticky: true,
+    dark: true,
+    hideScroll: true,
+    gen: () => html,
+  }, "detail");
+}
+
+function DisconnectedPlayerDetailWindow({ storageKey }: { storageKey: string }) {
+  const [badgeOptions, setBadgeOptions] = useState<BadgeOption[]>([
+    { value: "-1", label: "Default / none" },
+  ]);
+  const [form, setForm] = useState<PlayerEdit>({
+    displayName: "",
+    verified: false,
+    premium: false,
+    vip: false,
+    badgeIndex: -1,
+    clan: "",
+    clanColor: "",
+    rainbowClan: false,
+    hideClan: false,
+    hideBadge: false,
+  });
+
+  useEffect(() => {
+    const existing = getStoredEdit(storageKey);
+    if (existing) setForm(existing);
+    setBadgeOptions(getBadgeOptions());
+  }, [storageKey]);
+
+  useEffect(() => {
+    const syncBadgeOptions = () => {
+      const next = getBadgeOptions();
+      setBadgeOptions(next);
+    };
+
+    syncBadgeOptions();
+    const interval = setInterval(syncBadgeOptions, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const updateForm = <K extends keyof PlayerEdit>(key: K, value: PlayerEdit[K]) => {
+    setForm((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const applyCurrentEdit = () => {
+    setStoredEdit(storageKey, { ...form });
+    forceLeaderboardRerender();
+  };
+
+  const deleteCurrentEdit = () => {
+    deleteStoredEdit(storageKey);
+    navigateBackToPlayerList();
+  };
+
+  return (
+    <>
+      <div
+        className="settingsHeader"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "nowrap",
+          padding: "14px 18px",
+        }}
+      >
+        <div
+          style={{
+            flex: "1 1 auto",
+            minWidth: 0,
+            color: "white",
+            fontWeight: "bold",
+            padding: "6px 10px",
+            maxWidth: "520px",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+          title={`Saved Edit: ${storageKey}`}
+        >
+          Saved Edit: {storageKey}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            flexShrink: 0,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <div className="settingsBtn" onClick={applyCurrentEdit}>
+            Save
+          </div>
+          <div className="settingsBtn" onClick={deleteCurrentEdit}>
+            Delete
+          </div>
+          <div className="settingsBtn" onClick={navigateBackToPlayerList}>
+            Back
+          </div>
+        </div>
+      </div>
+
+      <Set title={`Editing: ${storageKey}`}>
+        <Text
+          title="Display Name"
+          description="Overrides visible display name"
+          defaultValue={form.displayName}
+          onChange={(event) => updateForm("displayName", event.currentTarget.value)}
+        />
+        <Switch
+          title="Verified"
+          description="Forces verification badge fields"
+          defaultChecked={form.verified}
+          onChange={(event) => updateForm("verified", event.currentTarget.checked)}
+        />
+        <Switch
+          title="Premium"
+          description="Forces premium status"
+          defaultChecked={form.premium}
+          onChange={(event) => updateForm("premium", event.currentTarget.checked)}
+        />
+        <Select
+          title="Badge"
+          description="Displayed custom badge"
+          value={String(form.badgeIndex)}
+          onChange={(event) =>
+            updateForm("badgeIndex", Number(event.currentTarget.value))
+          }
+        >
+          {Number.isInteger(form.badgeIndex) &&
+            form.badgeIndex >= 0 &&
+            !badgeOptions.some((badge) => badge.value === String(form.badgeIndex)) && (
+              <option value={String(form.badgeIndex)} key={`current-${form.badgeIndex}`}>
+                Current ({form.badgeIndex})
+              </option>
+            )}
+          {badgeOptions.map((badge) => (
+            <option value={badge.value} key={badge.value}>
+              {badge.label}
+            </option>
+          ))}
+        </Select>
+        <Text
+          title="Clan"
+          description="Clan tag text (leave blank to keep original)"
+          defaultValue={form.clan}
+          onChange={(event) => updateForm("clan", event.currentTarget.value)}
+        />
+        <Switch
+          title="Hide Clan"
+          description="Remove the original clan tag entirely"
+          defaultChecked={form.hideClan}
+          onChange={(event) => updateForm("hideClan", event.currentTarget.checked)}
+        />
+        <ColorPicker
+          title="Clan Color"
+          description="Static hex color for clan tag. Ignored if Rainbow is on."
+          defaultValue={form.clanColor || "#000000"}
+          onInput={(event) => updateForm("clanColor", event.currentTarget.value)}
+        />
+        <Switch
+          title="Rainbow Clan"
+          description="Cycles clan color using shared rainbow color (overrides static color)"
+          defaultChecked={form.rainbowClan}
+          onChange={(event) => updateForm("rainbowClan", event.currentTarget.checked)}
+        />
+        <Switch
+          title="Hide Badge"
+          description="Remove the original badge/verified/premium icons entirely"
+          defaultChecked={form.hideBadge}
+          onChange={(event) => updateForm("hideBadge", event.currentTarget.checked)}
+        />
+
+        <Button
+          title="Save"
+          description="Save this player's spoof data"
+          text="Save"
+          onClick={applyCurrentEdit}
+        />
+
+        <Button
+          title="Delete"
+          description="Remove saved spoof data for this player"
+          text="Delete"
+          onClick={deleteCurrentEdit}
+        />
+      </Set>
+    </>
+  );
+}
+
+// ── innerHTML-based DOM spoofing ────────────────────────────────────────────────
+// Instead of hooking every render path (switchLeaderboard, toggleStrm, overlay
+// render, etc.) we intercept Element.innerHTML writes. Whenever the game sets
+// innerHTML on a container we care about, we walk the freshly written DOM and
+// fix names, clan colors, and badges in one pass.
+
+// Badge icon colors (from game source)
+const PREMIUM_ICON_COLOR = "#FBC02D";
+const VERIFIED_ICON_COLOR = "#40C4FF";
+
+function getGameBadgeUrl(badgeIndex: number): string | null {
+  try {
+    const game = getGame() as AnyObj;
+    const badges = game?.badges;
+    if (!Array.isArray(badges) || badgeIndex < 0 || badgeIndex >= badges.length) return null;
+    return badges[badgeIndex]?.url || null;
+  } catch {
+    return null;
+  }
+}
+
+const NAME_NODE_SELECTOR = [
+  ".leaderName", ".leaderNameF", ".leaderNameM",
+  ".newLeaderName", ".newLeaderNameF", ".newLeaderNameM",
+  ".endTableN",
+].join(", ");
+
+const GAME_CONTAINER_IDS: Record<string, true> = {
+  leaderContainer: true, leaderboardHolder: true, playerListH: true,
+  centerLeaderDisplay: true, ingameTable: true, endTable: true, topRight: true,
+};
+
+const MENU_NAME_IDS: Record<string, true> = {
+  menuAccountUsername: true, menuUsername: true, menuAccountName: true, menuUserName: true,
+};
+
+/**
+ * Build lookup tables from current edits.
+ * Returns null when there are no active edits.
+ */
+function buildSpoofLookup() {
+  const edits = getStoredEdits();
+  const players = getPlayers();
+
+  // exact original name → edit config
+  const origToEdit = new Map<string, PlayerEdit>();
+  // exact spoofed name → original name (for end-screen reversal)
+  const spoofedToOrig = new Map<string, string>();
+
+  for (const player of players) {
+    const storageKey = getPlayerStorageKey(player);
+    const edit = edits[storageKey];
+    if (!edit) continue;
+
+    const origName = getOriginalPlayerName(player);
+    if (!origName) continue;
+
+    origToEdit.set(origName, edit);
+    if (isDevelopment) console.log("[PE] lookup: orig", JSON.stringify(origName), "→ edit", JSON.stringify(edit.displayName));
+
+    const spoofName = edit.displayName?.trim();
+    if (spoofName && spoofName !== origName) {
+      spoofedToOrig.set(spoofName, origName);
+      // Also map the spoofed name so we can apply clan colors to already-spoofed nodes
+      origToEdit.set(spoofName, edit);
+      if (isDevelopment) console.log("[PE] lookup: spoof", JSON.stringify(spoofName), "→ orig", JSON.stringify(origName));
+    }
+  }
+
+  if (isDevelopment) console.log("[PE] buildSpoofLookup: origToEdit size:", origToEdit.size, "spoofedToOrig size:", spoofedToOrig.size);
+  return origToEdit.size > 0 ? { origToEdit, spoofedToOrig } : null;
+}
+
+/**
+ * Walk a container and fix all name nodes: replace names and apply clan colors.
+ */
+function spoofNameNodesIn(container: Element, reverseMode: boolean) {
+  const maps = buildSpoofLookup();
+  if (!maps) return;
+
+  const { origToEdit, spoofedToOrig } = maps;
+
+  const nameNodes = container.querySelectorAll<HTMLElement>(NAME_NODE_SELECTOR);
+  if (isDevelopment) console.log("[PE] spoofNameNodesIn:", container.id, "reverseMode:", reverseMode, "nameNodes:", nameNodes.length);
+
+  for (const node of nameNodes) {
+    // Find leading text node (contains the player name)
+    let nameTextNode: Text | null = null;
+    let nameText = "";
+    for (const child of Array.from(node.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) {
+        nameTextNode = child as Text;
+        nameText = child.textContent.trim();
+        break;
+      }
+    }
+    if (!nameTextNode || !nameText) continue;
+
+    if (reverseMode) {
+      // End screen with hideOnEndScreen: undo spoofed → original
+      const origName = spoofedToOrig.get(nameText);
+      if (origName) {
+        if (isDevelopment) console.log("[PE] reverse:", JSON.stringify(nameText), "→", JSON.stringify(origName));
+        nameTextNode.textContent = origName;
+      }
+      continue;
+    }
+
+    const edit = origToEdit.get(nameText);
+    if (!edit) {
+      if (isDevelopment) console.log("[PE] no edit for name:", JSON.stringify(nameText));
+      continue;
+    }
+
+    // Replace name if needed
+    const spoofName = edit.displayName?.trim();
+    if (spoofName && nameText !== spoofName) {
+      if (isDevelopment) console.log("[PE] spoof:", JSON.stringify(nameText), "→", JSON.stringify(spoofName));
+      nameTextNode.textContent = spoofName;
+    }
+
+    // Hide clan: remove clan tag spans inside the name node
+    if (edit.hideClan) {
+      for (const span of Array.from(node.querySelectorAll<HTMLSpanElement>("span"))) {
+        if (/\[[^\]]*\]/.test(span.textContent ?? "")) {
+          if (isDevelopment) console.log("[PE] hideClan: removing", span.textContent);
+          span.remove();
+        }
+      }
+    } else {
+      // Apply clan color to existing clan spans
+      const wantsColor = edit.rainbowClan || edit.clanColor?.trim();
+      if (wantsColor) {
+        const color = edit.rainbowClan ? sharedRainbowHexColor : edit.clanColor!.trim();
+        for (const span of Array.from(node.querySelectorAll<HTMLSpanElement>("span"))) {
+          if (!/\[[^\]]+\]/.test(span.textContent ?? "")) continue;
+          if (isDevelopment) console.log("[PE] clan color:", span.textContent, "→", color);
+          span.style.setProperty("color", color, "important");
+          span.setAttribute(rainbowClanMarkAttr, "1");
+        }
+      }
+    }
+
+    // Badge injection / removal
+    // Works for both leaderboard (.leaderItem/.newLeaderItem) and end screen (<td> parent of .endTableN)
+    const isEndTableName = node.classList.contains("endTableN");
+    const itemEl = isEndTableName ? node.parentElement : node.closest(".leaderItem, .newLeaderItem");
+    if (itemEl) {
+      const isEndScreen = isEndTableName;
+      const isNewLeader = !isEndScreen && itemEl.classList.contains("newLeaderItem");
+      const marginTop = isEndScreen ? "-12px" : isNewLeader ? "3px" : "5px";
+      const fontSize = isEndScreen ? "28px" : "23px";
+      const badgeHeight = isEndScreen ? "26px" : "21px";
+
+      // Remove existing badge elements (material-icons <i>, badge <img>)
+      // In leaderboard: between counter div and name div
+      // In end screen: <i> and <img> siblings after the <a.endTableN>
+      if (edit.hideBadge || edit.verified || edit.premium || edit.vip ||
+          (Number.isInteger(edit.badgeIndex) && edit.badgeIndex >= 0)) {
+        const toRemove: Element[] = [];
+        if (isEndScreen) {
+          // End screen: badges are siblings after the <a.endTableN>
+          let sib = node.nextElementSibling;
+          while (sib) {
+            const next = sib.nextElementSibling;
+            if (sib.tagName === "I" && sib.classList.contains("material-icons")) {
+              toRemove.push(sib);
+            } else if (sib.tagName === "IMG" && !sib.classList.contains("endTablePfp") && !sib.classList.contains("endTableFlag")) {
+              toRemove.push(sib);
+            }
+            sib = next;
+          }
+        } else {
+          // Leaderboard: badges are between the counter and name node
+          for (const child of Array.from(itemEl.children)) {
+            if (child === node) break;
+            if (child.tagName === "I" && child.classList.contains("material-icons")) {
+              toRemove.push(child);
+            } else if (child.tagName === "IMG" && !child.classList.contains("leaderCounter") && !child.classList.contains("newLeaderCounter")) {
+              toRemove.push(child);
+            }
+          }
+        }
+        for (const el of toRemove) el.remove();
+      }
+
+      // If hideBadge and no explicit overrides, we're done (badges stripped)
+      if (edit.hideBadge && !edit.verified && !edit.premium && !edit.vip &&
+          !(Number.isInteger(edit.badgeIndex) && edit.badgeIndex >= 0)) {
+        // All badges removed, nothing to inject
+      } else {
+        // Determine effective badge index
+        let effectiveBadgeIndex = -1;
+        if (!edit.hideBadge) {
+          // Keep original if not hidden — but original is already rendered, only inject overrides
+        }
+        if (edit.vip) {
+          effectiveBadgeIndex = getVipBadgeIndex();
+        }
+        if (Number.isInteger(edit.badgeIndex) && edit.badgeIndex >= 0) {
+          effectiveBadgeIndex = edit.badgeIndex;
+        }
+
+        const frag = document.createDocumentFragment();
+
+        if (edit.premium) {
+          const icon = document.createElement("i");
+          icon.className = "material-icons";
+          icon.style.cssText = `color:${PREMIUM_ICON_COLOR};margin-top:${marginTop};font-size:${fontSize};vertical-align:middle;`;
+          icon.textContent = "beenhere";
+          frag.appendChild(icon);
+        }
+
+        if (edit.verified) {
+          const icon = document.createElement("i");
+          icon.className = "material-icons";
+          icon.style.cssText = `color:${VERIFIED_ICON_COLOR};margin-top:${marginTop};font-size:${fontSize};vertical-align:middle;`;
+          icon.textContent = "check_circle";
+          frag.appendChild(icon);
+        }
+
+        if (effectiveBadgeIndex >= 0) {
+          const url = getGameBadgeUrl(effectiveBadgeIndex);
+          if (url) {
+            const img = document.createElement("img");
+            img.src = url;
+            img.style.cssText = `margin-top:${marginTop};font-size:${fontSize};vertical-align:middle;height:${badgeHeight};margin-left:2px;`;
+            frag.appendChild(img);
+          }
+        }
+
+        if (frag.childNodes.length > 0) {
+          if (isDevelopment) console.log("[PE] badges injected: premium:", edit.premium, "verified:", edit.verified, "badge:", effectiveBadgeIndex);
+          if (isEndScreen) {
+            // End screen: insert after the <a.endTableN>
+            node.after(frag);
+          } else {
+            // Leaderboard: insert before name node
+            itemEl.insertBefore(frag, node);
+          }
+        }
+      }
+    }
+  }
+}
+
+let domSpoofHookInstalled = false;
+
+function installDomSpoofHook() {
+  if (domSpoofHookInstalled) return;
+  domSpoofHookInstalled = true;
+
+  innerHTMLHooks.push((el) => {
+    const id = el.id;
+    if (!id) return;
+
+    // Menu name elements (set via Svelte / updateMenuAccountData, caught here as backup)
+    if (MENU_NAME_IDS[id]) {
+      const edit = getStoredEdit("you");
+      const name = edit?.displayName?.trim();
+      if (name) {
+        if (isDevelopment) console.log("[PE] innerHTML menu name:", id, "→", JSON.stringify(name));
+        el.textContent = name;
+      }
+      return;
+    }
+
+    // menuClassNameTag contains .menuClassPlayerName
+    if (id === "menuClassNameTag" || id === "menuClassContainer") {
+      const edit = getStoredEdit("you");
+      const name = edit?.displayName?.trim();
+      if (!name) return;
+      const nameEl = el.querySelector(".menuClassPlayerName");
+      if (nameEl) {
+        if (isDevelopment) console.log("[PE] innerHTML class name tag:", id, "→", JSON.stringify(name));
+        nameEl.textContent = name;
+      }
+      return;
+    }
+
+    // Game UI containers (leaderboard, scoreboard, end screen, etc.)
+    if (!GAME_CONTAINER_IDS[id]) return;
+
+    if (isDevelopment) console.log("[PE] innerHTML hook fired for:", id);
+
+    const isEndScreen = id === "endTable";
+    const reverseMode = isEndScreen && playerSpoofConfig.get("hideOnEndScreen");
+    spoofNameNodesIn(el, reverseMode);
+  });
+}
+
+/**
+ * Update rainbow-marked clan spans to the current rainbow color.
+ * Called each frame from overlayRenderHooks.
+ */
+function updateRainbowClanSpans() {
+  const spans = document.querySelectorAll<HTMLElement>(`span[${rainbowClanMarkAttr}="1"]`);
+  for (const span of spans) {
+    span.style.setProperty("color", sharedRainbowHexColor, "important");
+  }
+}
+
 export function playerEditorHook() {
   startSharedRainbowColorLoop();
   installMenuAccountDataCallbacks();
@@ -1321,74 +1757,10 @@ export function playerEditorHook() {
   if (playerEditorRenderHookInstalled) return;
   playerEditorRenderHookInstalled = true;
 
-  // Track end screen state so we build the name fixup map once on transition
-  let endScreenNameMap: Map<string, string> | null = null;
+  // DOM spoofing via innerHTML hook — handles text (names, clan colors) after the game writes HTML
+  installDomSpoofHook();
 
-  overlayRenderHooks.push(() => {
-    const edits = getStoredEdits();
-    const players = getPlayers();
-
-    // When hideOnEndScreen is enabled and the end screen cards are showing,
-    // restore all spoofed players back to their original state and fix the DOM.
-    if (playerSpoofConfig.get("hideOnEndScreen")) {
-      const uiBase = document.getElementById("uiBase");
-      if (uiBase?.classList.contains("onEndScrn")) {
-        if (!endScreenNameMap) {
-          // First frame on end screen: build spoofedName → originalName map
-          // BEFORE restoring (restore deletes snapshots)
-          endScreenNameMap = new Map();
-          for (const player of players) {
-            const storageKey = getPlayerStorageKey(player);
-            const edit = edits[storageKey];
-            if (!edit?.displayName?.trim()) continue;
-            const origName = getOriginalPlayerName(player);
-            if (origName) endScreenNameMap.set(edit.displayName.trim(), origName);
-          }
-          // Restore all player objects to original state
-          for (const player of players) {
-            if (playerOriginals.has(String(player.id))) {
-              restoreOriginalPlayerState(player);
-            }
-          }
-        }
-        // Fix end screen DOM every frame (handles delayed re-renders)
-        if (endScreenNameMap.size > 0) {
-          fixEndScreenNames(endScreenNameMap);
-        }
-        return;
-      }
-    }
-
-    // Not on end screen or setting disabled — reset transition tracking
-    endScreenNameMap = null;
-
-    let newlyEdited = false;
-    for (const player of players) {
-      const storageKey = getPlayerStorageKey(player);
-      const edit = edits[storageKey];
-      if (!edit) continue;
-
-      // Snapshot once before any persisted spoof is applied so we can show/restore true originals.
-      if (!playerOriginals.has(String(player.id))) newlyEdited = true;
-      captureOriginalPlayerState(player);
-      installSetDataHook(player);
-      applyEditToPlayer(player, edit);
-    }
-
-    // Force a leaderboard re-render when edits are first applied to a player
-    // so spoofed badges/featured/etc. are visible immediately rather than
-    // waiting for the next server-triggered leaderboard update.
-    if (newlyEdited) {
-      const w = getExposedWindow() as AnyObj;
-      if (typeof w.switchLeaderboard === "function") {
-        const lh = document.getElementById("leaderboardHolder");
-        if (lh) w.switchLeaderboard(lh.style.display !== "none");
-      }
-    }
-
-    refreshClanColorsInDom(players, edits);
-  });
-
+  // Spoof player objects BEFORE the game generates leaderboard HTML so badges/verified/premium render correctly
   const reapplySpoofs = () => {
     const edits = getStoredEdits();
     const players = getPlayers();
@@ -1396,13 +1768,14 @@ export function playerEditorHook() {
       const storageKey = getPlayerStorageKey(player);
       const edit = edits[storageKey];
       if (!edit) continue;
+      captureOriginalPlayerState(player);
       applyEditToPlayer(player, edit);
     }
   };
 
   beforeSwitchLeaderboardHooks.push(reapplySpoofs);
 
-  // toggleStrm also calls the leaderboard render function directly, bypassing switchLeaderboard
+  // toggleStrm calls the leaderboard render directly, bypassing switchLeaderboard
   const w = getExposedWindow() as AnyObj;
   if (typeof w.toggleStrm === "function") {
     const origToggleStrm = w.toggleStrm;
@@ -1411,6 +1784,32 @@ export function playerEditorHook() {
       return origToggleStrm.apply(this, args);
     };
   }
+
+  // Keep player objects spoofed each frame so the game reads correct values
+  overlayRenderHooks.push(() => {
+    const edits = getStoredEdits();
+    const players = getPlayers();
+
+    let newlyEdited = false;
+    for (const player of players) {
+      const storageKey = getPlayerStorageKey(player);
+      const edit = edits[storageKey];
+      if (!edit) continue;
+
+      if (!playerOriginals.has(String(player.id))) newlyEdited = true;
+      captureOriginalPlayerState(player);
+      installSetDataHook(player);
+      applyEditToPlayer(player, edit);
+    }
+
+    // Force a leaderboard re-render when edits are first applied so badges show immediately
+    if (newlyEdited) {
+      forceLeaderboardRerender();
+    }
+
+    // Tick rainbow-colored clan spans
+    updateRainbowClanSpans();
+  });
 
   // Spoof player names in i18n chat messages (join/leave/kick/ban etc.)
   beforeAddChatI18NHooks.push((i18nArgs) => {
