@@ -389,7 +389,6 @@ function captureOriginalPlayerState(player: Player) {
       : null,
   };
 
-  if (isDevelopment) console.log("[PE] captureOriginalPlayerState:", id, isMenuPlayer(player) ? "menu" : "live");
 
   playerOriginals.set(id, snapshot);
 }
@@ -741,7 +740,6 @@ function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, Pl
 
 function getStoredEdit(storageKey: string) {
   const raw = getStoredEdits()[storageKey] as Partial<PlayerEdit> | undefined;
-  if (isDevelopment) console.log("[PE] getStoredEdit: key:", storageKey, "raw:", raw);
   if (!raw) return undefined;
 
   return {
@@ -756,7 +754,6 @@ function getStoredEdit(storageKey: string) {
 }
 
 function setStoredEdit(storageKey: string, edit: PlayerEdit) {
-  if (isDevelopment) console.log("[PE] setStoredEdit: key:", storageKey, "edit:", edit);
   const edits = getStoredEdits();
   playerSpoofConfig.set("edits", {
     ...edits,
@@ -765,7 +762,6 @@ function setStoredEdit(storageKey: string, edit: PlayerEdit) {
 }
 
 function deleteStoredEdit(storageKey: string) {
-  if (isDevelopment) console.log("[PE] deleteStoredEdit: key:", storageKey);
   const edits = getStoredEdits();
   if (!(storageKey in edits)) return;
   const next = { ...edits };
@@ -779,7 +775,6 @@ function getDefaultEdit(player: Player): PlayerEdit {
   const defaultName = isMenu
     ? getPlayerRealName(player)
     : (typeof p.name === "string" ? p.name : "").trim();
-  if (isDevelopment) console.log("[PE] getDefaultEdit: id:", p.id, "isMenu:", isMenu, "defaultName:", defaultName, "p.name:", p.name, "account.name:", p.account?.name, "p.clan:", p.clan, "p.premiumT:", p.premiumT);
   return {
     displayName: defaultName,
     verified: Boolean(p.emailVerified || p.featured),
@@ -831,22 +826,18 @@ function applyEditToPlayer(player: Player, edit: PlayerEdit) {
   const p = player as AnyObj;
   const account = p.account as AnyObj | undefined;
   const isMenu = isMenuPlayer(player);
-  if (isDevelopment) console.log("[PE] applyEditToPlayer: id:", p.id, "isMenu:", isMenu, "edit:", edit, "BEFORE p.name:", p.name, "p.alias:", p.alias, "p.fakeName:", p.fakeName, "account.name:", account?.name, "account.alias:", account?.alias);
 
   const name = edit.displayName.trim();
   if (name) {
     // For menuPlayer, only patch account fields — p.name/alias/fakeName are
     // meaningless on the preview player and leak "preview" into UI if captured.
     if (!isMenu) {
-      if (isDevelopment) console.log("[PE] applyEditToPlayer: setting p.name/alias/fakeName to:", name);
       p.name = name;
       p.alias = name;
       p.fakeName = name;
     } else {
-      if (isDevelopment) console.log("[PE] applyEditToPlayer: SKIPPING p.name/alias/fakeName for menuPlayer");
     }
     if (account) {
-      if (isDevelopment) console.log("[PE] applyEditToPlayer: setting account.name/alias to:", name);
       account.name = name;
       account.alias = name;
     }
@@ -917,7 +908,6 @@ function applyEditToPlayer(player: Player, edit: PlayerEdit) {
       account.clanCol = sharedRainbowHexColor;
     }
   }
-  if (isDevelopment) console.log("[PE] applyEditToPlayer: AFTER p.name:", p.name, "p.alias:", p.alias, "p.fakeName:", p.fakeName, "account.name:", account?.name, "account.alias:", account?.alias, "p.clan:", p.clan, "p.premiumT:", p.premiumT, "p.featured:", p.featured, "p.badgeIndex:", p.badgeIndex);
 }
 
 function openPlayerListWindow() {
@@ -1082,24 +1072,20 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
   });
 
   useEffect(() => {
-    if (isDevelopment) console.log("[PE] DetailWindow useEffect: playerId:", playerId);
     const player = findPlayerById(playerId);
     if (!player) {
-      if (isDevelopment) console.log("[PE] DetailWindow useEffect: player not found!");
       return;
     }
     captureOriginalPlayerState(player);
 
     const realName = getPlayerRealName(player) || "Unknown";
     const origName = getOriginalPlayerName(player) || "Unknown";
-    if (isDevelopment) console.log("[PE] DetailWindow useEffect: realName:", realName, "origName:", origName);
     setPlayerName(realName);
     setPlayerOriginalName(origName);
 
     const storageKey = getPlayerStorageKey(player);
     const existing = getStoredEdit(storageKey);
     const formData = existing ?? getDefaultEdit(player);
-    if (isDevelopment) console.log("[PE] DetailWindow useEffect: storageKey:", storageKey, "existing:", existing, "formData:", formData);
     setForm(formData);
     setBadgeOptions(getBadgeOptions());
   }, [playerId]);
@@ -1123,39 +1109,30 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
   };
 
   const applyCurrentEdit = () => {
-    if (isDevelopment) console.log("[PE] applyCurrentEdit: playerId:", playerId, "form:", form);
     const player = findPlayerById(playerId);
     if (!player) {
-      if (isDevelopment) console.log("[PE] applyCurrentEdit: player not found!");
       return;
     }
     captureOriginalPlayerState(player);
     const storageKey = getPlayerStorageKey(player);
-    if (isDevelopment) console.log("[PE] applyCurrentEdit: storageKey:", storageKey, "isLocal:", isLocalPlayerEntry(player));
     setStoredEdit(storageKey, { ...form });
     applyEditToPlayer(player, form);
     if (isLocalPlayerEntry(player)) {
-      if (isDevelopment) console.log("[PE] applyCurrentEdit: triggering menu refresh for local player");
       triggerMenuAccountDataRefresh();
     }
   };
 
   const resetCurrentEdit = () => {
-    if (isDevelopment) console.log("[PE] resetCurrentEdit: playerId:", playerId);
     const player = findPlayerById(playerId);
     if (!player) {
-      if (isDevelopment) console.log("[PE] resetCurrentEdit: player not found!");
       return;
     }
     const storageKey = getPlayerStorageKey(player);
-    if (isDevelopment) console.log("[PE] resetCurrentEdit: storageKey:", storageKey, "isLocal:", isLocalPlayerEntry(player));
     deleteStoredEdit(storageKey);
     restoreOriginalPlayerState(player);
     const defaults = getDefaultEdit(player);
-    if (isDevelopment) console.log("[PE] resetCurrentEdit: defaults:", defaults);
     setForm(defaults);
     if (isLocalPlayerEntry(player)) {
-      if (isDevelopment) console.log("[PE] resetCurrentEdit: triggering menu refresh for local player");
       triggerMenuAccountDataRefresh();
     }
   };
@@ -1282,7 +1259,6 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
 }
 
 export function playerEditorHook() {
-  if (isDevelopment) console.log("[PE] playerEditorHook: entering, renderHookInstalled:", playerEditorRenderHookInstalled);
   startSharedRainbowColorLoop();
   installMenuAccountDataCallbacks();
   installPlayerAddCallbacks();
@@ -1290,19 +1266,14 @@ export function playerEditorHook() {
   if (playerEditorRenderHookInstalled) return;
   playerEditorRenderHookInstalled = true;
 
-  let overlayFrameCount = 0;
   overlayRenderHooks.push(() => {
-    overlayFrameCount++;
     const edits = getStoredEdits();
     const players = getPlayers();
-    const editKeys = Object.keys(edits);
-    if (isDevelopment && overlayFrameCount % 300 === 1) console.log("[PE] overlayRenderHook frame", overlayFrameCount, "players:", players.length, "editKeys:", editKeys);
     for (const player of players) {
       const storageKey = getPlayerStorageKey(player);
       const edit = edits[storageKey];
       if (!edit) continue;
 
-      if (isDevelopment && overlayFrameCount % 300 === 1) console.log("[PE] overlayRenderHook: applying edit for", storageKey, "player id:", (player as AnyObj).id, "p.name:", (player as AnyObj).name, "account.name:", (player as AnyObj).account?.name);
       // Snapshot once before any persisted spoof is applied so we can show/restore true originals.
       captureOriginalPlayerState(player);
       installSetDataHook(player);
