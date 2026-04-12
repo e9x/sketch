@@ -1,6 +1,6 @@
 import { isDevelopment } from "../consts";
 import { console } from "../crashout";
-import { getBox, getGame, getIO, onGameHooks } from "../filters";
+import { getBox, getGame, getIO, onGameHooks, onIoHooks } from "../filters";
 import { onMessageTransformers, onSendTransformers } from "./wsHook";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import playerSpoofConfig, { type PlayerSpoofEdit } from "../playerSpoofConfig";
@@ -36,7 +36,9 @@ let skins: any[] = [];
 let savedIndexes: { [k: string]: number } = {};
 let ownedIDs: any[] = [];
 let username = "";
+let userAlias = "";
 let chatHistory: { role: string; content: string }[] = [];
+let aiPending = false;
 
 function normalizeKey(key: any): string {
   if (typeof key === "string") return key;
@@ -98,6 +100,7 @@ function setterFunc(obj: any, key: string, value?: any) {
 const ACCOUNT_CLAN_INDEX = 7;
 const ACCOUNT_FEATURED_INDEX = 9;
 const ACCOUNT_PREMIUM_INDEX = 19;
+const ACCOUNT_ALIAS_INDEX = 21; // player_alias (premium display name)
 const ACCOUNT_EMAIL_VERIFIED_INDEX = 43;
 
 // Player list packet indexes (packet "0") for local player chunk.
@@ -234,7 +237,12 @@ function onMessage(packet: any) {
 
     const isAiEnabled = sketchConfig.get("aiReply");
     const spoofName = getSpoofDisplayName();
-    const isNotSelf = senderName !== username && (!spoofName || senderName !== spoofName);
+    // Guard against self-replies: the game broadcasts the sender's alias (premium
+    // display name) rather than their raw account name, so check all three.
+    const isNotSelf =
+      senderName !== username &&
+      senderName !== userAlias &&
+      (!spoofName || senderName !== spoofName);
     const isPlayerChat = senderId === 0;
 
     if (isPlayerChat && isNotSelf) {
@@ -248,12 +256,13 @@ function onMessage(packet: any) {
       }
     }
 
-    if (isAiEnabled && isNotSelf && isPlayerChat) {
+    if (isAiEnabled && isNotSelf && isPlayerChat && !aiPending) {
       const endpoint = sketchConfig.get("aiEndpoint");
       const key = sketchConfig.get("aiKey");
       const prompt = sketchConfig.get("aiPrompt");
       const model = sketchConfig.get("aiModel");
 
+      aiPending = true;
       fetch(endpoint, {
         method: "POST",
         headers: {
@@ -289,11 +298,14 @@ function onMessage(packet: any) {
         })
         .catch((err) => {
           if (isDevelopment) console.error("ai fetch:", err);
+        })
+        .finally(() => {
+          aiPending = false;
         });
     }
   }
 
-  // Keep username fresh regardless of skinHack so packet transforms can target local chunks.
+  // Keep username/alias fresh regardless of skinHack so packet transforms can target local chunks.
   if (packet?.[0] === "a" || packet?.[0] === "ua") {
     const isUpdateAccount = packet[0] === "ua";
     if (!isUpdateAccount && typeof packet[3] === "string") {
@@ -304,6 +316,10 @@ function onMessage(packet: any) {
     }
 
     const data = packet[isUpdateAccount ? 1 : 4];
+    // Track the alias so the AI self-reply check works for premium players.
+    if (Array.isArray(data) && typeof data[ACCOUNT_ALIAS_INDEX] === "string") {
+      userAlias = data[ACCOUNT_ALIAS_INDEX];
+    }
     applyLocalAccountSpoofs(data);
   }
 
@@ -375,6 +391,12 @@ function onSend(packet: any) {
 export function skinHackHook() {
   onMessageTransformers.push(onMessage);
   onSendTransformers.push(onSend);
+
+  // Reset per-session state when a new WebSocket connection is established.
+  onIoHooks.push(() => {
+    chatHistory = [];
+    aiPending = false;
+  });
 
   onGameHooks.push(() => {
     skins = getGame().store.skins;

@@ -260,6 +260,7 @@ const tabs: Tab[] = [
       const [skybox, setSkybox] = useSketchConfig("skybox");
       const [skyboxHue, setSkyboxHue] = useSketchConfig("skyboxHue");
       const [hideClouds, setHideClouds] = useSketchConfig("hideClouds");
+      const [spoofGameId, setSpoofGameId] = useSketchConfig("spoofGameId");
 
       let activ: MapData | undefined;
       try {
@@ -276,6 +277,12 @@ const tabs: Tab[] = [
               title="Disable ADS FOV multiplier"
               defaultChecked={noAdsFovMlt}
               onChange={(event) => setNoAdsFovMlt(event.currentTarget.checked)}
+            />
+            <Switch
+              title="Spoof Game ID"
+              description="Shows a random game ID in the browser URL instead of the real one"
+              defaultChecked={spoofGameId}
+              onChange={(event) => setSpoofGameId(event.currentTarget.checked)}
             />
           </HeadlessSet>
           <Set title="ESP">

@@ -184,6 +184,7 @@ export interface SketchConfig {
   aiPrompt: string;
   aiModel: string;
   spectatorsOverlay: boolean;
+  spoofGameId: boolean;
 }
 
 /**
@@ -265,8 +266,9 @@ const defaultConfig: SketchConfig = {
   espMenu: true,
   aiReply: false,
   spectatorsOverlay: false,
+  spoofGameId: false,
   aiEndpoint: "https://chat.openai.com/v1/chat/completions",
-  aiKey: "SK_YOUR_KEY",
+  aiKey: "",
   aiPrompt:
     "skip the niceties you're here to talk shit. be brutally concise; ditch the fluff. use only lowercase; reserve ALL CAPS for punches and Initial Letter Capitalization to mock ProperNouns. ditch obscure vocab opt for sharp, plain insults. be clever, not tryhard wit over wank. send at most one or two bangers per response. lean on late-millennial slang; slip a random zoomer buzzword to keep them on edge. no preambles, no compliments, no disclaimers output only the roast. keep it under 250 characters.",
   aiModel: "gpt-4.1",

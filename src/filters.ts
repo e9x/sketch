@@ -266,6 +266,124 @@ beforeGame.push(() => {
   }, setItem);
 });
 
+// --- Spoof Game ID in browser URL ---
+
+const SPOOF_REGIONS = ["NY", "FRA", "BHN", "DAL", "MBI", "SIN", "BRZ", "SYD", "TOK"];
+
+function generateFakeGameId() {
+  const region = SPOOF_REGIONS[Math.floor(Math.random() * SPOOF_REGIONS.length)];
+  const code = Math.random().toString(36).slice(2, 7);
+  return `${region}:${code}`;
+}
+
+let fakeGameId: string | null = null;
+let realGameId: string | null = null;
+
+function ensureFakeGameId() {
+  if (!fakeGameId) fakeGameId = generateFakeGameId();
+  return fakeGameId;
+}
+
+function spoofUrlString(url: string): string {
+  if (!sketchConfig.get("spoofGameId")) return url;
+  // match game=REGION:CODE in query strings or paths
+  const match = url.match(/([?&])game=([A-Z]{2,4}:[a-z0-9]{3,6})/);
+  if (!match) return url;
+  realGameId = match[2];
+  return url.replace(match[2], ensureFakeGameId());
+}
+
+// Immediately spoof the URL on script load if enabled
+{
+  const href = location.href;
+  const match = href.match(/[?&]game=([A-Z]{2,4}:[a-z0-9]{3,6})/);
+  if (sketchConfig.get("spoofGameId") && match) {
+    realGameId = match[1];
+    fakeGameId = generateFakeGameId();
+    history.replaceState(document.title, document.title, href.replace(realGameId, fakeGameId));
+  }
+}
+
+// Spoofed history object — proxies to real history but spoofs game IDs in URLs
+data.history = new Proxy(history, {
+  get(target, prop) {
+    const value = (target as any)[prop];
+    if (typeof value !== "function") return value;
+
+    if (prop === "pushState" || prop === "replaceState") {
+      return function (data: any, unused: string, url?: string | URL | null) {
+        if (url && sketchConfig.get("spoofGameId")) {
+          const urlStr = typeof url === "string" ? url : url.toString();
+          return (target as any)[prop](data, unused, spoofUrlString(urlStr));
+        }
+        return (target as any)[prop](data, unused, url);
+      };
+    }
+
+    return value.bind(target);
+  },
+});
+
+// Spoofed location object — proxies to real location but spoofs game IDs in href/search
+data.location = new Proxy(location, {
+  get(target, prop) {
+    const value = (target as any)[prop];
+
+    if (sketchConfig.get("spoofGameId") && fakeGameId) {
+      if (prop === "href" || prop === "search") {
+        return spoofUrlString(value as string);
+      }
+      if (prop === "toString") {
+        return function () {
+          return spoofUrlString(target.href);
+        };
+      }
+    }
+
+    return typeof value === "function" ? value.bind(target) : value;
+  },
+  set(target, prop, value) {
+    (target as any)[prop] = value;
+    return true;
+  },
+});
+
+// Reset/regenerate fake game ID when the setting is toggled
+sketchConfig.configTarget.addEventListener("change", (e) => {
+  if (e.configKey === "spoofGameId") {
+    if (sketchConfig.get("spoofGameId")) {
+      fakeGameId = generateFakeGameId();
+      // Parse the real game ID from the current URL if we don't have it yet
+      const href = location.href;
+      const match = href.match(/[?&]game=([A-Z]{2,4}:[a-z0-9]{3,6})/);
+      if (match) realGameId = match[1];
+      if (realGameId && href.includes(realGameId)) {
+        history.replaceState(document.title, document.title, href.replace(realGameId, fakeGameId));
+      }
+    } else {
+      // Restore the real URL when disabled
+      if (realGameId && fakeGameId) {
+        const href = location.href;
+        if (href.includes(fakeGameId)) {
+          history.replaceState(document.title, document.title, href.replace(fakeGameId, realGameId));
+        }
+      }
+      fakeGameId = null;
+      realGameId = null;
+    }
+  }
+});
+
+patches.spoofHistory = [
+  /window\.history/g,
+  () => `${dataArg}.history`,
+];
+
+patches.spoofLocation = [
+  /window\.location/g,
+  () => `${dataArg}.location`,
+];
+
 let config: typeof configModule | undefined;
 
 export function getConfig() {
