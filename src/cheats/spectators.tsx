@@ -166,7 +166,7 @@ export function spectatorsHook() {
     );
 
     const rows = [
-      { label: "Spectating", value: String(spectating) },
+      { label: "Ghosts", value: String(spectating) },
       { label: "Alive", value: String(alivePlayers) },
       { label: "Connected", value: String(connected) },
     ];
