@@ -15,6 +15,7 @@ import { HeadlessSet, Set } from "../krunker-ui/components/Set";
 import { Select } from "../krunker-ui/components/Select";
 import { Switch } from "../krunker-ui/components/Switch";
 import { Text } from "../krunker-ui/components/Text";
+import { ColorPicker } from "../krunker-ui/components/ColorPicker";
 import type { Player } from "../krunker/Player";
 import { useEffect, useState } from "preact/hooks";
 import { getExposedWindow, isDevelopment } from "../consts";
@@ -175,6 +176,16 @@ function getPlayerRealName(player: Player): string {
 
 function getPlayerRows(): PlayerRow[] {
   const players = getPlayers();
+  console.log("[PE] getPlayerRows: players count:", players.length);
+  for (const player of players) {
+    const p = player as AnyObj;
+    console.log("[PE] player id:", p.id, "sid:", p.sid, "name:", p.name, "alias:", p.alias,
+      "isYou:", p.isYou, "isMenu:", isMenuPlayer(player), "accid:", p.accid,
+      "account:", p.account ? { name: p.account.name, alias: p.account.alias } : null,
+      "getRealName:", getPlayerRealName(player),
+      "getOriginalName:", getOriginalPlayerName(player),
+      "storageKey:", getPlayerStorageKey(player));
+  }
   const rows = players.map((player) => ({
     id: String(player.id),
     storageKey: getPlayerStorageKey(player),
@@ -534,7 +545,14 @@ function showInjectedWindow(
 function getPlayers(): Player[] {
   try {
     const livePlayers = [...getGame().players.list];
-    if (livePlayers.length > 0) return livePlayers;
+    if (livePlayers.length > 0) {
+      // Include menuPlayer alongside live players so its badges stay spoofed
+      const menuPlayer = getMenuPlayer();
+      if (menuPlayer && !livePlayers.includes(menuPlayer)) {
+        livePlayers.push(menuPlayer);
+      }
+      return livePlayers;
+    }
   } catch {
     // no-op
   }
@@ -605,13 +623,14 @@ function getLeadingText(node: Element) {
   return "";
 }
 
-interface RainbowTarget {
+interface ClanColorTarget {
   names: string[];
   clanTag: string;
+  color: string;
   isYou: boolean;
 }
 
-function resolveRainbowClanTag(player: Player, edit: PlayerEdit) {
+function resolveClanTag(player: Player, edit: PlayerEdit) {
   const customClan = edit.clan.trim();
   if (customClan) return customClan;
 
@@ -623,16 +642,20 @@ function resolveRainbowClanTag(player: Player, edit: PlayerEdit) {
       : "";
 }
 
-function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, PlayerEdit>) {
+function refreshClanColorsInDom(players: Player[], edits: Record<string, PlayerEdit>) {
   if (typeof document === "undefined") return;
 
-  const targets: RainbowTarget[] = [];
+  const targets: ClanColorTarget[] = [];
 
   for (const player of players) {
     const edit = edits[getPlayerStorageKey(player)];
-    if (!edit?.rainbowClan) continue;
+    if (!edit) continue;
 
-    const clanTag = resolveRainbowClanTag(player, edit);
+    const wantsRainbow = edit.rainbowClan;
+    const staticColor = edit.clanColor?.trim() || "";
+    if (!wantsRainbow && !staticColor) continue;
+
+    const clanTag = resolveClanTag(player, edit);
     if (!clanTag) continue;
 
     const names: string[] = [];
@@ -654,11 +677,12 @@ function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, Pl
     targets.push({
       names,
       clanTag,
+      color: wantsRainbow ? sharedRainbowHexColor : staticColor,
       isYou: Boolean((player as AnyObj).isYou),
     });
   }
 
-  if (isDevelopment && targets.length > 0) console.log("[PE] rainbow targets:", targets.length);
+  if (isDevelopment && targets.length > 0) console.log("[PE] clan color targets:", targets.length);
   if (targets.length === 0) return;
 
   const oldMarked = Array.from(
@@ -696,7 +720,7 @@ function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, Pl
     }
 
     clanSpan.textContent = ` [${target.clanTag}]`;
-    clanSpan.style.setProperty("color", sharedRainbowHexColor, "important");
+    clanSpan.style.setProperty("color", target.color, "important");
     touched.push(clanSpan);
   }
 
@@ -705,7 +729,7 @@ function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, Pl
   const localEdit = edits.you;
   const ownTargetClanTag =
     ownTarget?.clanTag ||
-    (localEdit?.rainbowClan ? localEdit.clan.trim() : "");
+    (localEdit?.rainbowClan || localEdit?.clanColor?.trim() ? localEdit.clan.trim() : "");
   if (ownTargetClanTag) {
     const ownNodes = document.querySelectorAll<HTMLElement>(".leaderNameM, .newLeaderNameM");
     for (const node of ownNodes) {
@@ -726,7 +750,8 @@ function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, Pl
       }
 
       clanSpan.textContent = ` [${ownTargetClanTag}]`;
-      clanSpan.style.setProperty("color", sharedRainbowHexColor, "important");
+      const ownColor = ownTarget?.color || (localEdit?.rainbowClan ? sharedRainbowHexColor : localEdit?.clanColor?.trim() || "");
+      if (ownColor) clanSpan.style.setProperty("color", ownColor, "important");
       touched.push(clanSpan);
     }
   }
@@ -744,7 +769,8 @@ function refreshRainbowClanTagsInDom(players: Player[], edits: Record<string, Pl
     const tag = match[1].trim().toLowerCase();
     if (!tag || !targetClanTags.includes(tag)) continue;
 
-    span.style.setProperty("color", sharedRainbowHexColor, "important");
+    const matchTarget = targets.find((t) => t.clanTag.toLowerCase() === tag);
+    if (matchTarget) span.style.setProperty("color", matchTarget.color, "important");
     span.setAttribute(rainbowClanMarkAttr, "1");
     touched.push(span);
   }
@@ -766,6 +792,7 @@ function getStoredEdit(storageKey: string) {
     vip: Boolean(raw.vip),
     badgeIndex: Number.isFinite(raw.badgeIndex) ? Number(raw.badgeIndex) : -1,
     clan: typeof raw.clan === "string" ? raw.clan : "",
+    clanColor: typeof raw.clanColor === "string" ? raw.clanColor : "",
     rainbowClan: Boolean(raw.rainbowClan),
   };
 }
@@ -799,6 +826,7 @@ function getDefaultEdit(player: Player): PlayerEdit {
     vip: Number(p.BP?.tier) > 0,
     badgeIndex: Number.isInteger(Number(p.badgeIndex)) ? Number(p.badgeIndex) : -1,
     clan: typeof p.clan === "string" ? p.clan : "",
+    clanColor: "",
     rainbowClan: false,
   };
 }
@@ -917,12 +945,15 @@ function applyEditToPlayer(player: Player, edit: PlayerEdit) {
     }
   }
 
-  if (edit.rainbowClan) {
-    p.clanColor = sharedRainbowHexColor;
-    p.clanCol = sharedRainbowHexColor;
+  const resolvedClanColor = edit.rainbowClan
+    ? sharedRainbowHexColor
+    : edit.clanColor?.trim() || "";
+  if (resolvedClanColor) {
+    p.clanColor = resolvedClanColor;
+    p.clanCol = resolvedClanColor;
     if (account) {
-      account.clanColor = sharedRainbowHexColor;
-      account.clanCol = sharedRainbowHexColor;
+      account.clanColor = resolvedClanColor;
+      account.clanCol = resolvedClanColor;
     }
   }
 }
@@ -1085,6 +1116,7 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
     vip: false,
     badgeIndex: -1,
     clan: "",
+    clanColor: "",
     rainbowClan: false,
   });
 
@@ -1250,9 +1282,15 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
           defaultValue={form.clan}
           onChange={(event) => updateForm("clan", event.currentTarget.value)}
         />
+        <ColorPicker
+          title="Clan Color"
+          description="Static hex color for clan tag. Ignored if Rainbow is on."
+          defaultValue={form.clanColor || "#000000"}
+          onInput={(event) => updateForm("clanColor", event.currentTarget.value)}
+        />
         <Switch
           title="Rainbow Clan"
-          description="Cycles clan color using shared rainbow color"
+          description="Cycles clan color using shared rainbow color (overrides static color)"
           defaultChecked={form.rainbowClan}
           onChange={(event) => updateForm("rainbowClan", event.currentTarget.checked)}
         />
@@ -1324,18 +1362,31 @@ export function playerEditorHook() {
     // Not on end screen or setting disabled — reset transition tracking
     endScreenNameMap = null;
 
+    let newlyEdited = false;
     for (const player of players) {
       const storageKey = getPlayerStorageKey(player);
       const edit = edits[storageKey];
       if (!edit) continue;
 
       // Snapshot once before any persisted spoof is applied so we can show/restore true originals.
+      if (!playerOriginals.has(String(player.id))) newlyEdited = true;
       captureOriginalPlayerState(player);
       installSetDataHook(player);
       applyEditToPlayer(player, edit);
     }
 
-    refreshRainbowClanTagsInDom(players, edits);
+    // Force a leaderboard re-render when edits are first applied to a player
+    // so spoofed badges/featured/etc. are visible immediately rather than
+    // waiting for the next server-triggered leaderboard update.
+    if (newlyEdited) {
+      const w = getExposedWindow() as AnyObj;
+      if (typeof w.switchLeaderboard === "function") {
+        const lh = document.getElementById("leaderboardHolder");
+        if (lh) w.switchLeaderboard(lh.style.display !== "none");
+      }
+    }
+
+    refreshClanColorsInDom(players, edits);
   });
 
   const reapplySpoofs = () => {

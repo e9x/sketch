@@ -10,6 +10,7 @@ export interface PlayerSpoofEdit {
   vip: boolean;
   badgeIndex: number;
   clan: string;
+  clanColor: string;
   rainbowClan: boolean;
 }
 
