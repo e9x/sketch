@@ -3,7 +3,7 @@
  * reloads within the same tab but is discarded when the tab is closed.
  */
 
-const PREFIX = "_sk_";
+const PREFIX = "_nn_";
 
 export const sessionStore = {
   get<T>(key: string): T | null {
