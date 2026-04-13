@@ -674,6 +674,33 @@ export function SkinChangerMenu() {
               regenLocalPlayerMeshes();
             }}
           />
+          <Button
+            title="Randomize All"
+            text="Random"
+            onClick={() => {
+              const newSlots: Record<string, number> = {};
+              for (const slot of COSMETIC_SLOTS) {
+                const skins = getSkinsForType(slot.type);
+                if (skins.length > 0) {
+                  newSlots[slot.key] = skins[Math.floor(Math.random() * skins.length)].index;
+                }
+              }
+              for (let i = 0; i < cachedWeapons.length; i++) {
+                const weaponId = i + 1;
+                const skins = getSkinsForType(SKIN_TYPE.WEAPON, weaponId);
+                if (skins.length > 0) {
+                  newSlots[`${WEAPON_SKIN_KEY_PREFIX}${i}`] = skins[Math.floor(Math.random() * skins.length)].index;
+                }
+                const charms = getSkinsForType(SKIN_TYPE.CHARM);
+                if (charms.length > 0) {
+                  newSlots[`${CHARM_KEY_PREFIX}${i}`] = charms[Math.floor(Math.random() * charms.length)].index;
+                }
+              }
+              setSlots(newSlots);
+              setRevision((r) => r + 1);
+              regenLocalPlayerMeshes();
+            }}
+          />
 
           <Set title="Colors">
             <Select
