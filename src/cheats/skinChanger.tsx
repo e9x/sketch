@@ -577,6 +577,14 @@ function SlotPicker({
 
   return (
     <Control title={label} description={currentSkin ? currentSkin.name : "Default"}>
+      <div className="settingsBtn" style={{ width: "auto", flexShrink: 0, marginLeft: "5px" }} onClick={() => {
+        openSkinPicker(slotKey, type, label, (index) => {
+          setSlotValue(slotKey, index);
+          onChanged();
+        }, weaponId);
+      }}>
+        Browse
+      </div>
       <div className="settingsBtn" style={{ width: "auto", flexShrink: 0 }} onClick={() => {
         const skins = getSkinsForType(type, weaponId);
         if (skins.length === 0) return;
@@ -587,12 +595,10 @@ function SlotPicker({
         Random
       </div>
       <div className="settingsBtn" style={{ width: "auto", flexShrink: 0, marginLeft: "5px" }} onClick={() => {
-        openSkinPicker(slotKey, type, label, (index) => {
-          setSlotValue(slotKey, index);
-          onChanged();
-        }, weaponId);
+        setSlotValue(slotKey, -1);
+        onChanged();
       }}>
-        Browse
+        Reset
       </div>
     </Control>
   );
