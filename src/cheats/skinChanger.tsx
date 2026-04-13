@@ -128,6 +128,13 @@ function getSkinsForType(type: number, weaponId?: number): { index: number; name
     if (weaponId !== undefined && s.weapon !== weaponId) continue;
     results.push({ index: i, name: s.name || `Skin #${i}` });
   }
+  // Sort by rarity descending (rarest first), then by name
+  results.sort((a, b) => {
+    const ra = cachedSkins[a.index]?.rarity || 0;
+    const rb = cachedSkins[b.index]?.rarity || 0;
+    if (rb !== ra) return rb - ra;
+    return a.name.localeCompare(b.name);
+  });
   return results;
 }
 
