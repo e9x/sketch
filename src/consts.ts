@@ -1,7 +1,6 @@
 import {
   FSJSONStorage,
   GMJSONStorage,
-  IDBJSONStorage,
   type JSONStorage,
 } from "./values";
 
@@ -40,7 +39,7 @@ function createStorage(): JSONStorage {
       require("path").join(require("os").homedir(), ".photoshop.sketch"),
     );
   if (hasGM) return new GMJSONStorage();
-  return new IDBJSONStorage("_appCache");
+  throw new Error("No storage backend available");
 }
 
 const storage = createStorage();

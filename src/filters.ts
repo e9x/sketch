@@ -228,16 +228,6 @@ export const beforeGame: (() => void)[] = [];
 export const afterGame: (() => void)[] = [];
 
 beforeGame.push(() => {
-  // hide our IDB database from indexedDB.databases()
-  const ogDatabases = IDBFactory.prototype.databases;
-  IDBFactory.prototype.databases = mirrorAttributes(
-    async function databases(this: any) {
-      const dbs = await ogDatabases.call(this);
-      return dbs.filter((db) => db.name !== "_appCache");
-    } as typeof IDBFactory.prototype.databases,
-    ogDatabases,
-  );
-
   const { setItem } = Storage.prototype;
 
   let loginFrame: string | undefined;
