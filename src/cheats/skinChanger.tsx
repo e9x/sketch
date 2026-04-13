@@ -1,4 +1,4 @@
-import { getGame, getMenuPlayer, onGameHooks } from "../filters";
+import { getGame, getMenuPlayer, innerHTMLHooks, onGameHooks } from "../filters";
 import sketchConfig, { useSketchConfig } from "../sketchConfig";
 import { Set } from "../krunker-ui/components/Set";
 import { Select } from "../krunker-ui/components/Select";
@@ -233,6 +233,100 @@ export function skinChangerHook() {
       applySkinOverrides(plr);
       return generateMeshes.call(this, plr, ...args);
     } as typeof generateMeshes;
+  });
+}
+
+/**
+ * Hook the class preview UI text (menuClassSubtext) so it displays
+ * the overridden skin's name, rarity color and thumbnail instead of
+ * the player's real equipped skin.
+ */
+export function skinChangerClassPreviewHook() {
+  let updating = false;
+
+  innerHTMLHooks.push((element) => {
+    if (updating) return;
+    if (element.id !== "menuClassSubtext") return;
+    if (!sketchConfig.get("skinChanger")) return;
+
+    ensureCache();
+    if (cachedSkins.length === 0 || cachedRarities.length === 0) return;
+
+    let game: ReturnType<typeof getGame>;
+    try {
+      game = getGame();
+    } catch {
+      return;
+    }
+    const slots = sketchConfig.get("skinChangerSlots");
+    const weapons = game.weapons;
+    if (!weapons) return;
+
+    // Figure out which class is selected by reading the current loadout.
+    let classConfig: { loadout: number[] } | undefined;
+    try {
+      const menuPlr = getMenuPlayer();
+      if (menuPlr) {
+        classConfig = game.classConfig[menuPlr.classIndex];
+      }
+    } catch {}
+    if (!classConfig) return;
+
+    const loadout = classConfig.loadout;
+    if (!loadout?.length) return;
+
+    // Only override if at least one weapon skin slot is active.
+    let hasOverride = false;
+    for (const weaponIdx of loadout) {
+      const slotKey = `${WEAPON_SKIN_KEY_PREFIX}${weaponIdx}`;
+      if ((slots[slotKey] ?? -1) >= 0) {
+        hasOverride = true;
+        break;
+      }
+    }
+    if (!hasOverride) return;
+
+    let html = "";
+    let lastThumbnail = "";
+
+    for (let wi = 0; wi < loadout.length; wi++) {
+      const weaponIdx = loadout[wi];
+      const weapon = weapons[weaponIdx];
+      if (!weapon) continue;
+
+      if (html) html += " - ";
+
+      const slotKey = `${WEAPON_SKIN_KEY_PREFIX}${weaponIdx}`;
+      const overrideSkinIdx = slots[slotKey] ?? -1;
+
+      let color = "inherit";
+      let animate = false;
+
+      if (overrideSkinIdx >= 0) {
+        const skin = cachedSkins[overrideSkinIdx];
+        if (skin) {
+          const rarity = cachedRarities[skin.rarity || 0];
+          if (rarity) {
+            color = rarity.color || color;
+            animate = !!rarity.animate;
+          }
+          if (skin.thumbnail) lastThumbnail = skin.thumbnail;
+        }
+      }
+
+      html += `<span ${animate ? "class='rainbowText' " : ""}style='color:${color}'>${weapon.name}</span>`;
+    }
+
+    if (html) {
+      updating = true;
+      element.innerHTML = html;
+      updating = false;
+    }
+
+    if (lastThumbnail) {
+      const iconEl = document.getElementById("menuClassIcn") as HTMLImageElement | null;
+      if (iconEl) iconEl.src = lastThumbnail;
+    }
   });
 }
 
