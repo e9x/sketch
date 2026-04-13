@@ -10,7 +10,7 @@ import parseUrl from "parseurl";
 import { userscriptMetadataGenerator } from "userscript-metadata-generator";
 
 const isDevelopment = process.argv.includes("--dev");
-const isDebug = process.argv.includes("--debug");
+const isDebug = isDevelopment; // process.argv.includes("--debug");
 
 process.env.NODE_ENV = isDevelopment ? "development" : "production";
 

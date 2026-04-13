@@ -63,6 +63,8 @@ export function getIO() {
 export const onIoHooks: ((socket: WebSocket) => void)[] = [];
 
 export const data: Record<string, any> = {
+  /** Clan name → hex color. When set, the game's special clan color function returns this instead of gold. */
+  clanColorOverrides: null as Record<string, string> | null,
   socket(t: typeof IO, prop: string | number, arg: string | URL) {
     io = t;
     const ws = new WebSocket(arg);
@@ -184,6 +186,16 @@ data.object.defineProperty = mirrorAttributes(
 );
 
 patches.freeze = [/Object\[/g, () => `${dataArg}.object[`];
+
+// Patch the special clan color function to check our clan color overrides first.
+// Original: function sr(e,a){return typeof e=="string"&&["arae",...].includes(e.toLowerCase())?"#FBC02D":a}
+// We wrap it so that if a clan name has a custom color override, that color is returned instead.
+patches.specialClanColor = [
+  /function (\w+)\((\w+),(\w+)\)\{return typeof \2=="string"&&\["arae","lain","scte","fame","kpd","jump","art","dev"\]\.includes\(\2\.toLowerCase\(\)\)\?"#FBC02D":\3\}/,
+  (_: string, fnName: string, clanArg: string, fallbackArg: string) => {
+    return `function ${fnName}(${clanArg},${fallbackArg}){var _o=${dataArg}.clanColorOverrides;if(_o&&typeof ${clanArg}==="string"){var _k=${clanArg}.toLowerCase();if(_o[_k])return _o[_k]}return typeof ${clanArg}=="string"&&["arae","lain","scte","fame","kpd","jump","art","dev"].includes(${clanArg}.toLowerCase())?"#FBC02D":${fallbackArg}}`;
+  },
+];
 
 patches.updateMenuAccountData = [
   /window\[['"]updateMenuAccountData['"]\]=function\(\)\{([^}]*)\}/,

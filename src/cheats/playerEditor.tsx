@@ -3,6 +3,7 @@ import {
   beforeSwitchLeaderboardHooks,
   afterUpdateMenuAccountDataHooks,
   beforeUpdateMenuAccountDataHooks,
+  data as filterData,
   getGame,
   getMenuPlayer,
   innerHTMLHooks,
@@ -1472,11 +1473,14 @@ const NAME_NODE_SELECTOR = [
   ".leaderName", ".leaderNameF", ".leaderNameM",
   ".newLeaderName", ".newLeaderNameF", ".newLeaderNameM",
   ".endTableN",
+  ".death-row-user-text",
+  ".pListName", ".pListName a",
 ].join(", ");
 
 const GAME_CONTAINER_IDS: Record<string, true> = {
   leaderContainer: true, leaderboardHolder: true, playerListH: true,
   centerLeaderDisplay: true, ingameTable: true, endTable: true, topRight: true,
+  deathUIHolder: true,
 };
 
 const MENU_NAME_IDS: Record<string, true> = {
@@ -1886,6 +1890,7 @@ export function playerEditorHook() {
     const players = getPlayers();
 
     let newlyEdited = false;
+    const clanOverrides: Record<string, string> = {};
     for (const player of players) {
       const storageKey = getPlayerStorageKey(player);
       const edit = edits[storageKey];
@@ -1895,7 +1900,17 @@ export function playerEditorHook() {
       captureOriginalPlayerState(player);
       installSetDataHook(player);
       applyEditToPlayer(player, edit);
+
+      // Build clan color override map for the game's special clan function
+      const p = player as AnyObj;
+      const clan = typeof p.clan === "string" ? p.clan : "";
+      if (clan && (edit.rainbowClan || edit.clanColor?.trim())) {
+        clanOverrides[clan.toLowerCase()] = edit.rainbowClan ? sharedRainbowHexColor : edit.clanColor!.trim();
+      }
     }
+
+    // Update the global clan color overrides so the patched sr() uses our colors
+    filterData.clanColorOverrides = Object.keys(clanOverrides).length > 0 ? clanOverrides : null;
 
     // Force a leaderboard re-render when edits are first applied so badges show immediately
     if (newlyEdited) {

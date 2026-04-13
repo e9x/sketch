@@ -1,5 +1,6 @@
 import { hookContext, mirrorAttributes } from "./hook";
 import { getExposedWindow } from "./consts";
+import { shouldBlockURL } from "./cheats/adblock";
 
 const window = getExposedWindow();
 
@@ -126,11 +127,23 @@ export const gameLoad = new Promise<void>((loaded) => {
       }
 
       for (var i = 0; i < mutation.addedNodes.length; i++) {
-        const node = mutation.addedNodes[i] as HTMLScriptElement;
-        if (node.tagName === "SCRIPT") {
-          if (node.src.startsWith("https://krunker.io/static/index-")) {
+        const node = mutation.addedNodes[i] as HTMLElement;
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+
+        const tag = node.tagName;
+
+        if (tag === "SCRIPT") {
+          const src = (node as HTMLScriptElement).src;
+          if (src.startsWith("https://krunker.io/static/index-")) {
             ele_rm(node);
             loaded();
+          } else if (src && shouldBlockURL(src)) {
+            ele_rm(node);
+          }
+        } else if (tag === "IFRAME" || tag === "IMG" || tag === "LINK") {
+          const url = (node as HTMLIFrameElement).src || (node as HTMLLinkElement).href;
+          if (url && shouldBlockURL(url)) {
+            ele_rm(node);
           }
         }
       }
