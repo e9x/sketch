@@ -166,6 +166,7 @@ export interface SketchConfig {
   espRainbowFriendly: boolean;
   espWallDarkness: number;
   hideClouds: boolean;
+  hideVisualsEndScreen: boolean;
 
   // LEGACY:
   espOpacity?: number;
@@ -262,6 +263,7 @@ const defaultConfig: SketchConfig = {
   espRainbowFriendly: false,
   espWallDarkness: 0.7,
   hideClouds: false,
+  hideVisualsEndScreen: false,
   mouseLockX: 0,
   mouseLockY: 0,
   noSpread: false,

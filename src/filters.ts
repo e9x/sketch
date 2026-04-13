@@ -15,6 +15,7 @@ import type { Hook } from "./inject";
 import { AI } from "./krunker/AI";
 import type * as IO from "./krunker/io";
 import { sessionStore } from "./sessionStore";
+import { isOnEndScreen } from "./krunkerUtil";
 
 const canSee = Symbol();
 let checkingCanSee = false;
@@ -853,7 +854,8 @@ function doRenderHooks() {
 
       conf = config;
       nConfig = { ...config };
-      if (sketchConfig.get("mapOverrides")) {
+      const hideVisuals = sketchConfig.get("hideVisualsEndScreen") && isOnEndScreen();
+      if (!hideVisuals && sketchConfig.get("mapOverrides")) {
         const overridesHue = normalizeHue(sketchConfig.get("mapOverridesHue"));
         const overrides = sketchConfig.get("mapOverridesCode");
         const adjusted =
@@ -862,7 +864,7 @@ function doRenderHooks() {
             : (shiftOverrideColors(overrides, overridesHue) as MapData);
         Object.assign(nConfig, adjusted);
       }
-      if (sketchConfig.get("skyColor"))
+      if (!hideVisuals && sketchConfig.get("skyColor"))
         Object.assign(nConfig, {
           skyDome: false,
           sky: sketchConfig.get("skyColorHex"),
@@ -875,7 +877,8 @@ function doRenderHooks() {
   );
 
   let lastThirdPerson: boolean | undefined;
-  let skyConf = ["mapOverrides", "mapOverridesCode", "mapOverridesHue", "skyColor", "skyColorHex", "skyboxHue"];
+  let lastEndScreen: boolean | undefined;
+  let skyConf = ["mapOverrides", "mapOverridesCode", "mapOverridesHue", "skyColor", "skyColorHex", "skyboxHue", "hideVisualsEndScreen"];
   sketchConfig.configTarget.addEventListener("change", (e) => {
     if (typeof e.configKey === "string" && skyConf.includes(e.configKey))
       redrawSky();
@@ -888,6 +891,15 @@ function doRenderHooks() {
       if (game) {
         for (const player of game.players.list) delete player[canSee];
         for (const ai of game.AI.ais) delete ai[canSee];
+
+        // redraw sky when end screen state transitions (so overrides toggle on/off)
+        if (sketchConfig.get("hideVisualsEndScreen")) {
+          const onEnd = isOnEndScreen();
+          if (lastEndScreen !== onEnd) {
+            lastEndScreen = onEnd;
+            redrawSky();
+          }
+        }
 
         if (localPlayer) {
           for (const hook of preRenderHooks) hook();
@@ -920,7 +932,7 @@ function doRenderHooks() {
           if (data.src === "clouds_0" || data.emissive === "#FFC980") {
             let visible = mat.visible;
             Object.defineProperty(mat, "visible", {
-              get: () => (sketchConfig.get("hideClouds") ? false : visible),
+              get: () => (sketchConfig.get("hideClouds") && !(sketchConfig.get("hideVisualsEndScreen") && isOnEndScreen()) ? false : visible),
               set: (v) => (visible = v),
             });
           }
@@ -936,7 +948,8 @@ function doRenderHooks() {
   render.renderer.render = mirrorAttributes(
     function (this: any, scene: any, camera: any) {
       if (camera === render.camera) {
-        render.scene.background = getTech();
+        const hideVisuals = sketchConfig.get("hideVisualsEndScreen") && isOnEndScreen();
+        render.scene.background = hideVisuals ? null : getTech();
         let ret = threeRenderFn.call(this, scene, camera);
         render.scene.background = null;
         return ret;
@@ -977,7 +990,7 @@ function doRenderHooks() {
           if (typeof data === "object" && hookNHide.test(data.src)) {
             let visible = mesh.visible;
             Object.defineProperty(mesh, "visible", {
-              get: () => (sketchConfig.get("hideClouds") ? false : visible),
+              get: () => (sketchConfig.get("hideClouds") && !(sketchConfig.get("hideVisualsEndScreen") && isOnEndScreen()) ? false : visible),
               set: (v) => (visible = v),
             });
           }

@@ -260,6 +260,7 @@ const tabs: Tab[] = [
       const [skybox, setSkybox] = useSketchConfig("skybox");
       const [skyboxHue, setSkyboxHue] = useSketchConfig("skyboxHue");
       const [hideClouds, setHideClouds] = useSketchConfig("hideClouds");
+      const [hideVisualsEndScreen, setHideVisualsEndScreen] = useSketchConfig("hideVisualsEndScreen");
       const [spoofGameId, setSpoofGameId] = useSketchConfig("spoofGameId");
 
       let activ: MapData | undefined;
@@ -357,6 +358,12 @@ const tabs: Tab[] = [
               description="whether to not render crap in the sky"
               defaultChecked={hideClouds}
               onChange={(event) => setHideClouds(event.currentTarget.checked)}
+            />
+            <Switch
+              title="Hide Visuals on End Screen"
+              description="Disables custom skybox, map overrides, sky color, and cloud hiding on the end card screen"
+              defaultChecked={hideVisualsEndScreen}
+              onChange={(event) => setHideVisualsEndScreen(event.currentTarget.checked)}
             />
             <Switch
               title="Use Map Overrides"

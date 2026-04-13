@@ -208,6 +208,11 @@ export function isInMenus() {
   return l?.classList.contains("onMenu") || l?.classList.contains("onEndScrn");
 }
 
+export function isOnEndScreen() {
+  const l = document.getElementById("uiBase");
+  return l?.classList.contains("onEndScrn") ?? false;
+}
+
 /**
  * will not return an accurate FPS unless showFPS is enabled in game or it's forced to calculate FPS
  */
