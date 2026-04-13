@@ -4,12 +4,14 @@ import { Set } from "../krunker-ui/components/Set";
 import { Select } from "../krunker-ui/components/Select";
 import { Switch } from "../krunker-ui/components/Switch";
 import { Button } from "../krunker-ui/components/Button";
+import { Control } from "../krunker-ui/components/Control";
 import { ColorPicker } from "../krunker-ui/components/ColorPicker";
 import { createRenderContainer } from "../krunker-ui/container";
 import { isDevelopment } from "../consts";
 import { console } from "../crashout";
 import type { Player } from "../krunker/Player";
 import { useState, useEffect, useCallback, useRef } from "preact/hooks";
+import { RarityEntry, SkinEntry } from "../krunker/Game";
 
 // Skin type indices per the game's store.types array
 const SKIN_TYPE = {
@@ -78,25 +80,6 @@ const SKIN_COLOR_VALUES = [
 const WEAPON_SKIN_KEY_PREFIX = "weaponSkin_";
 // Charm slots per weapon
 const CHARM_KEY_PREFIX = "charm_";
-
-type SkinEntry = {
-  id: number;
-  index: number;
-  name: string;
-  type: number;
-  weapon?: number;
-  classIndex?: number;
-  thumbnail?: string;
-  rarity?: number;
-  creator?: string;
-  creators?: string[];
-  rgb?: boolean;
-  seas?: number;
-  free?: boolean;
-  keyW?: string;
-};
-
-type RarityEntry = { color: string; animate?: boolean };
 
 let cachedSkins: SkinEntry[] = [];
 let cachedWeapons: { name: string }[] = [];
@@ -593,17 +576,25 @@ function SlotPicker({
   const currentSkin = currentVal >= 0 ? cachedSkins[currentVal] : null;
 
   return (
-    <Button
-      title={label}
-      description={currentSkin ? currentSkin.name : "Default"}
-      text="Browse"
-      onClick={() => {
+    <Control title={label} description={currentSkin ? currentSkin.name : "Default"}>
+      <div className="settingsBtn" style={{ width: "auto", flexShrink: 0 }} onClick={() => {
+        const skins = getSkinsForType(type, weaponId);
+        if (skins.length === 0) return;
+        const picked = skins[Math.floor(Math.random() * skins.length)];
+        setSlotValue(slotKey, picked.index);
+        onChanged();
+      }}>
+        Random
+      </div>
+      <div className="settingsBtn" style={{ width: "auto", flexShrink: 0, marginLeft: "5px" }} onClick={() => {
         openSkinPicker(slotKey, type, label, (index) => {
           setSlotValue(slotKey, index);
           onChanged();
         }, weaponId);
-      }}
-    />
+      }}>
+        Browse
+      </div>
+    </Control>
   );
 }
 

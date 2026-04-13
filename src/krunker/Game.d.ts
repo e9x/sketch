@@ -7,6 +7,25 @@ import type { Player, manager } from "./Player";
 import type classes from "./classes";
 import type * as THREE from "three";
 
+export declare type SkinEntry = {
+  id: number;
+  index: number;
+  name: string;
+  type: number;
+  weapon?: number;
+  classIndex?: number;
+  thumbnail?: string;
+  rarity?: number;
+  creator?: string;
+  creators?: string[];
+  rgb?: boolean;
+  seas?: number;
+  free?: boolean;
+  keyW?: string;
+};
+
+export declare type RarityEntry = { color: string; animate?: boolean };
+
 declare interface Attachment {
   req(player: Player, game: Game): boolean;
   [key: string | symbol]: any;
@@ -38,7 +57,9 @@ declare class Game {
   addSpray(...args: unknown[]): unknown;
   roundId: string;
   sessionId: string;
-  store: { skins: { type: number; weapon: number; classIndex: number; name: string; id: number }[] };
+  store: {
+    rarities: RarityEntry[]; skins: { type: number; weapon: number; classIndex: number; name: string; id: number }[] 
+};
   weapons: { name: string; src: string; icon: string; melee?: boolean; secondary?: boolean }[];
   canSee(
     target: Player | AI,
