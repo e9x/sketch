@@ -140,6 +140,7 @@ export interface SketchConfig {
   badgeRainbow: boolean;
   keybindOverlay: boolean;
   healthBars: boolean;
+  spawnESP: boolean;
   adblock: boolean;
   thirdPerson: boolean;
   skyColor: boolean;
@@ -240,6 +241,7 @@ const defaultConfig: SketchConfig = {
   badgeRainbow: false,
   keybindOverlay: false,
   healthBars: false,
+  spawnESP: false,
   adblock: true,
   thirdPerson: false,
   skyColor: false,

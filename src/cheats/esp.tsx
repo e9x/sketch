@@ -10,6 +10,7 @@ import {
 } from "../filters";
 import type { AI } from "../krunker/AI";
 import type { Player } from "../krunker/Player";
+import type { SpawnPoint } from "../krunker/GameMap";
 import {
   entityAlive,
   getOffScreenDir,
@@ -439,10 +440,11 @@ export function espHook() {
     const tracersEnemy = sketchConfig.get("tracersEnemy");
     const tracersFriendly = sketchConfig.get("tracersFriendly");
     const tracerThickness = sketchConfig.get("tracerThickness");
+    const spawnESP = sketchConfig.get("spawnESP");
 
     // const { globalAlpha } = overlay.ctx;
     const willRender =
-      tracersEnemy || tracersFriendly || newNametags || boxes || healthBars;
+      tracersEnemy || tracersFriendly || newNametags || boxes || healthBars || spawnESP;
 
     if (!willRender || isInMenus()) return;
 
@@ -452,6 +454,68 @@ export function espHook() {
     const overlayOpacity = sketchConfig.get("overlayOpacity");
 
     const overlaySize = getOverlaySizeScaled();
+
+    // --- Spawn point ESP ---
+    if (spawnESP) {
+      const spawns: SpawnPoint[] = (game.map as any).spawns;
+      if (spawns && spawns.length) {
+        const BEAM_HEIGHT = 200;
+        const BEAM_WIDTH = 4;
+
+        const cam = render.camera;
+        const mvp = new game.THREE.Matrix4().multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
+        const sw = innerWidth / overlay.scale;
+        const sh = innerHeight / overlay.scale;
+
+        for (const spawn of spawns) {
+          const bottom = new game.THREE.Vector4(spawn.x, spawn.y, spawn.z, 1).applyMatrix4(mvp);
+          const top = new game.THREE.Vector4(spawn.x, spawn.y + BEAM_HEIGHT, spawn.z, 1).applyMatrix4(mvp);
+
+          // Both behind near plane — skip
+          if (bottom.w <= 0 && top.w <= 0) continue;
+
+          // Clip to near plane if one point is behind the camera
+          let bx: number, by: number, tx: number, ty: number;
+
+          if (bottom.w <= 0) {
+            // Lerp bottom toward top to the near plane (w=0.001)
+            const t = (0.001 - bottom.w) / (top.w - bottom.w);
+            const cw = bottom.w + t * (top.w - bottom.w);
+            bx = ((bottom.x + t * (top.x - bottom.x)) / cw + 1) / 2 * sw;
+            by = (-(bottom.y + t * (top.y - bottom.y)) / cw + 1) / 2 * sh;
+          } else {
+            bx = (bottom.x / bottom.w + 1) / 2 * sw;
+            by = (-bottom.y / bottom.w + 1) / 2 * sh;
+          }
+
+          if (top.w <= 0) {
+            const t = (0.001 - top.w) / (bottom.w - top.w);
+            const cw = top.w + t * (bottom.w - top.w);
+            tx = ((top.x + t * (bottom.x - top.x)) / cw + 1) / 2 * sw;
+            ty = (-(top.y + t * (bottom.y - top.y)) / cw + 1) / 2 * sh;
+          } else {
+            tx = (top.x / top.w + 1) / 2 * sw;
+            ty = (-top.y / top.w + 1) / 2 * sh;
+          }
+
+          // Color by team
+          let color: string;
+          if (spawn.team === 1) color = "#00ccff";
+          else if (spawn.team === 2) color = "#ff4444";
+          else color = "#ffffff";
+
+          overlay.ctx.globalAlpha = overlayOpacity * 0.6;
+          overlay.ctx.strokeStyle = color;
+          overlay.ctx.lineWidth = BEAM_WIDTH;
+          overlay.ctx.beginPath();
+          overlay.ctx.moveTo(bx, by);
+          overlay.ctx.lineTo(tx, ty);
+          overlay.ctx.stroke();
+          overlay.ctx.closePath();
+          overlay.ctx.globalAlpha = 1;
+        }
+      }
+    }
 
     const entities = game.AI.ais.length
       ? (game.players.list as (Player | AI)[]).concat(game.AI.ais)
@@ -591,6 +655,7 @@ export function ESPMenu() {
   const [tracersFriendly, setTracersFriendly] = useSketchConfig("tracersFriendly");
   const [tracerThickness, setTracerThickness] = useSketchConfig("tracerThickness");
   const [healthBars, setHealthBars] = useSketchConfig("healthBars");
+  const [spawnESP, setSpawnESP] = useSketchConfig("spawnESP");
   const [badColor, setBadColor] = useSketchConfig("badColor");
   const [goodColor, setGoodColor] = useSketchConfig("goodColor");
   const [espRainbowEnemy, setEspRainbowEnemy] = useSketchConfig("espRainbowEnemy");
@@ -668,6 +733,12 @@ export function ESPMenu() {
         description="Shows a health bar next to a player"
         defaultChecked={healthBars}
         onChange={(event) => setHealthBars(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Spawn Points"
+        description="Draws beams at spawn locations (white=neutral, cyan=team1, red=team2)"
+        defaultChecked={spawnESP}
+        onChange={(event) => setSpawnESP(event.currentTarget.checked)}
       />
       <Slider
         title="Overlay Opacity"
