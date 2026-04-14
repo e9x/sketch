@@ -305,22 +305,35 @@ export function generateFakeGameId() {
 export let fakeGameId: string | null = null;
 export let realGameId: string | null = null;
 
-interface SpoofData { fake: string; real: string }
-
 // Restore persisted spoof IDs from session storage
+// Stored as { [fakeID]: realID } so multiple spoofed game IDs survive reloads.
 {
-  const stored = sessionStore.get<SpoofData>("spoof");
-  if (stored?.fake && stored?.real) {
-    fakeGameId = stored.fake;
-    realGameId = stored.real;
+  const stored = sessionStore.get<Record<string, string>>("spoof");
+  if (stored && typeof stored === "object") {
+    const href = location.href;
+    for (const [fake, real] of Object.entries(stored)) {
+      if (href.includes(fake)) {
+        fakeGameId = fake;
+        realGameId = real;
+        // Sync to raw sessionStorage for dogehook iframe
+        try {
+          sessionStorage.setItem("_sk_spoof", JSON.stringify({ fake, real }));
+        } catch {}
+        break;
+      }
+    }
   }
 }
 
 export function persistSpoofIds() {
   if (fakeGameId && realGameId) {
-    sessionStore.set("spoof", { fake: fakeGameId, real: realGameId });
-  } else {
-    sessionStore.remove("spoof");
+    const stored = sessionStore.get<Record<string, string>>("spoof") ?? {};
+    stored[fakeGameId] = realGameId;
+    sessionStore.set("spoof", stored);
+    // Also write to raw sessionStorage for dogehook (runs in iframe, no access to sessionStore)
+    try {
+      sessionStorage.setItem("_sk_spoof", JSON.stringify({ fake: fakeGameId, real: realGameId }));
+    } catch {}
   }
 }
 
@@ -453,7 +466,8 @@ export function disableSpoofGameId() {
   }
   fakeGameId = null;
   realGameId = null;
-  persistSpoofIds();
+  sessionStore.remove("spoof");
+  try { sessionStorage.removeItem("_sk_spoof"); } catch {}
 }
 
 // Patch menuRegionLabel.textContent assignments to go through our spoof

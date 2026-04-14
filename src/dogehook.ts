@@ -22,17 +22,52 @@ c.bind = c.bind;
 let str_in = c.bind(String.prototype.includes);
 let ele_rm = c.bind(Element.prototype.remove);
 
+// Map Krunker game-ID region prefixes to matchmaker region codes
+const REGION_TO_MATCHMAKER: Record<string, string> = {
+  NY: "us-nj",
+  SV: "us-ca-sv",
+  DAL: "us-tx",
+  MIA: "us-fl",
+  STL: "us-wa",
+  CHI: "us-il",
+  MX: "mx-cmx",
+  BRZ: "brz",
+  BHN: "me-bhn",
+  TOK: "jb-hnd",
+  SIN: "sgp",
+  SEO: "as-seoul",
+  MBI: "as-mb",
+  FRA: "de-fra",
+  LON: "gb-lon",
+  AFR: "af-ct",
+  SYD: "au-syd",
+  SSS: "sss",
+  IOW: "iow",
+};
+
 function unspoofSeekUrl(url: string): string {
   try {
     const raw = sessionStorage.getItem("_sk_spoof");
     if (!raw) return url;
     const data = JSON.parse(raw) as { fake: string; real: string };
-    if (data.fake && data.real && url.includes(encodeURIComponent(data.fake))) {
-      return url.replace(encodeURIComponent(data.fake), encodeURIComponent(data.real));
+    if (!data.fake || !data.real) return url;
+
+    // Replace fake game ID with real (both encoded and raw)
+    let result = url;
+    if (result.includes(encodeURIComponent(data.fake))) {
+      result = result.replace(encodeURIComponent(data.fake), encodeURIComponent(data.real));
+    } else if (result.includes(data.fake)) {
+      result = result.replace(data.fake, data.real);
     }
-    if (data.fake && data.real && url.includes(data.fake)) {
-      return url.replace(data.fake, data.real);
+
+    // Restore real matchmaker region based on real game ID prefix
+    const realRegionPrefix = data.real.split(":")[0];
+    const realMatchmaker = REGION_TO_MATCHMAKER[realRegionPrefix];
+    if (realMatchmaker) {
+      result = result.replace(/([?&]region=)[^&]+/, `$1${encodeURIComponent(realMatchmaker)}`);
     }
+
+    return result;
   } catch {}
   return url;
 }

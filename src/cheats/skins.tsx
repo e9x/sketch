@@ -5,6 +5,8 @@ import { onMessageTransformers, onSendTransformers } from "./wsHook";
 import sketchConfig from "../sketchConfig";
 import playerSpoofConfig, { type PlayerSpoofEdit } from "../playerSpoofConfig";
 import { Button } from "../krunker-ui/components/Button";
+import { Switch } from "../krunker-ui/components/Switch";
+import { useSketchConfig } from "../sketchConfig";
 import { openSkinChangerWindow } from "./skinChanger";
 
 // v9.1.1
@@ -405,12 +407,22 @@ export function skinHackHook() {
 }
 
 export function SkinHackMenu() {
+  const [skinHack, setSkinHack] = useSketchConfig("skinHack");
+
   return (
-    <Button
-      title="Skin Changer"
-      description="Override your cosmetics and weapon skins client-side"
-      text="Open"
-      onClick={openSkinChangerWindow}
-    />
+    <>
+      <Switch
+        title="Inventory Unlocker"
+        description="Spoofs your inventory via WebSocket packets so the game thinks you own all skins"
+        defaultChecked={skinHack}
+        onChange={(e) => setSkinHack(e.currentTarget.checked)}
+      />
+      <Button
+        title="Skin Changer"
+        description="Override your cosmetics and weapon skins client-side"
+        text="Open"
+        onClick={openSkinChangerWindow}
+      />
+    </>
   );
 }

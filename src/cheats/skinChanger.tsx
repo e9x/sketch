@@ -606,6 +606,7 @@ function SlotPicker({
 
 export function SkinChangerMenu() {
   const [enabled, setEnabled] = useSketchConfig("skinChanger");
+  const [skinHack, setSkinHack] = useSketchConfig("skinHack");
   const [, setSlots] = useSketchConfig("skinChangerSlots");
   const [revision, setRevision] = useState(0);
   const [ready, setReady] = useState(false);
@@ -662,6 +663,12 @@ export function SkinChangerMenu() {
           setEnabled(on);
           regenLocalPlayerMeshes();
         }}
+      />
+      <Switch
+        title="Inventory Unlocker"
+        description="Spoofs your inventory via WebSocket packets so the game thinks you own all skins. Requires a rejoin to take effect."
+        defaultChecked={skinHack}
+        onChange={(e) => setSkinHack(e.currentTarget.checked)}
       />
       {enabled && (
         <>
