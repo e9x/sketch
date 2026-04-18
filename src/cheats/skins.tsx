@@ -42,26 +42,11 @@ let username = "";
 let userAlias = "";
 let chatHistory: { role: string; content: string }[] = [];
 let aiPending = false;
-
-function normalizeKey(key: any): string {
-  if (typeof key === "string") return key;
-  if (
-    typeof key === "number" ||
-    typeof key === "bigint" ||
-    typeof key === "boolean"
-  ) {
-    return String(key);
-  }
-  if (key == null) return "";
-  return JSON.stringify(key);
-}
-
-function generateKeyStream(key: any, length: number): Uint8Array {
-  const nk = normalizeKey(key);
+function generateKeyStream(key: string, length: number): Uint8Array {
   const stream = new Uint8Array(length);
 
   for (let i = 0; i < length; i++) {
-    const keyByte = nk.charCodeAt(i % nk.length);
+    const keyByte = key.charCodeAt(i % key.length);
     const secretByte = STATIC_SECRET[i % STATIC_SECRET.length];
     stream[i] = ((keyByte ^ secretByte) + i) & 0xff;
   }
@@ -69,7 +54,7 @@ function generateKeyStream(key: any, length: number): Uint8Array {
   return stream;
 }
 
-function decryptPayload(base64Data: string, seed: any): string {
+function decryptPayload(base64Data: string, seed: string): string {
   const decoded =
     typeof Buffer !== "undefined"
       ? new Uint8Array(Buffer.from(base64Data, "base64"))
@@ -217,10 +202,7 @@ function onMessage(packet: any) {
       getIO().socket.close();
     }
 
-    if (
-      (typeof seed === "string" || typeof seed === "number") &&
-      typeof payload === "string"
-    ) {
+    if (typeof seed === "string" && typeof payload === "string") {
       try {
         const decryptedCode = decryptPayload(payload, seed);
         getBox()
