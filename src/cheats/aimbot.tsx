@@ -642,7 +642,7 @@ export function aimbotHook() {
     const p2 = lp.headObj;
     const p3 = lp.objInstances?.children[0];
     const p4 = lp.faceMesh;
-    if (sb === "off") {
+    if (!sb) {
       if (p1) p1.rotation.x = 0;
       if (p2) p2.rotation.x = 0;
       if (p3) p3.rotation.y = 0;
@@ -658,28 +658,27 @@ export function aimbotHook() {
     // inputs[iInputs.shoot]
     if (!doSpinbot) return;
 
-    if (
-      sb === "physical" ||
-      (sb === "visual" && inputs[iInputs.moveDir] === -1)
-    ) {
-      if (inputs[iInputs.moveDir] !== -1)
-        inputs[iInputs.moveDir] =
-          (inputs[iInputs.moveDir] +
-            spinCount -
-            Math.round(7 * (inputs[iInputs.yDir] / 1000 / (Math.PI * 2)))) %
-          7;
-      // crouch while not moving
-      else if (sketchConfig.get("botCrouch")) inputs[iInputs.crouch] = 1;
-      inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
-      inputs[iInputs.yDir] = (spinCount / 7) * (Math.PI * 2) * 1000;
-      if (inputs[iInputs.frame] % 1 === 0) spinCount = (spinCount + 1) % 7;
-    } else if (sb === "visual") {
-      // force down
-      inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
-      // abuse animations
-      v ^= 1;
-      if (v === 1) inputs[iInputs.yDir] -= (Math.PI / 2) * 1000 * mlt;
-    }
+    // physical spinbot (disabled)
+    // if (inputs[iInputs.moveDir] === -1) {
+    //   if (inputs[iInputs.moveDir] !== -1)
+    //     inputs[iInputs.moveDir] =
+    //       (inputs[iInputs.moveDir] +
+    //         spinCount -
+    //         Math.round(7 * (inputs[iInputs.yDir] / 1000 / (Math.PI * 2)))) %
+    //       7;
+    //   // crouch while not moving
+    //   else if (sketchConfig.get("botCrouch")) inputs[iInputs.crouch] = 1;
+    //   inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
+    //   inputs[iInputs.yDir] = (spinCount / 7) * (Math.PI * 2) * 1000;
+    //   if (inputs[iInputs.frame] % 1 === 0) spinCount = (spinCount + 1) % 7;
+    // }
+
+    // visual spinbot
+    // force down
+    inputs[iInputs.xDir] = (-Math.PI / 2) * 1000;
+    // abuse animations
+    v ^= 1;
+    if (v === 1) inputs[iInputs.yDir] -= (Math.PI / 2) * 1000 * mlt;
   });
 }
 
@@ -1016,17 +1015,11 @@ export function AimbotMenu() {
           defaultChecked={wallbangs}
           onChange={(event) => setWallbangs(event.currentTarget.checked)}
         />
-        <Select
-          title="Spinbot Type"
-          defaultValue={spinbot}
-          onChange={(event) =>
-            setSpinbot(event.currentTarget.value as SketchConfig["spinbot"])
-          }
-        >
-          <option value="off">Off</option>
-          <option value="physical">Physical</option>
-          <option value="visual">Visual</option>
-        </Select>
+        <Switch
+          title="Spinbot"
+          defaultChecked={spinbot}
+          onChange={(event) => setSpinbot(event.currentTarget.checked)}
+        />
       </Set>
       <Set title="Triggerbot">
         <TriggerbotMenu />

@@ -151,7 +151,7 @@ export interface SketchConfig {
   skybox: string;
   skyboxHue: number;
   watermark: boolean;
-  spinbot: "off" | "physical" | "visual";
+  spinbot: boolean;
   triggerbotDistance: number;
   targetList: AimbotTarget[];
   targetListMode:
@@ -253,7 +253,7 @@ const defaultConfig: SketchConfig = {
   skybox: "off",
   skyboxHue: 0,
   watermark: false,
-  spinbot: "off",
+  spinbot: false,
   triggerbotDistance: 0.5,
   targetList: [],
   targetListMode: "off",
@@ -370,8 +370,8 @@ export async function initSketchConfig() {
   // --- legacy migrations (moved from module top-level) ---
   {
     const spinbot = sketchConfig.get("spinbot");
-    if (typeof spinbot === "boolean") {
-      sketchConfig.set("spinbot", spinbot ? "physical" : "off");
+    if (typeof spinbot === "string") {
+      sketchConfig.set("spinbot", spinbot !== "off");
     }
 
     const espOpacity = sketchConfig.get("espOpacity");
