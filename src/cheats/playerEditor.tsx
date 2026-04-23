@@ -1224,20 +1224,6 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
           defaultChecked={form.hideBadge}
           onChange={(event) => updateForm("hideBadge", event.currentTarget.checked)}
         />
-
-        <Button
-          title="Apply"
-          description="Save and apply this player's spoof data"
-          text="Apply"
-          onClick={applyCurrentEdit}
-        />
-
-        <Button
-          title="Reset"
-          description="Remove custom spoof data for this player"
-          text="Reset"
-          onClick={resetCurrentEdit}
-        />
       </Set>
     </>
   );
