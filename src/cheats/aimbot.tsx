@@ -167,7 +167,8 @@ function playerHitbox(player: Player, hitbox: string) {
 
   if (hitbox === "chest") {
     const vec = new THREE.Vector3();
-    player.headObj?.getWorldPosition(vec);
+    player.upperBody?.getWorldPosition(vec);
+    vec.y -= config.playerHeight / 4; // Adjust downwards to chest level
     return vec;
   }
 
