@@ -187,16 +187,6 @@ function getPlayerRows(): PlayerRow[] {
   // (menuPlayer is kept in getPlayers() for spoofing, but shouldn't show as a duplicate row)
   const hasRealLocal = players.some((p) => (p as AnyObj).isYou);
   const filtered = hasRealLocal ? players.filter((p) => !isMenuPlayer(p)) : players;
-  console.log("[PE] getPlayerRows: players count:", filtered.length);
-  for (const player of filtered) {
-    const p = player as AnyObj;
-    console.log("[PE] player id:", p.id, "sid:", p.sid, "name:", p.name, "alias:", p.alias,
-      "isYou:", p.isYou, "isMenu:", isMenuPlayer(player), "accid:", p.accid,
-      "account:", p.account ? { name: p.account.name, alias: p.account.alias } : null,
-      "getRealName:", getPlayerRealName(player),
-      "getOriginalName:", getOriginalPlayerName(player),
-      "storageKey:", getPlayerStorageKey(player));
-  }
   const rows = filtered.map((player) => ({
     id: String(player.id),
     storageKey: getPlayerStorageKey(player),
@@ -373,7 +363,6 @@ function forceLeaderboardRerender() {
   if (typeof w.switchLeaderboard !== "function") return;
   const lh = document.getElementById("leaderboardHolder");
   if (lh) {
-    if (isDevelopment) console.log("[PE] forcing sidebar leaderboard re-render");
     w.switchLeaderboard(lh.style.display !== "none");
   }
 }
@@ -807,7 +796,6 @@ function applyEditToPlayer(player: Player, edit: PlayerEdit) {
 }
 
 function openPlayerListWindow() {
-  if (isDevelopment) console.log("[PE] openPlayerListWindow");
   const html = createRenderContainer(() => <PlayerEditorListWindow />);
   showInjectedWindow({
     header: "🧩",
@@ -823,7 +811,6 @@ function openPlayerListWindow() {
 }
 
 function openPlayerEditWindow(playerId: string) {
-  if (isDevelopment) console.log("[PE] openPlayerEditWindow: playerId:", playerId);
   const html = createRenderContainer(() => <PlayerEditorDetailWindow playerId={playerId} />);
   showInjectedWindow({
     header: "🧩",
@@ -1230,7 +1217,6 @@ function PlayerEditorDetailWindow({ playerId }: { playerId: string }) {
 }
 
 function openDisconnectedEditWindow(storageKey: string) {
-  if (isDevelopment) console.log("[PE] openDisconnectedEditWindow: storageKey:", storageKey);
   const html = createRenderContainer(() => <DisconnectedPlayerDetailWindow storageKey={storageKey} />);
   showInjectedWindow({
     header: "🧩",
@@ -1497,7 +1483,6 @@ function buildSpoofLookup() {
     if (!origName) continue;
 
     origToEdit.set(origName, edit);
-    if (isDevelopment) console.log("[PE] lookup: orig", JSON.stringify(origName), "→ edit", JSON.stringify(edit.displayName));
 
     const snap = playerOriginals.get(String(player.id));
     if (snap) nameToSnapshot.set(origName, snap);
@@ -1508,11 +1493,9 @@ function buildSpoofLookup() {
       // Also map the spoofed name so we can apply clan colors to already-spoofed nodes
       origToEdit.set(spoofName, edit);
       if (snap) nameToSnapshot.set(spoofName, snap);
-      if (isDevelopment) console.log("[PE] lookup: spoof", JSON.stringify(spoofName), "→ orig", JSON.stringify(origName));
     }
   }
 
-  if (isDevelopment) console.log("[PE] buildSpoofLookup: origToEdit size:", origToEdit.size, "spoofedToOrig size:", spoofedToOrig.size);
   return origToEdit.size > 0 ? { origToEdit, spoofedToOrig, nameToSnapshot } : null;
 }
 
@@ -1526,7 +1509,6 @@ function spoofNameNodesIn(container: Element, reverseMode: boolean) {
   const { origToEdit, spoofedToOrig, nameToSnapshot } = maps;
 
   const nameNodes = container.querySelectorAll<HTMLElement>(NAME_NODE_SELECTOR);
-  if (isDevelopment) console.log("[PE] spoofNameNodesIn:", container.id, "reverseMode:", reverseMode, "nameNodes:", nameNodes.length);
 
   for (const node of nameNodes) {
     // Find leading text node (contains the player name)
@@ -1545,14 +1527,12 @@ function spoofNameNodesIn(container: Element, reverseMode: boolean) {
       // End screen with hideOnEndScreen: undo spoofed → original
       const origName = spoofedToOrig.get(nameText);
       if (origName) {
-        if (isDevelopment) console.log("[PE] reverse:", JSON.stringify(nameText), "→", JSON.stringify(origName));
         nameTextNode.textContent = origName;
       }
 
       // Also undo badge/clan changes for this name node
       // Look up snapshot by the pre-reversed name (spoofed name before we changed the text node)
       const snap = nameToSnapshot.get(nameText);
-      if (isDevelopment) console.log("[PE] reverse snap for", JSON.stringify(nameText), ":", snap ? "found" : "NOT FOUND");
       const edit = origToEdit.get(nameText);
       const isEndTableName = node.classList.contains("endTableN");
       const itemEl = isEndTableName ? node.parentElement : node.closest(".leaderItem, .newLeaderItem");
@@ -1571,7 +1551,6 @@ function spoofNameNodesIn(container: Element, reverseMode: boolean) {
             sib = next;
           }
         }
-        if (isDevelopment) console.log("[PE] reverse: stripping", toRemove.length, "badge elements");
         for (const el of toRemove) el.remove();
 
         // Re-inject original badges from snapshot
@@ -1613,7 +1592,6 @@ function spoofNameNodesIn(container: Element, reverseMode: boolean) {
           if (frag.childNodes.length > 0 && isEndTableName) {
             node.after(frag);
           }
-          if (isDevelopment) console.log("[PE] reverse badges: premium:", origPremium, "verified:", origVerified, "badge:", origBadge);
         }
       }
 
@@ -1631,7 +1609,6 @@ function spoofNameNodesIn(container: Element, reverseMode: boolean) {
           }
         } else if (edit) {
           // Original player had no clan; remove the spoofed clan span
-          if (isDevelopment) console.log("[PE] reverse: removing spoofed clan span", span.textContent);
           span.remove();
         }
         span.removeAttribute?.(rainbowClanMarkAttr);
@@ -1649,7 +1626,6 @@ function spoofNameNodesIn(container: Element, reverseMode: boolean) {
     // Replace name if needed
     const spoofName = edit.displayName?.trim();
     if (spoofName && nameText !== spoofName) {
-      if (isDevelopment) console.log("[PE] spoof:", JSON.stringify(nameText), "→", JSON.stringify(spoofName));
       nameTextNode.textContent = spoofName;
     }
 
@@ -1657,7 +1633,6 @@ function spoofNameNodesIn(container: Element, reverseMode: boolean) {
     if (edit.hideClan) {
       for (const span of Array.from(node.querySelectorAll<HTMLSpanElement>("span"))) {
         if (/\[[^\]]*\]/.test(span.textContent ?? "")) {
-          if (isDevelopment) console.log("[PE] hideClan: removing", span.textContent);
           span.remove();
         }
       }
@@ -1668,7 +1643,6 @@ function spoofNameNodesIn(container: Element, reverseMode: boolean) {
         const color = edit.rainbowClan ? sharedRainbowHexColor : edit.clanColor!.trim();
         for (const span of Array.from(node.querySelectorAll<HTMLSpanElement>("span"))) {
           if (!/\[[^\]]+\]/.test(span.textContent ?? "")) continue;
-          if (isDevelopment) console.log("[PE] clan color:", span.textContent, "→", color);
           span.style.setProperty("color", color, "important");
           span.setAttribute(rainbowClanMarkAttr, "1");
         }
@@ -1764,7 +1738,6 @@ function spoofNameNodesIn(container: Element, reverseMode: boolean) {
         }
 
         if (frag.childNodes.length > 0) {
-          if (isDevelopment) console.log("[PE] badges injected: premium:", edit.premium, "verified:", edit.verified, "badge:", effectiveBadgeIndex);
           if (isEndScreen) {
             // End screen: insert after the <a.endTableN>
             node.after(frag);
@@ -1793,7 +1766,6 @@ function installDomSpoofHook() {
       const edit = getStoredEdit("you");
       const name = edit?.displayName?.trim();
       if (name) {
-        if (isDevelopment) console.log("[PE] innerHTML menu name:", id, "→", JSON.stringify(name));
         el.textContent = name;
       }
       return;
@@ -1806,7 +1778,6 @@ function installDomSpoofHook() {
       if (!name) return;
       const nameEl = el.querySelector(".menuClassPlayerName");
       if (nameEl) {
-        if (isDevelopment) console.log("[PE] innerHTML class name tag:", id, "→", JSON.stringify(name));
         nameEl.textContent = name;
       }
       return;
@@ -1814,8 +1785,6 @@ function installDomSpoofHook() {
 
     // Game UI containers (leaderboard, scoreboard, end screen, etc.)
     if (!GAME_CONTAINER_IDS[id]) return;
-
-    if (isDevelopment) console.log("[PE] innerHTML hook fired for:", id);
 
     const isEndScreen = id === "endTable";
     const reverseMode = isEndScreen && playerSpoofConfig.get("hideOnEndScreen");
