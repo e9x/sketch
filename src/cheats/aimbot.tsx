@@ -170,12 +170,6 @@ function playerHitbox(player: Player, hitbox: string) {
     return vec;
   }
 
-  if (hitbox === "chest") {
-    const vec = new THREE.Vector3();
-    player.headObj?.getWorldPosition(vec);
-    return vec;
-  }
-
   const hitboxOffset =
     hitbox === "feet" ? config.legHeight / 2 : config.playerHeight / 2;
 
