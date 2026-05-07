@@ -165,6 +165,7 @@ export interface SketchConfig {
   espRainbowEnemy: boolean;
   espRainbowFriendly: boolean;
   espWallDarkness: number;
+  renderHitboxPoints: boolean;
   hideClouds: boolean;
   hideVisualsEndScreen: boolean;
 
@@ -262,6 +263,7 @@ const defaultConfig: SketchConfig = {
   espRainbowEnemy: false,
   espRainbowFriendly: false,
   espWallDarkness: 0.7,
+  renderHitboxPoints: false,
   hideClouds: false,
   hideVisualsEndScreen: false,
   mouseLockX: 0,

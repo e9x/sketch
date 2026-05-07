@@ -8,6 +8,7 @@ import {
   getLocalPlayer,
   getOverlay,
   getRender,
+  hitboxPoints,
   inputHooks,
   overlayRenderHooks,
 } from "../filters";
@@ -125,6 +126,8 @@ function playerAimPoint(player: Player) {
 
   // 1. Get all potential points
   const points = getMultipoints(player);
+
+  if (sketchConfig.get("renderHitboxPoints")) player[hitboxPoints] = points;
 
   // 2. Filter for visible points only
   // canSee returns the distance of obstruction (0-1). If it's null/undefined, it's clear.
@@ -520,9 +523,7 @@ export function aimbotHook() {
             inFrustum: fovCheck ? false : render.frustum.containsPoint(point),
           };
         })
-        .filter(
-          (e): e is NonNullable<typeof e> => e !== null,
-        )
+        .filter((e): e is NonNullable<typeof e> => e !== null)
         .sort((p1, p2) => {
           const distComparison =
             p1.screen.distanceTo(center) - p2.screen.distanceTo(center);

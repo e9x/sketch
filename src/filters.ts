@@ -17,6 +17,8 @@ import type * as IO from "./krunker/io";
 import { sessionStore } from "./sessionStore";
 import { isOnEndScreen } from "./krunkerUtil";
 
+export const hitboxPoints = Symbol();
+
 const canSee = Symbol();
 let checkingCanSee = false;
 
@@ -44,12 +46,14 @@ export function canISeeEnt(ent: Player | AI) {
 declare module "./krunker/Player" {
   interface Player {
     [canSee]?: boolean;
+    [hitboxPoints]?: THREE.Vector3[];
   }
 }
 
 declare module "./krunker/AI" {
   interface AI {
     [canSee]?: boolean;
+    [hitboxPoints]?: THREE.Vector3[];
   }
 }
 

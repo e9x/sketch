@@ -7,6 +7,7 @@ import {
   getRender,
   overlayRenderHooks,
   canISeeEnt,
+  hitboxPoints,
 } from "../filters";
 import type { AI } from "../krunker/AI";
 import type { Player } from "../krunker/Player";
@@ -88,6 +89,76 @@ function canESP(entity: Player | AI) {
       : game.AI.ais.includes(entity)) &&
     (!getExposedWindow().spectating || game.controls.spect.target !== entity)
   );
+}
+
+function playerAimbotHitbox(player: Player, hitbox: "head" | "chest" | "feet") {
+  const config = getConfig();
+  const game = getGame();
+
+  if (hitbox === "head") {
+    const vec = new game.THREE.Vector3();
+    player.upperBody?.getWorldPosition(vec);
+    return vec;
+  }
+
+  const hitboxOffset =
+    hitbox === "feet" ? config.legHeight / 2 : config.playerHeight / 2;
+
+  return new game.THREE.Vector3(
+    player.x,
+    player.y +
+      player.height -
+      hitboxOffset -
+      player.crouchVal * config.crouchDst,
+    player.z
+  );
+}
+
+function getPotentialAimbotPoints(entity: Player | AI): THREE.Vector3[] {
+  const game = getGame();
+  const config = getConfig();
+
+  if (entity.isPlayer) {
+    const points: THREE.Vector3[] = [
+      playerAimbotHitbox(entity, "head"),
+      playerAimbotHitbox(entity, "chest"),
+      playerAimbotHitbox(entity, "feet"),
+    ];
+
+    if (sketchConfig.get("multiPoint")) {
+      const mpScale = sketchConfig.get("multiPointScale");
+      const h = entity.height - entity.crouchVal * config.crouchDst;
+
+      for (let x = -1; x <= 1; x += 1) {
+        for (let z = -1; z <= 1; z += 1) {
+          if (x === 0 && z === 0) continue;
+          points.push(
+            new game.THREE.Vector3(
+              entity.x + x * mpScale,
+              entity.y + h * 0.6,
+              entity.z + z * mpScale
+            )
+          );
+        }
+      }
+    }
+
+    return points;
+  }
+
+  const aiMid = entity.y + entity.height * 0.5;
+  const aiTop = entity.y + entity.height;
+  const aiRadius = Math.max(entity.mSize * 0.45, 0.12);
+
+  return [
+    new game.THREE.Vector3(entity.x, aiTop, entity.z),
+    new game.THREE.Vector3(entity.x, aiMid, entity.z),
+    new game.THREE.Vector3(entity.x, entity.y, entity.z),
+    new game.THREE.Vector3(entity.x + aiRadius, aiMid, entity.z),
+    new game.THREE.Vector3(entity.x - aiRadius, aiMid, entity.z),
+    new game.THREE.Vector3(entity.x, aiMid, entity.z + aiRadius),
+    new game.THREE.Vector3(entity.x, aiMid, entity.z - aiRadius),
+  ];
 }
 
 function playerBox(entity: Player | AI) {
@@ -521,8 +592,16 @@ export function espHook() {
       ? (game.players.list as (Player | AI)[]).concat(game.AI.ais)
       : game.players.list;
 
+    const renderHitboxPoints = sketchConfig.get("renderHitboxPoints");
+
     for (const entity of entities) {
-      if (!canESP(entity)) continue;
+      const shouldTrackEntity = canESP(entity);
+
+      if (renderHitboxPoints && shouldTrackEntity) {
+        entity[hitboxPoints] = getPotentialAimbotPoints(entity);
+      } else if (hitboxPoints in entity) {
+        delete entity[hitboxPoints];
+      }
 
       const entityColor =
         "#" + getEntityMaterial(entity, materials.colors).getHexString();
@@ -533,8 +612,26 @@ export function espHook() {
           .multiplyScalar(sketchConfig.get("espWallDarkness"))
           .getHexString();
 
-      const drawTracer = isEnemy(entity) ? tracersEnemy : tracersFriendly;
+      if (renderHitboxPoints && hitboxPoints in entity) {
+        const pointSize = 20;
+        const halfPointSize = pointSize / 2;
+        overlay.ctx.globalAlpha = overlayOpacity;
+        overlay.ctx.fillStyle = entityColor;
+        for (const p of entity[hitboxPoints]!) {
+          const pos = pos2D(p);
+          overlay.ctx.fillRect(
+            pos.x - halfPointSize,
+            pos.y - halfPointSize,
+            pointSize,
+            pointSize
+          );
+        }
+        overlay.ctx.globalAlpha = 1;
+      }
 
+      if (!shouldTrackEntity) continue;
+
+      const drawTracer = isEnemy(entity) ? tracersEnemy : tracersFriendly;
       if (drawTracer) {
         let tracerPoint: THREE.Vector2;
         const bottom = playerPos(entity);
@@ -665,6 +762,7 @@ export function ESPMenu() {
   const [newNametags, setNewNametags] = useSketchConfig("newNametags");
   const [espMenu, setEspMenu] = useSketchConfig("espMenu");
   const [espWallDarkness, setEspWallDarkness] = useSketchConfig("espWallDarkness");
+  const [renderHitboxPoints, setRenderHitboxPoints] = useSketchConfig("renderHitboxPoints");
 
   return (
     <>
@@ -684,6 +782,12 @@ export function ESPMenu() {
         description="lets you use sketch's nametags"
         defaultChecked={newNametags}
         onChange={(event) => setNewNametags(event.currentTarget.checked)}
+      />
+      <Switch
+        title="Render Hitbox Points"
+        description="Draws 20x20 boxes at cached potential aimbot points"
+        defaultChecked={renderHitboxPoints}
+        onChange={(event) => setRenderHitboxPoints(event.currentTarget.checked)}
       />
       <Switch
         title="Chams"
