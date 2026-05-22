@@ -1,6 +1,7 @@
 import tokenConfig from "./tokenConfig";
 import KrunkBox from "./KrunkBox";
 import {
+  getExposedWindow,
   isDevelopment,
   isKrunker,
   sketchVersion,
@@ -57,6 +58,10 @@ function checkHash() {
 }
 
 declare function enterGame(): void;
+
+declare global {
+  var Howler: any;
+}
 
 async function main() {
   const version = await KrunkBox.sketchVersion(sketchVersion, supportedGame);
@@ -118,7 +123,9 @@ async function main() {
     await gameLoad;
     for (const bg of beforeGame) bg();
     // wait for lib
-    // await waitFor(() => "Howler" in window);
+    if (isDevelopment) console.log("[DEV] waiting for howler");
+    await waitFor(() => getExposedWindow().Howler);
+    if (isDevelopment) console.log("[DEV] howler loaded");
     game.init();
     for (const ag of afterGame) ag();
     sketchButton();
