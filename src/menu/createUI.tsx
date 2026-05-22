@@ -2,7 +2,6 @@ import { keyListeners } from "../keys";
 import sketchConfig from "../sketchConfig";
 import Menu from "./Menu";
 import { createRenderContainer } from "../krunker-ui/container";
-import { waitFor } from "../util";
 
 function sketchWindow() {
   const html = createRenderContainer(() => <Menu />);
@@ -40,16 +39,34 @@ export function updateSketchMenuButton() {
   sketchMenuButton.style.display = sketchConfig.get("menuButton") ? "" : "none";
 }
 
-export async function sketchButton() {
-  const menuItemContainer =
-    document.querySelector<HTMLDivElement>("#menuItemContainer");
-  if (menuItemContainer)
-    menuItemContainer.innerHTML += `<div class="menuItem" onmouseenter="playTick()" onclick="playSelect()" id="sketchMenu"><span class="material-icons-outlined menBtnIcn" style="color: #fbff00">edit</span><div class="menuItemTitle">Sketch</div></div>`;
+let created = false;
+function createSketchMenuItem(menuItemContainer: HTMLDivElement) {
+  if (created) return;
+  created = true;
+  const item = document.createElement("div");
+  item.className = "menuItem svelte-fgmdj8";
+  item.addEventListener("mouseenter", () => playTick());
+  item.addEventListener("click", () => playSelect());
+  const tool = item.attachShadow({ mode: "closed" });
+  tool.innerHTML = `<link rel="stylesheet" href="https://krunker.io/css/material-icons-outlined.css?build=zVvup"><!----><span class="material-icons-outlined menuItemIcon svelte-fgmdj8" style="color: #fbff00">edit</span><!----> <div class="menuItemTitle svelte-fgmdj8">Sketch<!----><!----></div>`;
+  // item.innerHTML = `<!----><span class="material-icons-outlined menuItemIcon svelte-fgmdj8" style="color: #fbff00">edit</span><!----> <div class="menuItemTitle svelte-fgmdj8" id="sketchMenu">Sketch<!----><!----></div>`;
+  menuItemContainer.appendChild(item);
 
-  sketchMenuButton = await waitFor(() => document.getElementById("sketchMenu") as HTMLDivElement);
-  sketchMenuButton.removeAttribute("id");
+  sketchMenuButton = item;
   sketchMenuButton.addEventListener("click", sketchWindow);
   updateSketchMenuButton();
+}
+
+export function sketchButton() {
+  const existing = document.querySelector<HTMLDivElement>("#menuItemContainer");
+  if (existing) createSketchMenuItem(existing);
+
+  const observer = new MutationObserver(() => {
+    const menuItemContainer =
+      document.querySelector<HTMLDivElement>("#menuItemContainer");
+    if (menuItemContainer) createSketchMenuItem(menuItemContainer);
+  });
+  observer.observe(document, { childList: true, subtree: true });
 
   keyListeners.push((event, code, down) => {
     const menuKey = sketchConfig.get("menuKey");

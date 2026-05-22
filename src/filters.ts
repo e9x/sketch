@@ -61,12 +61,8 @@ export function getIO() {
 export const onIoHooks: ((socket: WebSocket) => void)[] = [];
 
 export const data: Record<string, any> = {
-  socket(
-    t: typeof IO,
-    prop: string | number,
-    arg: string | URL,
-  ) {
-    io = t
+  socket(t: typeof IO, prop: string | number, arg: string | URL) {
+    io = t;
     const ws = new WebSocket(arg);
     // console.log({ io, ws, prop, arg });
     for (const hook of onIoHooks) hook(ws);
@@ -197,7 +193,6 @@ beforeGame.push(() => {
       });
 
       if ("skyDomeInit" in this) {
-        console.log("RENDER: render");
         render = this;
         doRenderHooks();
       }
@@ -779,8 +774,7 @@ export const hook: Hook = (
       ran = true;
       return patch[1](...args);
     });
-    //if (isDevelopment)
-    console.log("patching", name, "worked:", ran);
+    if (isDevelopment) console.log("[DEV] patching", name, "worked:", ran);
   }
 
   args[dataArg] = data;
@@ -789,7 +783,7 @@ export const hook: Hook = (
 };
 
 if (isDevelopment) {
-  console.trace("DEV");
+  console.trace("[DEV]");
 
   Object.assign(getExposedWindow(), {
     getGame,

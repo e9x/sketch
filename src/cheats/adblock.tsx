@@ -14,6 +14,8 @@ export function adblockHook() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win: any = getExposedWindow();
 
+    const msg = "breaking krunker ad loading";
+
     Object.defineProperty(win, "clearPops", {
       set: (v) => {
         delete win.clearPops;
@@ -23,7 +25,14 @@ export function adblockHook() {
         win.useFRVRSDKBannerAds = false;
         delete win.FRVR.config.ads;
         win.FRVR.init("prod");
-        throw new Error("breaking krunker ad loading");
+        window.addEventListener(
+          "error",
+          (event) => {
+            if (event.error?.message === msg) event.preventDefault();
+          },
+          { once: true },
+        );
+        throw new Error(msg);
       },
       configurable: true,
     });

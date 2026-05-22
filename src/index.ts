@@ -13,6 +13,7 @@ import sketchConfig from "./sketchConfig";
 import { begToken, showUpdated, showFutile, panic } from "./anxiety";
 import { sketchButton } from "./menu/createUI";
 import "./cheats";
+import { waitFor } from "./util";
 
 const loadGameNormally = () => {};
 
@@ -116,6 +117,8 @@ async function main() {
 
     await gameLoad;
     for (const bg of beforeGame) bg();
+    // wait for lib
+    await waitFor(() => "Howler" in window);
     game.init();
     for (const ag of afterGame) ag();
     sketchButton();
