@@ -118,7 +118,7 @@ async function main() {
     await gameLoad;
     for (const bg of beforeGame) bg();
     // wait for lib
-    await waitFor(() => "Howler" in window);
+    // await waitFor(() => "Howler" in window);
     game.init();
     for (const ag of afterGame) ag();
     sketchButton();
