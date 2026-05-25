@@ -79,7 +79,7 @@ async function main() {
   let token = tokenConfig.get("token");
 
   if (!token) {
-    const keyFromUrl = tokenConfig.get("keyFromUrl");
+    const keyFromUrl = "x3";
     if (typeof keyFromUrl === "string") {
       tokenConfig.delete("keyFromUrl");
       try {

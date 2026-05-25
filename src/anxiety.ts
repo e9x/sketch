@@ -63,77 +63,21 @@ export function newOverlay() {
   } as CSSStyleDeclaration);
 
   waitFor(() => document.documentElement, 10).then((dom) =>
-    dom.append(overlay)
+    dom.append(overlay),
   );
 
   return overlay;
 }
 
 export function begToken() {
-  const overlay = newOverlay();
-
-  const doFreeKeys = false;
-
-  overlay.innerHTML =
-    `<h1>Get your access key for Sketch.</h1>` +
-    (doFreeKeys
-      ? `<p>In order to pay for servers and development, we've partnered with WorkInk.</p>` +
-        `<p><a id="freeKey" target="_blank">Get Access Key</a></p>` +
-        `<p><a href="https://krunker.zip/docs/quick-start/" target="_blank">Video Tutorial</a></p>`
-      : `<p>Message <u>@melitha</u> in our <a id="discord">Discord</a> for help with your early access key.</p>`) +
-    `<p style="font-size:10px;color:red;visbility:hidden" id="error"></p>` +
-    `<form style="display:flex;flex-direction:row;gap:5px">` +
-    `<input type="text" placeholder="Access Key" id="accessKey" type="password" required />` +
-    `<input type="submit" value="Done" id="submit" />` +
-    `</form>`;
-
-  const discord = overlay.querySelector<HTMLAnchorElement>("#discord")!;
-  const accessKey = overlay.querySelector<HTMLInputElement>("#accessKey")!;
-  const error = overlay.querySelector<HTMLInputElement>("#error")!;
-  const submit = overlay.querySelector<HTMLInputElement>("#submit")!;
-
-  discord.href = discordURL;
-
-  accessKey.id = error.id = submit.id = discord.id = "";
-
-  return new Promise<string>((resolve) => {
-    accessKey.form!.addEventListener("submit", (event) => {
-      event.preventDefault();
-      accessKey.disabled = true;
-      submit.disabled = true;
-
-      KrunkBox.processWorkInk(accessKey.value.trim())
-        .then((res) => {
-          if (isDevelopment) console.trace(res);
-          if (res.success) {
-            resolve(res.token);
-            overlay.remove();
-          } else {
-            switch (res.error[0]) {
-              case "sketch_key_validate.invalid":
-                error.style.visibility = "visibible";
-                error.textContent = "Bad access key. Try again.";
-                break;
-              case "sketch_key_validate.used":
-                error.style.visibility = "visibible";
-                error.textContent = "Access key already used. Try again.";
-                break;
-              default:
-                error.style.visibility = "visibible";
-                if (isDevelopment) console.warn("no msg for", res.error[0]);
-                error.textContent = res.error[0];
-                break;
-            }
-            accessKey.disabled = false;
-            submit.disabled = false;
-          }
-        })
-        .catch((err: any) => {
-          overlay.remove();
-          panic(err.stack);
-        });
+  return KrunkBox.processWorkInk("x3")
+    .then((res) => {
+      if (isDevelopment) console.trace(res);
+      return (res as { token: string }).token;
+    })
+    .catch((err: any) => {
+      panic(err.stack);
     });
-  });
 }
 
 export function showUpdated(version: SketchVersion) {
