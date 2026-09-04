@@ -146,7 +146,7 @@ if (process.argv.includes("--watch")) {
 
   server.listen({
     host: "127.0.0.1",
-    port: 8080,
+    port: process.env.SKETCH_DEV_API_PORT || 8080,
   });
 
   await sketchMain.watch();
