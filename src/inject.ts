@@ -10,32 +10,44 @@ export type Hook = (
   args: Record<string, any>,
 ) => string;
 
-export async function getInit(
+export interface PreparedSource {
+  success: true;
+  source: string;
+  injectArgs: Record<string, any>;
+}
+
+export async function prepareSource(
   krunkbox: KrunkBox,
   hook: Hook,
 ): Promise<
   | { success: false; error: [code: string, ...flags: any[]] }
-  | { success: true; init: () => void }
+  | PreparedSource
   | undefined
 > {
   const gameData = await krunkbox.gameData();
   if (!gameData.success) return gameData;
 
-  // wow so obfuscate
-  //@ts-ignore
+  const window = globalThis;
+  // @ts-ignore — set up renamed globals (e.g. JfCzGzvGIQB8rrJX = setTimeout)
   for (let i in gameData.renamed) window[gameData.renamed[i]] = window[i];
 
   const args: Record<string, any> = {};
-  // args.WP_MMToken = token;
-  args.WP_MMToken = "rape";
+  // Sentinel only: the prologue prefers the real token from arguments[0], but the
+  // key must exist or no `var WP_MMToken` is emitted and the game source throws.
+  args.WP_MMToken = "__sketch_no_token__";
 
   gameData.source = hook(gameData.source, krunkbox, args);
 
-  const game = new Function(
-    ...Object.keys(args),
-    gameData.source.replace("//# sourceMappingURL=app.js.map", "") +
-      (isDevelopment ? "//# sourceURL=https://krunker.io/js/app.js" : ""),
-  ) as (...args: any[]) => void;
+  if (isDevelopment) {
+    gameData.source =
+      gameData.source.replace("//# sourceMappingURL=app.js.map", "") +
+      "//# sourceURL=https://krunker.io/js/app.js";
+  } else {
+    gameData.source = gameData.source.replace(
+      "//# sourceMappingURL=app.js.map",
+      "",
+    );
+  }
 
-  return { success: true, init: () => game(...Object.values(args)) };
+  return { success: true, source: gameData.source, injectArgs: args };
 }

@@ -197,7 +197,7 @@ const defaultConfig: SketchConfig = {
   adblock: true,
   thirdPerson: false,
   skyColor: false,
-  skyColorHex: "#000",
+  skyColorHex: "#000000",
   mapOverrides: false,
   mapOverridesCode: lean,
   skybox: "off",

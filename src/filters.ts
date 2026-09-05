@@ -7,13 +7,14 @@ import type configModule from "./krunker/config";
 import type * as Overlay from "./krunker/overlay";
 import sketchConfig, { skyboxes } from "./sketchConfig";
 import { console, defineProperty } from "./crashout";
-import { mirrorAttributes } from "./hook";
+import { hookContext, mirrorAttributes } from "./hook";
 import type KrunkBox from "./KrunkBox";
 import type * as THREE from "three";
 import type { MapData } from "./krunker/GameMap";
 import type { Hook } from "./inject";
 import { AI } from "./krunker/AI";
 import type * as IO from "./krunker/io";
+import { waitFor } from "./util";
 
 const canSee = Symbol();
 let checkingCanSee = false;
@@ -62,13 +63,166 @@ export const onIoHooks: ((socket: WebSocket) => void)[] = [];
 
 export const data: Record<string, any> = {
   socket(t: typeof IO, prop: string | number, arg: string | URL) {
+    if (isDevelopment) console.log("[sketch] data.socket called:", { target: typeof t, prop, url: String(arg) });
     io = t;
-    const ws = new WebSocket(arg);
+    // Page-realm constructor: frames must be page-realm ArrayBuffers or msgpack decoding fails
+    const ws = new (getExposedWindow().WebSocket)(arg);
+    if (isDevelopment) {
+      ws.addEventListener("open", () => console.log("[sketch] ws open"));
+      ws.addEventListener("error", (e) => console.error("[sketch] ws error", e));
+      ws.addEventListener("close", (e) =>
+        console.error("[sketch] ws close", {
+          code: e.code,
+          reason: e.reason,
+          wasClean: e.wasClean,
+        }),
+      );
+    }
     // console.log({ io, ws, prop, arg });
     for (const hook of onIoHooks) hook(ws);
     // @ts-ignore
     t[prop] = ws;
     return ws;
+  },
+
+  /**
+   * Game constructor capture. The patch site is mid-constructor, so `attach`
+   * and `players` don't exist yet -- defer the hooks until it's actually built.
+   */
+  captureGame(g: Game) {
+    if (game) return g;
+    game = g;
+    if (isDevelopment) console.log("[sketch] captured game");
+
+    // Runs mid-constructor: anything thrown here aborts Game's boot, and the
+    // game swallows it, so the only symptom is a later "socket error".
+    try {
+      if (isDevelopment) {
+        const w = getExposedWindow();
+        w.addEventListener("error", (e) =>
+          console.error("[sketch] uncaught:", e.message, e.filename, e.lineno),
+        );
+        w.addEventListener("unhandledrejection", (e) =>
+          console.error("[sketch] unhandled rejection:", e.reason),
+        );
+      }
+
+      waitFor(
+        () =>
+          game &&
+          (game as any).attach &&
+          (game as any).players &&
+          (game as any).controls &&
+          (game as any).map,
+        50,
+        30e3,
+      ).then(
+        () => {
+          try {
+            doGameHooks();
+          } catch (e) {
+            if (isDevelopment) console.error("[sketch] doGameHooks failed:", e);
+          }
+        },
+        (e) => {
+          if (isDevelopment) console.error("[sketch] waitFor game failed:", e);
+        },
+      );
+    } catch (e) {
+      if (isDevelopment) console.error("[sketch] captureGame failed:", e);
+    }
+
+    return g;
+  },
+
+  /** render.sceneInit -> this.skyDomeInit(config); `this` is the RenderManager */
+  captureRender(r: RenderManager) {
+    if (render) return r;
+    render = r;
+    if (isDevelopment) console.log("[sketch] captured render");
+
+    // Captured mid-sceneInit, so scene/camera/renderer don't exist yet and the
+    // render wrapper reads game.players every frame.
+    try {
+      waitFor(
+        () =>
+          render &&
+          (render as any).scene &&
+          (render as any).camera &&
+          (render as any).renderer &&
+          game &&
+          (game as any).players,
+        50,
+        30e3,
+      ).then(
+        () => {
+          try {
+            doRenderHooks();
+            if (isDevelopment) console.log("[sketch] render hooks installed");
+          } catch (e) {
+            if (isDevelopment) console.error("[sketch] doRenderHooks failed:", e);
+          }
+        },
+        (e) => {
+          if (isDevelopment) console.error("[sketch] waitFor render failed:", e);
+        },
+      );
+    } catch (e) {
+      if (isDevelopment) console.error("[sketch] captureRender failed:", e);
+    }
+
+    return r;
+  },
+
+  /** overlay module init -> overlay.hideNames */
+  captureOverlay(o: typeof Overlay) {
+    if (overlay) return o;
+    overlay = o;
+    if (isDevelopment) console.log("[sketch] captured overlay");
+
+    // hideNames is assigned ~640 lines before overlay.render. Wrapping now
+    // would close over undefined and then be overwritten by the game's own
+    // render assignment, so the overlay hooks would never run.
+    try {
+      waitFor(
+        () => overlay && typeof (overlay as any).render === "function",
+        50,
+        30e3,
+      ).then(
+        () => {
+          try {
+            doOverlayHooks();
+            if (isDevelopment) console.log("[sketch] overlay hooks installed");
+          } catch (e) {
+            if (isDevelopment)
+              console.error("[sketch] doOverlayHooks failed:", e);
+          }
+        },
+        (e) => {
+          if (isDevelopment)
+            console.error("[sketch] waitFor overlay failed:", e);
+        },
+      );
+    } catch (e) {
+      if (isDevelopment) console.error("[sketch] captureOverlay failed:", e);
+    }
+
+    return o;
+  },
+
+  /** SETTINGS constructor -> this['tmp']={},this['bundleMedalFilters']=... */
+  captureSettings(s: Settings) {
+    if (settings) return s;
+    settings = s;
+    if (isDevelopment) console.log("[sketch] captured settings");
+
+    // Runs mid-constructor, so a throw here would abort SETTINGS' boot.
+    try {
+      doSettingsHooks();
+    } catch (e) {
+      if (isDevelopment) console.error("[sketch] doSettingsHooks failed:", e);
+    }
+    return s;
   },
 };
 
@@ -91,6 +245,48 @@ patches.io = [
   (_, target, prop, arg) => `${dataArg}.socket(${target}, ${prop}, ${arg})`,
 ];
 
+// Game constructor. The Players constructor also assigns this['isServer'], but
+// that one is followed by this['liveObjects'], so anchoring on this['isClient']
+// uniquely selects Game. Capture inside the existing comma chain.
+patches.game = [
+  new RegExp(`this\\['isServer'\\]=!!(${v.source}),this\\['isClient'\\]`),
+  (_: string, arg: string) =>
+    `this['isServer']=!!${arg},${dataArg}.captureGame(this),this['isClient']`,
+];
+
+// Render manager constructor: `,this['clearSkyDome']=function(){...}`, a method
+// definition inside the constructor's comma chain, so it runs unconditionally at
+// module init. The old skyDomeInit call site was gated on the map having a
+// skyDome and no skyCol override, so it fired late or never. 'clearSkyDome' has
+// exactly one literal occurrence outside the obfuscator string array.
+patches.render = [
+  new RegExp(`,this\\['clearSkyDome'\\]=function\\(\\)`),
+  () => `,${dataArg}.captureRender(this),this['clearSkyDome']=function()`,
+];
+
+// Overlay module init chain: `<overlay>[..]=null,<overlay>['hideNames']=!0x1,`.
+// Unconditional at module init, unlike the old updateMedalIcon anchor, which
+// only ran on medal-icon update and so never fired. The other 'hideNames'
+// literals are settings setters assigning a variable rather than !0x1, and the
+// leading `]=null,` pins this to the init chain.
+patches.overlay = [
+  new RegExp(`\\]=null,(${v.source})\\['hideNames'\\]=!0x1,`),
+  (_: string, target: string) =>
+    `]=null,${dataArg}.captureOverlay(${target})['hideNames']=!0x1,`,
+];
+
+// SETTINGS constructor: `this['tmp']={},this['bundleMedalFilters']=function(){`.
+// The self-alias assigned just before it (`<var>=this`) is what the filter body
+// closes over, confirming `tmp` and `bundleMedalFilters` share one owner, so
+// `this` here is SETTINGS. Exactly one literal occurrence in the source.
+patches.settings = [
+  new RegExp(
+    `this\\['tmp'\\]=\\{\\},this\\['bundleMedalFilters'\\]=function\\(\\)`,
+  ),
+  () =>
+    `this['tmp']={},${dataArg}.captureSettings(this),this['bundleMedalFilters']=function()`,
+];
+
 // patches.lol = [new RegExp(`this\\[(${v.source}\\(0x[0-9a-f]+\\))\\]=new WebSocket\\(`), (_, prop) => `this[${prop}] = ${dataArg}.socket = new WebSocket(`];
 
 // patches.UseStrict = [/"use strict";/, () => ""];
@@ -101,6 +297,27 @@ patches.io = [
 export const beforeGame: (() => void)[] = [];
 // called after game init: pull out!
 export const afterGame: (() => void)[] = [];
+
+let ranBeforeGame = false;
+
+export function runBeforeGameOnce() {
+  if (ranBeforeGame) return;
+  ranBeforeGame = true;
+  // Isolated so one failing hook can't skip the rest.
+  for (const bg of beforeGame) {
+    try {
+      bg();
+    } catch (e) {
+      if (isDevelopment) console.error("[sketch] beforeGame hook failed:", e);
+    }
+  }
+}
+
+// Must run first: every mirrorAttributes spoof below is inert until
+// Function.prototype.toString is hooked to read the functionStrings map.
+beforeGame.push(() => {
+  hookContext(getExposedWindow(), undefined, false);
+});
 
 beforeGame.push(() => {
   const { getItem, setItem } = Storage.prototype;
@@ -171,49 +388,50 @@ export function getOverlay() {
   return overlay;
 }
 
-declare global {
-  interface Object {
-    render: any;
-    controls: any;
-    skyDomeInit: any;
-    bundleMedalFilters: any;
-  }
+type Settings = { tmp: Record<string, any>; bundleMedalFilters: () => void };
+
+let settings: Settings | undefined;
+
+export function getSettings() {
+  if (!settings) throw new Error("Too early");
+  return settings;
 }
 
-beforeGame.push(() => {
-  defineProperty(Object.prototype, "render", {
-    configurable: true,
-    enumerable: false,
-    set(value) {
-      defineProperty(this, "render", {
-        value,
-        writable: true,
-        enumerable: true,
-        configurable: true,
-      });
+function doSettingsHooks() {
+  const settings = getSettings();
+  // `this['tmp']` was assigned `{}` immediately before our capture point, so
+  // showFPS isn't set yet and the game's later write lands on the setter below.
+  // The read covers the reverse order in case the anchor ever moves.
+  let showFPS = settings.tmp?.showFPS;
 
-      if ("skyDomeInit" in this) {
-        render = this;
-        doRenderHooks();
-      }
-      if ("medalsList" in this) {
-        overlay = this;
-        doOverlayHooks();
-      }
+  // Force the game to calculate FPS when the watermark is enabled. Safe because
+  // the game still hides its own FPS element, so nothing extra becomes visible.
+  defineProperty(settings.tmp, "showFPS", {
+    enumerable: true,
+    configurable: true,
+    get: () => sketchConfig.get("watermark") || showFPS,
+    set: (v) => {
+      showFPS = v;
     },
   });
+}
 
-  afterGame.push(() => delete Object.prototype.render);
-});
+// NOTE: render/overlay used to be captured with an Object.prototype "render"
+// accessor. That is unusable: the loader calls Object.preventExtensions on
+// Object.prototype before the game source runs, and even when the trap did
+// install (at document-start) the mere existence of an accessor named
+// "render" hung the Emscripten loader, because every object then reports
+// `'render' in obj === true`. Both are now captured via source patches
+// (patches.render / patches.overlay) instead.
 
 function doOverlayHooks() {
   const overlay = getOverlay();
   const renderFn = overlay.render;
 
   overlay.render = function (...args) {
-    if (localPlayer) for (const hook of preOverlayRenderHooks) hook();
+    if (localPlayer) runHooks("preOverlayRenderHook", preOverlayRenderHooks);
     const result = renderFn.call(this, ...args);
-    if (localPlayer) for (const hook of overlayRenderHooks) hook();
+    if (localPlayer) runHooks("overlayRenderHook", overlayRenderHooks);
     return result;
   };
 }
@@ -326,7 +544,7 @@ function doRenderHooks() {
     for (const ai of game.AI.ais) delete ai[canSee];
 
     if (localPlayer) {
-      for (const hook of preRenderHooks) hook();
+      runHooks("preRenderHook", preRenderHooks);
 
       if (game.config.thirdPerson !== lastThirdPerson) {
         try {
@@ -342,27 +560,35 @@ function doRenderHooks() {
   };
 
   // toggle clouds
-  defineProperty(render, "loadTexture", {
-    configurable: true,
-    set(value: RenderManager["loadTexture"]) {
-      delete (render as any).loadTexture;
+  const wrapLoadTexture = (
+    value: RenderManager["loadTexture"],
+  ): RenderManager["loadTexture"] =>
+    function (this: any, mat, id, data, crap) {
+      const ret = value.call(this, mat, id, data, crap);
+      if (data.src === "clouds_0" || data.emissive === "#FFC980") {
+        let visible = mat.visible;
+        Object.defineProperty(mat, "visible", {
+          get: () => (sketchConfig.get("hideClouds") ? false : visible),
+          set: (v) => (visible = v),
+        });
+      }
 
-      render.loadTexture = function (mat, id, data, crap) {
-        const ret = value.call(this, mat, id, data, crap);
-        // console.log("load tex", mat, id, data, crap);
-        if (data.src === "clouds_0" || data.emissive === "#FFC980") {
-          let visible = mat.visible;
-          // console.log("got cloud", mat, id, data, crap);
-          Object.defineProperty(mat, "visible", {
-            get: () => (sketchConfig.get("hideClouds") ? false : visible),
-            set: (v) => (visible = v),
-          });
-        }
+      return ret;
+    };
 
-        return ret;
-      };
-    },
-  });
+  // These hooks can run after the game already assigned the property, in which
+  // case a write-only accessor would make every read return undefined.
+  if (typeof (render as any).loadTexture === "function") {
+    render.loadTexture = wrapLoadTexture(render.loadTexture);
+  } else {
+    defineProperty(render, "loadTexture", {
+      configurable: true,
+      set(value: RenderManager["loadTexture"]) {
+        delete (render as any).loadTexture;
+        render.loadTexture = wrapLoadTexture(value);
+      },
+    });
+  }
 
   const threeRenderFn = render.renderer.render;
   render.renderer.render = function (scene, camera) {
@@ -395,59 +621,35 @@ function doRenderHooks() {
     },
   });
 
-  //console.log(render, "LO!L!!");
-  defineProperty(render, "add", {
-    configurable: true,
-    set(value: RenderManager["add"]) {
-      delete (render as any).add;
-      //console.log("add:", value);
-      const hookNHide = /^clouds_|lightcone_/;
-      render.add = function (mesh, data) {
-        value.call(this, mesh, data);
-        // console.log("The Fucking Object:", mesh, data);
-        if (typeof data === "object" && hookNHide.test(data.src)) {
-          let visible = mesh.visible;
-          //console.log("got cloud", mesh, data);
-          Object.defineProperty(mesh, "visible", {
-            get: () => (sketchConfig.get("hideClouds") ? false : visible),
-            set: (v) => (visible = v),
-          });
-        }
-      };
-    },
-  });
-}
-
-beforeGame.push(() => {
-  defineProperty(Object.prototype, "controls", {
-    configurable: true,
-    enumerable: false,
-    get() {
-      return null;
-    },
-    set(value) {
-      if ("isServer" in this) {
-        if (value === null) return;
-        // so at this point value either null or the controls class
-        // once its set to the class, unhook global and fire events , until then just stay put
-        delete Object.prototype.controls;
-        this.controls = value;
-        game = this;
-        // need to hook config IMMEDIATELY (for sandbox)
-        doGameHooks();
-      } else {
-        defineProperty(this, "controls", {
-          value,
-          writable: true,
-          enumerable: true,
-          configurable: true,
+  const hookNHide = /^clouds_|lightcone_/;
+  const wrapAdd = (value: RenderManager["add"]): RenderManager["add"] =>
+    function (this: any, mesh, data) {
+      value.call(this, mesh, data);
+      if (typeof data === "object" && hookNHide.test(data.src)) {
+        let visible = mesh.visible;
+        Object.defineProperty(mesh, "visible", {
+          get: () => (sketchConfig.get("hideClouds") ? false : visible),
+          set: (v) => (visible = v),
         });
       }
-    },
-  });
+    };
 
-  return () => delete Object.prototype.controls;
-});
+  if (typeof (render as any).add === "function") {
+    render.add = wrapAdd(render.add);
+  } else {
+    defineProperty(render, "add", {
+      configurable: true,
+      set(value: RenderManager["add"]) {
+        delete (render as any).add;
+        render.add = wrapAdd(value);
+      },
+    });
+  }
+}
+
+// NOTE: game used to be captured with an Object.prototype "controls" accessor.
+// Same failure mode as the "render" trap above -- see patches.game, which
+// anchors on the Game constructor's this['isServer']/this['isClient'] pair.
 
 let game: Game | undefined;
 
@@ -476,6 +678,27 @@ let sprayingFakeServer = false;
 let ogCanSee: Game["canSee"] | undefined;
 
 const hookAttach = Symbol();
+
+const reportedHookErrors = new Set<string>();
+
+// Per-frame hooks: log each distinct failure once instead of every frame.
+function reportHookError(label: string, e: unknown) {
+  if (!isDevelopment) return;
+  const key = label + ":" + (e instanceof Error ? e.message : String(e));
+  if (reportedHookErrors.has(key)) return;
+  reportedHookErrors.add(key);
+  console.error(`[sketch] ${label} failed:`, e);
+}
+
+function runHooks(label: string, hooks: Array<() => void>) {
+  for (const hook of hooks) {
+    try {
+      hook();
+    } catch (e) {
+      reportHookError(label, e);
+    }
+  }
+}
 
 function doGameHooks() {
   const game = getGame();
@@ -520,7 +743,7 @@ function doGameHooks() {
     sprayingFakeServer = false;
   };
 
-  let gameConfig = game.config;
+  gameConfig = game.config;
 
   defineProperty(game, "config", {
     get() {
@@ -544,7 +767,7 @@ function doGameHooks() {
 
   const { add } = getGame().players;
 
-  for (const hook of onGameHooks) hook();
+  runHooks("onGameHooks", onGameHooks);
 
   game.players.add = function (...args) {
     const player = add.call(this, ...args);
@@ -565,7 +788,14 @@ function doGameHooks() {
   */
 
   game.controls.tmpInpts.push = function (inputs) {
-    if (localPlayer) for (const hook of inputHooks) hook(inputs);
+    if (localPlayer)
+      for (const hook of inputHooks) {
+        try {
+          hook(inputs);
+        } catch (e) {
+          reportHookError("inputHook", e);
+        }
+      }
     return tmpInptsPush.call(this, inputs);
   };
 
@@ -595,35 +825,11 @@ export function getGameConfig() {
   return gameConfig;
 }
 
-beforeGame.push(() => {
-  defineProperty(Object.prototype, "bundleMedalFilters", {
-    enumerable: false,
-    configurable: true,
-    set(value) {
-      if (!("tmp" in this))
-        return defineProperty(this, "bundleMedalFilters", {
-          value,
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-      delete Object.prototype.bundleMedalFilters;
-      this.bundleMedalFilters = value;
-
-      // force the game to calculate FPS if the watermark is enabled
-      // this works because the game hides the FPS element even if this code is ran
-      let { showFPS } = this.tmp;
-      defineProperty(this.tmp, "showFPS", {
-        get: () => sketchConfig.get("watermark") || showFPS,
-        set: (v) => {
-          showFPS = v;
-        },
-      });
-    },
-  });
-
-  return () => delete Object.prototype.bundleMedalFilters;
-});
+// NOTE: showFPS used to be forced through an Object.prototype
+// "bundleMedalFilters" setter trap. That could never install, because
+// Object.prototype is already non-extensible by the time beforeGame runs, so it
+// only ever logged a failure. SETTINGS is now captured directly via
+// patches.settings and the accessor is installed in doSettingsHooks.
 
 /**
  * player created while in the menu
@@ -748,10 +954,15 @@ const freeze = descs.freeze.value!;
 descs.freeze.value = (o: any) => {
   if ("gameVersion" in o) {
     config = o;
-    // console.log("game config:", config);
   }
-
   return freeze(o);
+};
+
+const origPreventExt = descs.preventExtensions.value!;
+descs.preventExtensions.value = (o: any) => {
+  // Don't let game code lock down Object.prototype — we need it extensible for hooks
+  try { if (o && o.constructor && o.constructor.prototype === o) return o; } catch {}
+  return origPreventExt(o);
 };
 
 Object.defineProperties(fakeObj, descs);

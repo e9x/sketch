@@ -1,112 +1,132 @@
-import { mirrorAttributes } from "./hook";
-import { getExposedWindow } from "./consts";
+import { getExposedWindow, isDevelopment, isKrunker } from "./consts";
+import { mirrorAttributes, setNativeFunction } from "./hook";
 
 const window = getExposedWindow();
 
-let tokenPromiseResolve: (res: Response) => void;
-let tokenPromiseReject: (e: any) => void;
+export type SourceInterceptor = (
+  url: string,
+  responseText: string,
+) => string | undefined;
 
-const tokenPromise = new Promise<Response>((resolve, reject) => {
-  tokenPromiseResolve = resolve;
-  tokenPromiseReject = reject;
-});
+let interceptor: SourceInterceptor | undefined;
 
-let ifr: HTMLIFrameElement;
-
-let { call: c } = (() => {}).bind;
-// no get() allowed
-c.bind = c.bind;
-let str_in = c.bind(String.prototype.includes);
-let ele_rm = c.bind(Element.prototype.remove);
-function makeFrame() {
-  ifr = document.createElement("iframe");
-  ifr.src = location.href;
-  ifr.style.display = "none";
-  const div = document.createElement("div");
-  document.documentElement.append(div);
-  const realm = div.attachShadow({ mode: "closed" });
-  realm.append(ifr);
-  // @ts-ignore
-  const ifrFetch = ifr.contentWindow.fetch;
-  const ifr_fetch = c.bind(ifrFetch);
-  // Object.defineProperty(ifr.contentWindow, "fetch", {
-  //     value:
-  //         configurable: true,
-  //         writable: true,
-  //     });
-
-  ifr.contentWindow!.fetch = mirrorAttributes(
-    function (this: any, url, init) {
-      // if (ifr.contentWindow?.windows?.length > 0) {
-      if (typeof url === "string" && str_in(url, "/seek-game")) {
-        ele_rm(ifr);
-        ele_rm(div);
-        const p = _fetch(this, url, init) as Promise<Response>;
-        p.then(tokenPromiseResolve).catch(tokenPromiseReject);
-      }
-      // @ts-ignore
-      return ifr_fetch(this, url, init) as Promise<Response>;
-    } as typeof fetch,
-    ifrFetch,
-  );
-  // Object.defineProperty(ifr.contentWindow, "fetch", {
-  //     get() {
-  //         // @ts-ignore
-  //         if (ifr.contentWindow?.windows?.length > 0) {
-  //             // @ts-ignore
-  //             return xnxx;
-  //         }
-  //         return ifrFetch;
-  //     },
-  //     set(v) {
-  //         console.log("ASSIGNINMG TO FETCH:", v);
-  //         xnxx = v;
-  //     },
-  //     configurable: true,
-  //     writable: true,
-  // });
+export function setSourceInterceptor(fn: SourceInterceptor) {
+  interceptor = fn;
 }
 
-const ogFetch = window.fetch;
-const _fetch = c.bind(ogFetch);
+export function setInjectValues(_values: Record<string, any>) {
+  // Non-enumerable so the global stays out of Object.keys(window) and for-in.
+  Object.defineProperty(window, "__sketchInject", {
+    value: _values,
+    writable: true,
+    enumerable: false,
+    configurable: true,
+  });
+}
 
-window.fetch = mirrorAttributes(
-  async function (this: any, url, init) {
-    if (typeof url === "string" && str_in(url, "/seek-game")) {
-      //   console.log("it wants to fetch", url);
-      const xx = await tokenPromise;
-      //   console.log("done fetchin on main", xx, url, init);
-      return xx;
-    }
-    return _fetch(this, url, init) as any;
-  } as typeof fetch,
-  ogFetch,
-);
+const GAME_SOURCE_MIN = 5_000_000;
 
-let addedFr = false;
+function init(): Promise<void> {
+  // NOTE: an Object.prototype lockdown guard used to live here -- wrappers
+  // around Object.preventExtensions/seal/freeze and Reflect.preventExtensions,
+  // plus a WebAssembly.instantiateStreaming scanner that looked for those
+  // functions in the WASM import object. None of it ever fired: the
+  // '[sketch] blocked Object.prototype lockdown' line never logged once, yet
+  // Object.prototype still flipped from extensible to non-extensible between
+  // document-start and the game source running. Removed, because
+  // game/render/overlay are now captured by source patches in filters.ts and
+  // nothing depends on Object.prototype staying extensible.
 
-export const gameLoad = new Promise<void>((loaded) => {
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      if (!addedFr && document.documentElement) {
-        makeFrame();
-        addedFr = true;
-      }
+  // Emscripten's UTF8ToString uses a cached TextDecoder instance created at
+  // module scope. Hook the prototype method BEFORE the loader module parses
+  // (we run at document-start). The 8.6MB game source passes through here.
+  // Replace the TextDecoder constructor (static property on window, not prototype)
+  // so instances created after this point get an instance-level decode override.
+  // Prototype stays untouched — only the constructor reference on window changes.
+  const OrigTD = window.TextDecoder;
+  const origProtoDecode = OrigTD.prototype.decode;
+  let intercepted = false;
 
-      for (var i = 0; i < mutation.addedNodes.length; i++) {
-        const node = mutation.addedNodes[i] as HTMLScriptElement;
-        if (node.tagName === "SCRIPT") {
-          if (node.src.startsWith("https://krunker.io/static/index-")) {
-            ele_rm(node);
-            loaded();
+  const FakeTD = function TextDecoder(this: any, ...args: any[]) {
+    const instance = new (OrigTD as any)(...args);
+    if (intercepted) return instance;
+
+    const decode = setNativeFunction(
+      function (input?: BufferSource, options?: TextDecodeOptions) {
+        const result = origProtoDecode.call(instance, input as any, options);
+
+        if (
+          intercepted ||
+          !interceptor ||
+          typeof result !== "string" ||
+          result.length <= GAME_SOURCE_MIN
+        )
+          return result;
+
+        intercepted = true;
+        // Uninstall before returning so no own 'decode' or swapped global remains.
+        delete (instance as any).decode;
+        (window as any).TextDecoder = OrigTD;
+
+        if (isDevelopment)
+          console.log("[sketch] intercepted game source:", result.length, "chars");
+
+        const patched = interceptor("Function", result);
+        if (patched === undefined) return result;
+
+        if (isDevelopment)
+          console.log("[sketch] injected patched source:", patched.length, "chars");
+
+        return patched;
+      },
+      "decode",
+      { length: 1 },
+    );
+
+    Object.defineProperty(instance, "decode", {
+      configurable: true,
+      enumerable: false,
+      writable: true,
+      value: decode,
+    });
+
+    return instance;
+  } as unknown as typeof TextDecoder;
+
+  // Not isConstructor: leaves OrigTD.prototype.constructor honest.
+  mirrorAttributes(FakeTD, OrigTD);
+  FakeTD.prototype = OrigTD.prototype;
+  (window as any).TextDecoder = FakeTD;
+
+  if (isDevelopment) console.log('[sketch] TextDecoder constructor replaced');
+
+  return new Promise<void>((loaded) => {
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (let i = 0; i < mutation.addedNodes.length; i++) {
+          const node = mutation.addedNodes[i] as HTMLScriptElement;
+          if (node.tagName === "SCRIPT" && node.src) {
+            if (
+              node.src.includes("/static/index-") ||
+              node.src.includes("/pkg/loader-")
+            ) {
+              loaded();
+              observer.disconnect();
+              return;
+            }
           }
         }
       }
-    }
-  });
+    });
 
-  observer.observe(document, {
-    childList: true,
-    subtree: true,
+    observer.observe(document, {
+      childList: true,
+      subtree: true,
+    });
   });
-});
+}
+
+export const gameLoad: Promise<void> = isKrunker
+  ? init()
+  : new Promise<void>(() => {});
+
